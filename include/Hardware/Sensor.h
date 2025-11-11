@@ -1,5 +1,4 @@
-
-
+#include "HealthMonitor.h"
 
 class Sensor{
 public:
@@ -7,8 +6,9 @@ public:
     virtual float ReadValue() = 0;
     
 
-// private:
-    //HealthMonitor _hm;
+private:
+    HealthMonitor _hm;
+    
 
     
 
