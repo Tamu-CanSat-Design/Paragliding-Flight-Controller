@@ -13,5 +13,5 @@ void HealthMonitor::Update(float value){
     buffer.Sum += value;
     buffer.SlidingWindow.push_back(value);
 
-
+    
 }

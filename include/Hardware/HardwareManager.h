@@ -1,4 +1,4 @@
-
+#include "Common\Common.h"
 
 class HardwareManager{
 public:
@@ -6,12 +6,6 @@ public:
     void read();
     
 private:
-    float _temperature;
-    float _pressure;
-    float _baroAltitude;
-    float _headingAngle;
-    float _accelX;
-    float _accelY;
-    float _accelZ;
-
+    Common::telemetry telemetryData; 
+    
 };
