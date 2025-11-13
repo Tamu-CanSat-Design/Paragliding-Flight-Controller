@@ -5,8 +5,7 @@
 // State logic
 namespace States
 {
-  extern uint16_t EE_STATE;
-  extern bool landing_legs_deployed;
+  // extern uint16_t EE_STATE;
   
   // ordered by state diagram (2024-2025: State diagram was unofficially revised)
   // void setup() : Bootup -> EE_STATE = 0
