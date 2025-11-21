@@ -2,7 +2,7 @@
 // #define SLIDING_WINDOW_SIZE 5
 
 
-void HealthMonitor::Update(float value){
+void HealthMonitor::UpdateWindow(float value){
     if(buffer.SlidingWindow.size() == buffer.ExpectedSize)
     {
         buffer.Sum -= buffer.SlidingWindow.front();

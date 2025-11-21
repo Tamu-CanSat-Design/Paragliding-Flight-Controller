@@ -1,6 +1,15 @@
 #include <iostream>
 
 namespace Common{
+
+
+    const int I2C_BAUDRATE = 400000;
+
+    const uint16_t TEAM_ID = 1030;
+    const unsigned long TELEMETRY_INTERVAL_MS = 1000;
+    const byte VOLTAGE_PIN = 48;
+    const byte CURRENT_PIN = 49;
+    const 
     struct Vector3{
         float X;
         float Y;
@@ -28,4 +37,15 @@ namespace Common{
         Vector3 velocity;
         Vector3 position;
     };
+
+    
+    void ParseCommand(const std::string& command){
+        // Simple parser that extracts the command type from a command string
+        
+    }
+
+
+
+
+    
 }

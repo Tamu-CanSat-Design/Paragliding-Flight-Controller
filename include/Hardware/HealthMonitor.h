@@ -1,3 +1,6 @@
+#ifndef HARDWARE_HEALTHMONITOR_H
+#define HARDWARE_HEALTHMONITOR_H
+
 #include <deque>
 
 
@@ -11,7 +14,7 @@ enum StatusCheck{
 struct SensorWindow{
     std::deque<float> SlidingWindow;
     unsigned int ExpectedSize;
-    float Sum;
+    float Sum = 0;
     float mean;
     
 };
@@ -21,11 +24,12 @@ class HealthMonitor{
 public:
     HealthMonitor(int _expectedSize);
     void Initialize();
-    void Update(float value);
+    void UpdateWindow(float value);
     void MovingAverage();
-    void MahalanobisDistance();
 
 private:
     SensorWindow buffer;
 
 };
+
+#endif // HARDWARE_HEALTHMONITOR_H
