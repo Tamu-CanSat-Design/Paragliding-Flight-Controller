@@ -15,9 +15,9 @@ namespace Common{
     const byte MAGNETOMETER_PIN = 43;
 
     struct Vector3{
-        float X;
-        float Y;
-        float Z;
+        float x;
+        float y;
+        float z;
     };
 
     struct telemetry{
@@ -54,26 +54,26 @@ namespace Common{
                              ",Pressure:" + std::to_string(data.pressure) +
                              ",Voltage:" + std::to_string(data.voltage) +
                              ",Current:" + std::to_string(data.current) +
-                             ",GyroX:" + std::to_string(data.gyroVel.X) +
-                             ",GyroY:" + std::to_string(data.gyroVel.Y) +
-                             ",GyroZ:" + std::to_string(data.gyroVel.Z) +
-                             ",AccX:" + std::to_string(data.acceleration.X) +
-                             ",AccY:" + std::to_string(data.acceleration.Y) +
-                             ",AccZ:" + std::to_string(data.acceleration.Z) +
+                             ",GyroX:" + std::to_string(data.gyroVel.x) +
+                             ",GyroY:" + std::to_string(data.gyroVel.y) +
+                             ",GyroZ:" + std::to_string(data.gyroVel.z) +
+                             ",AccX:" + std::to_string(data.acceleration.x) +
+                             ",AccY:" + std::to_string(data.acceleration.y) +
+                             ",AccZ:" + std::to_string(data.acceleration.z) +
                              ",GPSTime:" + std::to_string(data.GPSTime) +
-                             ",GPSLat:" + std::to_string(data.GPSLoc.X) +
-                             ",GPSLon:" + std::to_string(data.GPSLoc.Y) +
+                             ",GPSLat:" + std::to_string(data.GPSLoc.x) +
+                             ",GPSLon:" + std::to_string(data.GPSLoc.y) +
                              ",GPSSats:" + std::to_string(data.GPSSats) +
                              ",CMDEcho:" + data.CMDEcho +
-                             ",EulerX:" + std::to_string(data.eulerAngles.X) +
-                             ",EulerY:" + std::to_string(data.eulerAngles.Y) +
-                             ",EulerZ:" + std::to_string(data.eulerAngles.Z) +
-                             ",VelX:" + std::to_string(data.velocity.X) +
-                             ",VelY:" + std::to_string(data.velocity.Y) +
-                             ",VelZ:" + std::to_string(data.velocity.Z) +
-                             ",PosX:" + std::to_string(data.position.X) +
-                             ",PosY:" + std::to_string(data.position.Y) +
-                             ",PosZ:" + std::to_string(data.position.Z);
+                             ",EulerX:" + std::to_string(data.eulerAngles.x) +
+                             ",EulerY:" + std::to_string(data.eulerAngles.y) +
+                             ",EulerZ:" + std::to_string(data.eulerAngles.z) +
+                             ",VelX:" + std::to_string(data.velocity.x) +
+                             ",VelY:" + std::to_string(data.velocity.y) +
+                             ",VelZ:" + std::to_string(data.velocity.z) +
+                             ",PosX:" + std::to_string(data.position.x) +
+                             ",PosY:" + std::to_string(data.position.y) +
+                             ",PosZ:" + std::to_string(data.position.z);
         return packet;
     }
     
