@@ -22,7 +22,7 @@ namespace States
       // Kalman Filter
       // Start recording of nosecone camera
       // Start Reaction Wheel Control system
-  void StartDescent();    // StartDescent -> EE_STATE = 3
+  void Descent();    // StartDescent -> EE_STATE = 3
   
   //Transmit
   //Kalman Filter
