@@ -1,6 +1,6 @@
 #ifndef HARDWARE_HARDWAREMANAGER_H
 #define HARDWARE_HARDWAREMANAGER_H
-
+#include "EEPROM.h"
 #include "Common.h"
 
 class HardwareManager{
