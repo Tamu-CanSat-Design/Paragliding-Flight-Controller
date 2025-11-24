@@ -1,5 +1,4 @@
 #include <iostream>
-
 namespace Common{
 
 
@@ -7,12 +6,12 @@ namespace Common{
 
     const uint16_t TEAM_ID = 1030;
     const unsigned long TELEMETRY_INTERVAL_MS = 1000;
-    const byte VOLTAGE_PIN = 48;
-    const byte CURRENT_PIN = 49;
-    const byte BAROMETER_PIN = 44;
-    const byte IMU_PIN = 42;
-    const byte GPS_PIN = 50;
-    const byte MAGNETOMETER_PIN = 43;
+    const uint8_t VOLTAGE_PIN = 48;
+    const uint8_t CURRENT_PIN = 49;
+    const uint8_t BAROMETER_PIN = 44;
+    const uint8_t IMU_PIN = 42;
+    const uint8_t GPS_PIN = 50;
+    const uint8_t MAGNETOMETER_PIN = 43;
 
     struct Vector3{
         float x;

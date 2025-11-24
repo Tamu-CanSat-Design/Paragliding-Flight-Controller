@@ -1,5 +1,4 @@
 #include "Barometer.h"
-#include <BMP390.h>
 class BarometerBMP390 : public Barometer {
 
 public:
