@@ -13,6 +13,18 @@ namespace Common{
     const uint8_t GPS_PIN = 50;
     const uint8_t MAGNETOMETER_PIN = 43;
 
+    
+    enum FlightState {
+        BOOTUP = 0,
+        STANDBY = 1,
+        ASCENT = 2,
+        DESCENT = 3,
+        PAYLOAD_RELEASE = 4,
+        RECOVERY = 5
+    };
+
+    FlightState EE_STATE = BOOTUP;
+
     struct Vector3{
         float x;
         float y;
