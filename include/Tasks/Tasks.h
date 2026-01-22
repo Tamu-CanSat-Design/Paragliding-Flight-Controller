@@ -1,10 +1,12 @@
 #ifndef __TASKS_H__
 #define __TASKS_H__
 
+#include "SensorSnapshot.h"
 
 namespace Tasks
 {
     void InitializeTasks();
+    bool GetSnapshot(SensorSnapshot* outSnapshot);
 
     void SensorTask(void* pvParameters);
     void GPSTask(void* pvParameters);
