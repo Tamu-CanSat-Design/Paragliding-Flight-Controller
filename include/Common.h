@@ -1,4 +1,5 @@
-#include <iostream>
+#include <cstddef>
+#include <cstdio>
 namespace Common{
 
 
@@ -31,12 +32,24 @@ namespace Common{
         float z;
     };
 
+    struct BarometerData {
+        float pressure;
+        float temperature;
+        float altitude;
+    };
+
+    struct GpsData {
+        float latitude;
+        float longitude;
+        float altitude;
+    };
+
     struct telemetry{
         const int teamID;
         float missionTime;
         int packetCount;
         char Mode;
-        std::string state;
+        char state[16];
         float baroAltitude;
         float temperature;
         float pressure;
@@ -45,50 +58,56 @@ namespace Common{
         Vector3 gyroVel;   
         Vector3 acceleration;      
         float GPSTime;
-        Vector3 GPSLoc;
+        GpsData GPSLoc;
         int GPSSats;
-        std::string CMDEcho; 
+        char CMDEcho[32];
         Vector3 eulerAngles;
         Vector3 velocity;
         Vector3 position;
     };
 
-    std::string BuildPacket(const telemetry& data){ //packet is innaccurate here (copilot made this)
-        // Simple packet builder that converts telemetry data to a string format
-        std::string packet = "ID:" + std::to_string(data.teamID) +
-                             ",Time:" + std::to_string(data.missionTime) +
-                             ",PacketCount:" + std::to_string(data.packetCount) +
-                             ",Mode:" + data.Mode +
-                             ",State:" + data.state +
-                             ",BaroAlt:" + std::to_string(data.baroAltitude) +
-                             ",Temp:" + std::to_string(data.temperature) +
-                             ",Pressure:" + std::to_string(data.pressure) +
-                             ",Voltage:" + std::to_string(data.voltage) +
-                             ",Current:" + std::to_string(data.current) +
-                             ",GyroX:" + std::to_string(data.gyroVel.x) +
-                             ",GyroY:" + std::to_string(data.gyroVel.y) +
-                             ",GyroZ:" + std::to_string(data.gyroVel.z) +
-                             ",AccX:" + std::to_string(data.acceleration.x) +
-                             ",AccY:" + std::to_string(data.acceleration.y) +
-                             ",AccZ:" + std::to_string(data.acceleration.z) +
-                             ",GPSTime:" + std::to_string(data.GPSTime) +
-                             ",GPSLat:" + std::to_string(data.GPSLoc.x) +
-                             ",GPSLon:" + std::to_string(data.GPSLoc.y) +
-                             ",GPSSats:" + std::to_string(data.GPSSats) +
-                             ",CMDEcho:" + data.CMDEcho +
-                             ",EulerX:" + std::to_string(data.eulerAngles.x) +
-                             ",EulerY:" + std::to_string(data.eulerAngles.y) +
-                             ",EulerZ:" + std::to_string(data.eulerAngles.z) +
-                             ",VelX:" + std::to_string(data.velocity.x) +
-                             ",VelY:" + std::to_string(data.velocity.y) +
-                             ",VelZ:" + std::to_string(data.velocity.z) +
-                             ",PosX:" + std::to_string(data.position.x) +
-                             ",PosY:" + std::to_string(data.position.y) +
-                             ",PosZ:" + std::to_string(data.position.z);
-        return packet;
+    int BuildPacket(const telemetry& data, char* buffer, size_t bufferSize){ // packet format is placeholder
+        // Simple packet builder that writes into a fixed buffer (no heap).
+        return std::snprintf(
+            buffer,
+            bufferSize,
+            "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,Voltage:%f,Current:%f,"
+            "GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,GPSLat:%f,GPSLon:%f,GPSSats:%d,"
+            "CMDEcho:%s,EulerX:%f,EulerY:%f,EulerZ:%f,VelX:%f,VelY:%f,VelZ:%f,PosX:%f,PosY:%f,PosZ:%f",
+            data.teamID,
+            data.missionTime,
+            data.packetCount,
+            data.Mode,
+            data.state,
+            data.baroAltitude,
+            data.temperature,
+            data.pressure,
+            data.voltage,
+            data.current,
+            data.gyroVel.x,
+            data.gyroVel.y,
+            data.gyroVel.z,
+            data.acceleration.x,
+            data.acceleration.y,
+            data.acceleration.z,
+            data.GPSTime,
+            data.GPSLoc.latitude,
+            data.GPSLoc.longitude,
+            data.GPSSats,
+            data.CMDEcho,
+            data.eulerAngles.x,
+            data.eulerAngles.y,
+            data.eulerAngles.z,
+            data.velocity.x,
+            data.velocity.y,
+            data.velocity.z,
+            data.position.x,
+            data.position.y,
+            data.position.z
+        );
     }
     
-    void ParseCommand(const std::string& command){
+    void ParseCommand(const char* command){
         // Simple parser that extracts the command type from a command string
         
     }

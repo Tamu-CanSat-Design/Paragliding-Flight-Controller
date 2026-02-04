@@ -1,5 +1,5 @@
-#ifndef HARDWARE_SIMULATEDIMU_H
-#define HARDWARE_SIMULATEDIMU_H
+#ifndef HARDWARE_IMU_INTERFACE_H
+#define HARDWARE_IMU_INTERFACE_H
 #include "Common.h"
 
 
@@ -11,11 +11,12 @@ struct IMUData {
 };
 class IIMU {
 public:
-    virtual void Initialize() = 0;
+    virtual ~IIMU() = default;
+    virtual bool Initialize() = 0;
     virtual IMUData ReadData() = 0;
     virtual void Calibrate() = 0;
     virtual void setIMUData(const IMUData& data) = 0;
 
 };
 
-#endif // HARDWARE_SIMULATEDIMU_H
+#endif // HARDWARE_IMU_INTERFACE_H
