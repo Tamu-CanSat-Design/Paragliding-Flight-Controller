@@ -1,7 +1,6 @@
+#pragma once
 #ifndef __STATES_H__
 #define __STATES_H__
-
-
 
 // State logic
 namespace States
@@ -36,6 +35,8 @@ namespace States
       // State -> Landing: if airspeed < 1 m/s and altitude << 2m
       // Deploy parachute
       // Move landing legs to landing deployment
+  void Landing();         // Landing -> EE_STATE = 5
+
     // Cease telemetry
     // Stop both camera recordings
     // Activate audio beacon
