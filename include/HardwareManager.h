@@ -3,7 +3,6 @@
 
 #include "EEPROM.h"
 #include "Common.h"
-#include "SensorSnapshot.h"
 #include "drivers/Barometer.h"
 #include "drivers/Gps.h"
 #include "drivers/Imu.h"
@@ -22,7 +21,7 @@ public:
     const SensorSnapshot& GetSnapshot() const;
     
 private:
-    SensorSnapshot snapshot_;
+    Common::SensorSnapshot snapshot_;
     Barometer barometer_;
     IMU imu_;
     GPS gps_;

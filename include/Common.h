@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdio>
+#include <Arduino.h>
 namespace Common{
 
 
@@ -24,7 +25,7 @@ namespace Common{
         RECOVERY = 5
     };
 
-    FlightState EE_STATE = BOOTUP;
+    uint8_t EE_STATE = BOOTUP;
 
     struct Vector3{
         float x;
@@ -43,13 +44,36 @@ namespace Common{
         float longitude;
         float altitude;
     };
+    
+    struct IMUData {
+        Vector3 gyroVel;
+        Vector3 acceleration;
+        Vector3 eulerAngles;
+    };
 
-    struct telemetry{
+    struct VoltageData {
+        float voltage;
+        float current;
+        float power;
+    };
+
+    struct SensorSnapshot {
+        BarometerData barometer;
+        IMUData imu;
+        GpsData gpsLocation;
+        float gpsTime = 0.0f;
+        int gpsSatellites = 0; //possibly make unsigned
+        float rangeMeters = 0.0f;
+        float voltage = 0.0f;
+        float current = 0.0f;
+    };
+
+    struct telemetry{ // This struct needs to be reordered for memory optimization
         const int teamID;
         float missionTime;
         int packetCount;
         char Mode;
-        char state[16];
+        char state[16]; //
         float baroAltitude;
         float temperature;
         float pressure;
@@ -58,7 +82,7 @@ namespace Common{
         Vector3 gyroVel;   
         Vector3 acceleration;      
         float GPSTime;
-        GpsData GPSLoc;
+        Vector3 GPSLoc;
         int GPSSats;
         char CMDEcho[32];
         Vector3 eulerAngles;
@@ -71,9 +95,9 @@ namespace Common{
         return std::snprintf(
             buffer,
             bufferSize,
-            "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,Voltage:%f,Current:%f,"
-            "GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,GPSLat:%f,GPSLon:%f,GPSSats:%d,"
-            "CMDEcho:%s,EulerX:%f,EulerY:%f,EulerZ:%f,VelX:%f,VelY:%f,VelZ:%f,PosX:%f,PosY:%f,PosZ:%f",
+            "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
+            "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
+            "GPSLat:%f,GPSLon:%f,GPSSats:%d,CMDEcho:%s,EulerX:%f,EulerY:%f,EulerZ:%f,VelX:%f,VelY:%f,VelZ:%f,PosX:%f,PosY:%f,PosZ:%f",
             data.teamID,
             data.missionTime,
             data.packetCount,
@@ -91,8 +115,9 @@ namespace Common{
             data.acceleration.y,
             data.acceleration.z,
             data.GPSTime,
-            data.GPSLoc.latitude,
-            data.GPSLoc.longitude,
+            data.GPSLoc.x,
+            data.GPSLoc.y,
+            data.GPSLoc.z,
             data.GPSSats,
             data.CMDEcho,
             data.eulerAngles.x,
