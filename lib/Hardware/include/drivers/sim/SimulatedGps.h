@@ -5,6 +5,9 @@
 
 class SimulatedGps : public IGPS {
 public:
+    static constexpr const char* kSensorName = "Simulated GPS";
+
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     GPSData ReadData() override;
 

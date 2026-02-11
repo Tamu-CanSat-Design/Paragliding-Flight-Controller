@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "interfaces/IMU.h"
 
+// TODO: move to Common.h
 struct SensorSnapshot {
     Common::BarometerData barometer;
     IMUData imu;

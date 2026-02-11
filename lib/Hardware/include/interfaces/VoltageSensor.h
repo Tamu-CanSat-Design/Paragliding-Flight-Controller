@@ -10,6 +10,7 @@ struct VoltageData {
 class IVoltageSensor {
 public:
     virtual ~IVoltageSensor() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual VoltageData ReadData() = 0;
 };

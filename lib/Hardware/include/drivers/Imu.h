@@ -8,6 +8,9 @@
 
 class IMU : public IIMU {
 public:
+    static constexpr const char* kSensorName = "LSM6DSR + LIS2MDL";
+
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     IMUData ReadData() override;
     void Calibrate() override;

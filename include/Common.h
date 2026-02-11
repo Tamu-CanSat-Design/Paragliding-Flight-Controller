@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdio>
+
 namespace Common{
 
 
@@ -111,9 +112,4 @@ namespace Common{
         // Simple parser that extracts the command type from a command string
         
     }
-
-
-
-
-    
 }

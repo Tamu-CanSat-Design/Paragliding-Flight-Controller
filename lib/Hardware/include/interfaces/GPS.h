@@ -11,6 +11,7 @@ struct GPSData {
 class IGPS {
 public:
     virtual ~IGPS() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual GPSData ReadData() = 0;
 };

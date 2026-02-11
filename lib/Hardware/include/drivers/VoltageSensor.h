@@ -5,6 +5,9 @@
 
 class VoltageSensor : public IVoltageSensor {
 public:
+    static constexpr const char* kSensorName = "Generic Voltage Sensor";
+
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     VoltageData ReadData() override;
 };

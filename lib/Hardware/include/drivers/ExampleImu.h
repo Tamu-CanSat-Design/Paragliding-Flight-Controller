@@ -6,6 +6,9 @@
 // Example IMU driver skeleton. Use this as a template for new drivers.
 class ExampleImu : public IIMU {
 public:
+    static constexpr const char* kSensorName = "Example IMU";
+
+    const char* SensorName() const override { return kSensorName; }
     // Return true if initialization succeeds.
     bool Initialize() override;
 

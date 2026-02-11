@@ -5,6 +5,9 @@
 
 class Camera : public ICamera {
 public:
+    static constexpr const char* kSensorName = "Generic Camera";
+
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     bool StartCapture() override;
     bool StopCapture() override;

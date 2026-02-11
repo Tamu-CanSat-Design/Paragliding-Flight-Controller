@@ -12,6 +12,7 @@ struct IMUData {
 class IIMU {
 public:
     virtual ~IIMU() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual IMUData ReadData() = 0;
     virtual void Calibrate() = 0;
