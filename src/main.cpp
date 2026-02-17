@@ -2,9 +2,8 @@
 #include "HardwareManager.h"
 
 
-// BMP390 bmp390;
 
-HardwareManager hardwareManager(/*Barometer, IMU, GPS, whatever*/);
+// HardwareManager hardwareManager(/*Barometer, IMU, GPS, whatever*/);
 
 
 

@@ -21,16 +21,16 @@ public:
     
 private:
     Common::SensorSnapshot snapshot_;
-    IBarometer barometer_;
-    IIMU imu_;
-    IGPS gps_;
-    ILidar lidar_;
-    IVoltageSensor voltageSensor_;
-    IRadio radio_;
-    IAudioBeacon audioBeacon_;
-    ICamera cameras_[2];
-    IServo mechServos_[3];
-    IServo steeringServos_[2];
+    IBarometer& barometer_;
+    IIMU& imu_;
+    IGPS& gps_;
+    ILidar& lidar_;
+    IVoltageSensor& voltageSensor_;
+    IRadio& radio_;
+    IAudioBeacon& audioBeacon_;
+    std::array<ICamera*, 2> cameras_;
+    std::array<IServo*, 3> mechServos_;
+    std::array<IServo*, 2> steeringServos_;
 };
 
 #endif // HARDWARE_HARDWAREMANAGER_H
