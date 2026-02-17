@@ -3,35 +3,34 @@
 
 #include "EEPROM.h"
 #include "Common.h"
-#include "drivers/Barometer.h"
-#include "drivers/Gps.h"
-#include "drivers/Imu.h"
-#include "drivers/VoltageSensor.h"
-#include "drivers/Lidar.h"
-#include "drivers/Radio.h"
-#include "drivers/AudioBeacon.h"
-#include "drivers/Camera.h"
-#include "drivers/ReleaseServo.h"
-#include "drivers/SteeringServo.h"
+#include "interfaces/BarometerInterface.h"
+#include "interfaces/GpsInterface.h"
+#include "interfaces/ImuInterface.h"
+#include "interfaces/VoltageSensorInterface.h"
+#include "interfaces/LidarInterface.h"
+#include "interfaces/RadioInterface.h"
+#include "interfaces/AudioBeaconInterface.h"
+#include "interfaces/CameraInterface.h"
+#include "interfaces/ServoInterface.h"
 
 class HardwareManager{
 public:
     bool Initialize();
     void ReadSensors();
-    const SensorSnapshot& GetSnapshot() const;
+    const Common::SensorSnapshot& GetSnapshot() const;
     
 private:
     Common::SensorSnapshot snapshot_;
-    Barometer barometer_;
-    IMU imu_;
-    GPS gps_;
-    Lidar lidar_;
-    VoltageSensor voltageSensor_;
-    Radio radio_;
-    AudioBeacon audioBeacon_;
-    Camera cameras_[2];
-    ReleaseServo releaseServos_[2];
-    SteeringServo steeringServos_[4];
+    IBarometer barometer_;
+    IIMU imu_;
+    IGPS gps_;
+    ILidar lidar_;
+    IVoltageSensor voltageSensor_;
+    IRadio radio_;
+    IAudioBeacon audioBeacon_;
+    ICamera cameras_[2];
+    IServo mechServos_[3];
+    IServo steeringServos_[2];
 };
 
 #endif // HARDWARE_HARDWAREMANAGER_H
