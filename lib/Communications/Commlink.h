@@ -9,8 +9,8 @@ public:
     void WriteGroundRadio(const char* data);
     void ReadGroundRadio(char* buffer, int length);
     void ParseCommand(const char* command);
-
-
+private:
+    static int index;
 };
 
 #endif // COMMLINK_H

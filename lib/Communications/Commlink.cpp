@@ -17,12 +17,28 @@ void Commlink::WriteGroundRadio(const char* data){
 }
 void Commlink::ReadGroundRadio(char* buffer, int length){
 /* If data exists, parse */
-    if (length<=0){
+    if (!buffer || length <= 1) {
         return;
     }
-    std::string text;
+
+    while (XBEE_SERIAL.available() > 0) {
+        char c = XBEE_SERIAL.read();
+        if (c == '\n') {
+            buffer[index] = '\0';
+            ParseCommand(buffer);
+            index = 0;
+        } else {
+            if (index < length - 1) {
+                buffer[index++] = c;
+            } else {
+                //do something about overflow
+                return;
+            }
+        }
+    }
 }
+
 void Commlink::ParseCommand(const char* command){
-/* Parse possible commands, add to buffer? */
+/* Parse possible commands, do thing */
 
 }
