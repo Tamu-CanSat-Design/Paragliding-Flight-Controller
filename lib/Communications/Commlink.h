@@ -1,6 +1,8 @@
 #ifndef COMMLINK_H
 #define COMMLINK_H
-#define SERIAL_BAUDRATE 115200
+#define TEAM_ID      "1030"
+#define XBEE_SERIAL   Serial1
+#define XBEE_BAUDRATE 115200
 class Commlink{
 public:
     void Initialize();
