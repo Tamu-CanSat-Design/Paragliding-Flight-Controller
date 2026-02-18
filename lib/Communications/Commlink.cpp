@@ -1,12 +1,13 @@
 #include "Commlink.h"
 #include <Arduino.h>
+#include <string.h>
 
 void Commlink::Initialize(){
 /* Initialize Ground Link */
     XBEE_SERIAL.begin(XBEE_BAUDRATE);
 }
 
-void WriteGroundRadio(const char* data){
+void Commlink::WriteGroundRadio(const char* data){
 /* If data exists, write to XBEE and flush buffer */
     if (!data){
         return;
@@ -14,11 +15,14 @@ void WriteGroundRadio(const char* data){
     XBEE_SERIAL.print(data);
     XBEE_SERIAL.flush();
 }
-void ReadGroundRadio(char* buffer, int length){
+void Commlink::ReadGroundRadio(char* buffer, int length){
 /* If data exists, parse */
-
+    if (!buffer || length <= 0){
+        return;
+    }
+    
 }
-void ParseCommand(const char* command){
+void Commlink::ParseCommand(const char* command){
 /* Parse possible commands, add to buffer? */
 
 }
