@@ -1,7 +1,7 @@
 #ifndef HARDWARE_CAMERA_DRIVER_H
 #define HARDWARE_CAMERA_DRIVER_H
 
-#include "interfaces/Camera.h"
+#include "interfaces/CameraInterface.h"
 
 class Camera : public ICamera {
 public:

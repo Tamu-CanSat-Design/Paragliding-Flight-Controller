@@ -1,7 +1,7 @@
 #ifndef HARDWARE_RADIO_DRIVER_H
 #define HARDWARE_RADIO_DRIVER_H
 
-#include "interfaces/Radio.h"
+#include "interfaces/RadioInterface.h"
 
 class Radio : public IRadio {
 public:

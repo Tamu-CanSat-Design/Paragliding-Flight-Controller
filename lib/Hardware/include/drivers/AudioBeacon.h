@@ -1,7 +1,7 @@
 #ifndef HARDWARE_AUDIO_BEACON_DRIVER_H
 #define HARDWARE_AUDIO_BEACON_DRIVER_H
 
-#include "interfaces/AudioBeacon.h"
+#include "interfaces/AudioBeaconInterface.h"
 
 class AudioBeacon : public IAudioBeacon {
 public:

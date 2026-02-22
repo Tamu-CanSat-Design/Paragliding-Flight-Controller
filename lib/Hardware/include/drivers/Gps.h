@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #include "bus/UartDevice.h"
-#include "interfaces/GPS.h"
+#include "interfaces/GPSInterface.h"
 
 class GPS : public IGPS {
 public:

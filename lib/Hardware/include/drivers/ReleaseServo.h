@@ -1,7 +1,7 @@
 #ifndef HARDWARE_RELEASE_SERVO_H
 #define HARDWARE_RELEASE_SERVO_H
 
-#include "interfaces/Servo.h"
+#include "interfaces/ServoInterface.h"
 
 class ReleaseServo : public IServo {
 public:

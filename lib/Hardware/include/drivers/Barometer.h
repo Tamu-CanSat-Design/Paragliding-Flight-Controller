@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "bus/I2CDevice.h"
-#include "interfaces/Barometer.h"
+#include "interfaces/BarometerInterface.h"
 
 class Barometer : public IBarometer {
 public:

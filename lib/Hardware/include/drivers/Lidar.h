@@ -1,7 +1,7 @@
 #ifndef HARDWARE_LIDAR_DRIVER_H
 #define HARDWARE_LIDAR_DRIVER_H
 
-#include "interfaces/Lidar.h"
+#include "interfaces/LidarInterface.h"
 
 class Lidar : public ILidar {
 public:

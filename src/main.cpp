@@ -5,7 +5,7 @@
 
 #include "Tasks/Tasks.h"
 
-// TODO: static allocation over
+
 void setup() {
   Serial.begin(115200);
 

@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "bus/I2CDevice.h"
-#include "interfaces/IMU.h"
+#include "interfaces/IMUInterface.h"
 
 class IMU : public IIMU {
 public:

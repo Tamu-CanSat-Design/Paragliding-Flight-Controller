@@ -205,22 +205,22 @@ bool Barometer::ReadCalibration() {
 
     // Datasheet p55: "Therefore the coefficient have to be converted into floating point numbers by the following formulas."
     // Convert raw coefficients into floating-point calibration terms required by formulas.
-    calib_.par_t1 = static_cast<float>(nvm_t1) * std::ldexpf(1.0f, 8);
-    calib_.par_t2 = static_cast<float>(nvm_t2) * std::ldexpf(1.0f, -30);
-    calib_.par_t3 = static_cast<float>(nvm_t3) * std::ldexpf(1.0f, -48);
+    calib_.par_t1 = static_cast<float>(nvm_t1) * std::ldexp(1.0f, 8);
+    calib_.par_t2 = static_cast<float>(nvm_t2) * std::ldexp(1.0f, -30);
+    calib_.par_t3 = static_cast<float>(nvm_t3) * std::ldexp(1.0f, -48);
 
     // Pressure coefficients have offsets and scales per datasheet to linearize output.
-    calib_.par_p1 = (static_cast<float>(nvm_p1) - 16384.0f) * std::ldexpf(1.0f, -20);
-    calib_.par_p2 = (static_cast<float>(nvm_p2) - 16384.0f) * std::ldexpf(1.0f, -29);
-    calib_.par_p3 = static_cast<float>(nvm_p3) * std::ldexpf(1.0f, -32);
-    calib_.par_p4 = static_cast<float>(nvm_p4) * std::ldexpf(1.0f, -37);
+    calib_.par_p1 = (static_cast<float>(nvm_p1) - 16384.0f) * std::ldexp(1.0f, -20);
+    calib_.par_p2 = (static_cast<float>(nvm_p2) - 16384.0f) * std::ldexp(1.0f, -29);
+    calib_.par_p3 = static_cast<float>(nvm_p3) * std::ldexp(1.0f, -32);
+    calib_.par_p4 = static_cast<float>(nvm_p4) * std::ldexp(1.0f, -37);
     calib_.par_p5 = static_cast<float>(nvm_p5) * 8.0f;
-    calib_.par_p6 = static_cast<float>(nvm_p6) * std::ldexpf(1.0f, -6);
-    calib_.par_p7 = static_cast<float>(nvm_p7) * std::ldexpf(1.0f, -8);
-    calib_.par_p8 = static_cast<float>(nvm_p8) * std::ldexpf(1.0f, -15);
-    calib_.par_p9 = static_cast<float>(nvm_p9) * std::ldexpf(1.0f, -48);
-    calib_.par_p10 = static_cast<float>(nvm_p10) * std::ldexpf(1.0f, -48);
-    calib_.par_p11 = static_cast<float>(nvm_p11) * std::ldexpf(1.0f, -65);
+    calib_.par_p6 = static_cast<float>(nvm_p6) * std::ldexp(1.0f, -6);
+    calib_.par_p7 = static_cast<float>(nvm_p7) * std::ldexp(1.0f, -8);
+    calib_.par_p8 = static_cast<float>(nvm_p8) * std::ldexp(1.0f, -15);
+    calib_.par_p9 = static_cast<float>(nvm_p9) * std::ldexp(1.0f, -48);
+    calib_.par_p10 = static_cast<float>(nvm_p10) * std::ldexp(1.0f, -48);
+    calib_.par_p11 = static_cast<float>(nvm_p11) * std::ldexp(1.0f, -65);
 
     // Calibration is ready for compensation routines.
     return true;
