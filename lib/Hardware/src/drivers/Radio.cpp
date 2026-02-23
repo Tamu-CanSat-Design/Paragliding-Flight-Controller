@@ -1,4 +1,12 @@
-#include "drivers/Radio.h"
+#include "interfaces/RadioInterface.h"
+
+class Radio : public IRadio {
+public: 
+    bool Initialize();
+    bool Send(const uint8_t* data, size_t length);
+    int Receive(uint8_t* buffer, size_t maxLength);
+};
+
 
 bool Radio::Initialize() {
     return true;

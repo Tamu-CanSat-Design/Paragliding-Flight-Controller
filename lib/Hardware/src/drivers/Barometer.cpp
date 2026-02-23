@@ -1,4 +1,13 @@
-#include "drivers/Barometer.h"
+#include "interfaces/BarometerInterface.h"
+
+class Barometer : public IBarometer {
+public:
+    bool Initialize();
+    Common::BarometerData ReadData();
+private:
+    float pressure_;
+    float temperature_;
+};
 
 bool Barometer::Initialize() {
     // Initialization code for BMP390 barometer

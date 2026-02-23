@@ -1,3 +1,4 @@
+#pragma once
 #include <cstddef>
 #include <cstdio>
 #include <Arduino.h>
@@ -39,10 +40,12 @@ namespace Common{
         float altitude;
     };
 
-    struct GpsData {
+    struct GPSData {
         float latitude;
         float longitude;
         float altitude;
+        float time;
+        int satellites;
     };
     
     struct IMUData {
@@ -57,17 +60,18 @@ namespace Common{
         float power;
     };
 
+    struct LidarData {
+        float distanceMeters;
+    };
+
     struct SensorSnapshot {
         BarometerData barometer;
         IMUData imu;
-        GpsData gpsLocation;
-        float gpsTime = 0.0f;
-        int gpsSatellites = 0; //possibly make unsigned
-        float rangeMeters = 0.0f;
+        GPSData gpsData;
         float voltage = 0.0f;
         float current = 0.0f;
+        LidarData lidarData;
     };
-
     struct telemetry{ // This struct needs to be reordered for memory optimization
         const int teamID;
         float missionTime;
@@ -141,4 +145,4 @@ namespace Common{
 
 
     
-}
+};

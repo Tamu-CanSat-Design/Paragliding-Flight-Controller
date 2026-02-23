@@ -1,9 +1,15 @@
-#include "drivers/VoltageSensor.h"
+#include "interfaces/VoltageSensorInterface.h"
+
+class VoltageSensor : public IVoltageSensor {
+public:
+    bool Initialize();
+    Common::VoltageData ReadData();
+};
 
 bool VoltageSensor::Initialize() {
     return true;
 }
 
-VoltageData VoltageSensor::ReadData() {
+Common::VoltageData VoltageSensor::ReadData() {
     return {};
 }

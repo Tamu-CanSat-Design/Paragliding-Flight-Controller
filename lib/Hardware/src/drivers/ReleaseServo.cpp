@@ -1,4 +1,15 @@
-#include "drivers/ReleaseServo.h"
+#include "interfaces/ServoInterface.h"
+
+
+
+class ReleaseServo : public IServo {
+public:
+    bool Initialize();
+    void SetAngle(float degrees);
+};
+
+
+
 
 bool ReleaseServo::Initialize() {
     return true;

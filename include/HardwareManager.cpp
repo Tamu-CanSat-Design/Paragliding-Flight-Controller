@@ -20,20 +20,19 @@ bool HardwareManager::Initialize() {
 }
 
 void HardwareManager::ReadSensors() {
+    
     snapshot_.barometer = barometer_.ReadData();
     snapshot_.imu = imu_.ReadData();
 
-    GPSData gps = gps_.ReadData();
-    snapshot_.gpsLocation = gps.location;
-    snapshot_.gpsTime = gps.time;
-    snapshot_.gpsSatellites = gps.satellites;
+    Common::GPSData gps = gps_.ReadData();
+    snapshot_.gpsData = gps;
 
     snapshot_.rangeMeters = lidar_.ReadData().distanceMeters;
-    VoltageData power = voltageSensor_.ReadData();
+    Common::VoltageData power = voltageSensor_.ReadData();
     snapshot_.voltage = power.voltage;
     snapshot_.current = power.current;
 }
 
-const SensorSnapshot& HardwareManager::GetSnapshot() const {
+const Common::SensorSnapshot& HardwareManager::GetSnapshot() const {
     return snapshot_;
 }
