@@ -3,35 +3,62 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <Wire.h>
+
 namespace {
-#ifndef GPS_BAUD
-constexpr unsigned long kGpsBaud = 9600;
+#ifndef GPS_I2C_ADDRESS
+constexpr uint8_t kGpsI2cAddress = 0x42;
 #else
-constexpr unsigned long kGpsBaud = GPS_BAUD;
+constexpr uint8_t kGpsI2cAddress = static_cast<uint8_t>(GPS_I2C_ADDRESS);
 #endif
 
-#ifndef GPS_SERIAL_CONFIG
-constexpr uint16_t kGpsSerialConfig = SERIAL_8N1;
+#ifndef GPS_I2C_BYTES_AVAILABLE_REG
+constexpr uint8_t kGpsBytesAvailableReg = 0xFD;
 #else
-constexpr uint16_t kGpsSerialConfig = GPS_SERIAL_CONFIG;
+constexpr uint8_t kGpsBytesAvailableReg = static_cast<uint8_t>(GPS_I2C_BYTES_AVAILABLE_REG);
+#endif
+
+#ifndef GPS_I2C_DATA_REG
+constexpr uint8_t kGpsDataReg = 0xFF;
+#else
+constexpr uint8_t kGpsDataReg = static_cast<uint8_t>(GPS_I2C_DATA_REG);
+#endif
+
+#ifndef GPS_I2C_MAX_BYTES_PER_READ
+constexpr size_t kGpsMaxBytesPerRead = 128;
+#else
+constexpr size_t kGpsMaxBytesPerRead = static_cast<size_t>(GPS_I2C_MAX_BYTES_PER_READ);
 #endif
 }  // namespace
 
-GPS::GPS(HardwareSerial& serial)
-    : uart_(serial), bus_(&uart_) {}
+GPS::GPS(uint8_t address)
+    : i2c_(address), bus_(&i2c_) {}
 
-GPS::GPS(IStreamBus& bus)
+GPS::GPS(I2CDevice& bus)
     : bus_(&bus) {}
 
 bool GPS::Initialize() {
-    data_ = {}; 
+    data_ = {};
     sentence_len_ = 0;
-    initialized_ = true;
+    initialized_ = false;
 
-    if (bus_ == &uart_) {
-        uart_.Begin(kGpsBaud, kGpsSerialConfig);
+    Wire.begin();
+    Wire.setClock(Common::I2C_BAUDRATE);
+
+    if (bus_ == &i2c_ && bus_->address() == 0) {
+        bus_->setAddress(kGpsI2cAddress);
     }
 
+    if (bus_->address() == 0) {
+        return false;
+    }
+
+    uint8_t available_bytes[2] = {};
+    if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
+        return false;
+    }
+
+    initialized_ = true;
     return true;
 }
 
@@ -40,16 +67,41 @@ GPSData GPS::ReadData() {
         return data_;
     }
 
-    while (bus_->Available() > 0) {
-        const int byte = bus_->Read();
-        if (byte < 0) {
+    uint8_t available_bytes[2] = {};
+    if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
+        return data_;
+    }
+
+    size_t bytes_to_read = static_cast<size_t>(available_bytes[0])
+        | (static_cast<size_t>(available_bytes[1]) << 8);
+    if (bytes_to_read == 0) {
+        return data_;
+    }
+
+    if (bytes_to_read > kGpsMaxBytesPerRead) {
+        bytes_to_read = kGpsMaxBytesPerRead;
+    }
+
+    uint8_t chunk[kMaxI2cChunkLen] = {};
+    while (bytes_to_read > 0) {
+        size_t chunk_len = bytes_to_read;
+        if (chunk_len > kMaxI2cChunkLen) {
+            chunk_len = kMaxI2cChunkLen;
+        }
+
+        if (!bus_->ReadRegisters(kGpsDataReg, chunk, chunk_len, false)) {
             break;
         }
-        ProcessChar(static_cast<char>(byte));
+
+        for (size_t i = 0; i < chunk_len; ++i) {
+            ProcessChar(static_cast<char>(chunk[i]));
+        }
+        bytes_to_read -= chunk_len;
     }
+
     return data_;
 }
-
+    
 void GPS::ProcessChar(char c) {
     if (c == '$') {
         sentence_len_ = 0;

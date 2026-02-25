@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "bus/UartDevice.h"
+#include "bus/I2CDevice.h"
 #include "interfaces/GPSInterface.h"
 
 class GPS : public IGPS {
@@ -13,17 +13,18 @@ public:
 
     const char* SensorName() const override { return kSensorName; }
     GPS() = default;
-    explicit GPS(HardwareSerial& serial);
-    explicit GPS(IStreamBus& bus);
+    explicit GPS(uint8_t address);
+    explicit GPS(I2CDevice& bus);
     bool Initialize() override;
     GPSData ReadData() override;
 
 private:
     static constexpr size_t kMaxSentenceLen = 128;
     static constexpr size_t kMaxFields = 20;
+    static constexpr size_t kMaxI2cChunkLen = 32;
 
-    UartDevice uart_{};
-    IStreamBus* bus_ = &uart_;
+    I2CDevice i2c_{};
+    I2CDevice* bus_ = &i2c_;
     GPSData data_{};
     char sentence_[kMaxSentenceLen]{};
     size_t sentence_len_ = 0;
