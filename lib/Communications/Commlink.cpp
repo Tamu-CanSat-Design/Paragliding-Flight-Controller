@@ -75,8 +75,13 @@ void Commlink::ParseCommand(const char* command){
         return;
     }
 
-    // 2) TEAM_ID (ignored here)
-    skipField(p);
+    // 2) prefix: TEAM_ID
+    char teamId[8];
+    copyField(p, teamId, sizeof(teamId));
+    if (strcmp(teamId, TEAM_ID) != 0) {
+        Serial.println("Invalid TEAM_ID");
+        return;
+    }
 
     // 3) main command: CX, ST, SIM, SIMP, CAL, MEC, ...
     char cmd[8];
