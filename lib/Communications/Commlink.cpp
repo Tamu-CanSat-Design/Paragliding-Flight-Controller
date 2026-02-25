@@ -1,6 +1,6 @@
 #include "Commlink.h"
 #include "HardwareManager.h"
-#include <Arduino.h>
+#include "Arduino.h"
 #include <string.h>
 
 int Commlink::index = 0;
@@ -46,12 +46,6 @@ void Commlink::ReadGroundRadio(char* buffer, int length){
     }
 }
 
-// skip one comma‑separated field
-static void skipField(const char*& s) {
-    while (*s && *s != ',') ++s;
-    if (*s == ',') ++s;
-}
-
 // copy next field into dst
 static void copyField(const char*& s, char* dst, size_t dstSize) {
     size_t i = 0;
@@ -94,12 +88,14 @@ void Commlink::ParseCommand(const char* command){
 
         if (strcmp(onOff, "ON") == 0) {
             Serial.println("Telemetry ON");
+            WriteGroundRadio(command);
             // TODO: Enable telemetry transmission
         } else if (strcmp(onOff, "OFF") == 0) {
             Serial.println("Telemetry OFF");
+            WriteGroundRadio(command);
             // TODO: Disable telemetry transmission
         } else {
-            Serial.println("CX: invalid ON/OFF");
+            Serial.println("CX: invalid telemetry ON/OFF");
         }
     }
 
@@ -111,9 +107,10 @@ void Commlink::ParseCommand(const char* command){
         if (*utcTime) {
             Serial.print("Set RTC to UTC ");
             Serial.println(utcTime);
+            WriteGroundRadio(command);
             // TODO: Set RTC time from ground station
         } else {
-            Serial.println("ST: missing time");
+            Serial.println("ST: missing/invalid time");
         }
     }
 
@@ -124,8 +121,12 @@ void Commlink::ParseCommand(const char* command){
 
         if (strcmp(mode, "ENABLE") == 0) {
             Serial.println("Simulation mode ENABLE");
+            WriteGroundRadio(command);
+            // TODO: Simulation mode enable
         } else if (strcmp(mode, "DISABLE") == 0) {
             Serial.println("Simulation mode DISABLE");
+            WriteGroundRadio(command);
+            // TODO: Simulation mode disable
         } else {
             Serial.println("SIM: unknown mode");
         }
@@ -139,6 +140,8 @@ void Commlink::ParseCommand(const char* command){
         if (*pressure) {
             Serial.print("Simulated pressure = ");
             Serial.println(pressure);
+            //TODO: Set pressure in simulation
+            WriteGroundRadio(command);
         } else {
             Serial.println("SIMP: missing pressure");
         }
@@ -147,6 +150,8 @@ void Commlink::ParseCommand(const char* command){
     // ---------- CAL: Calibrate Altitude to Zero ----------
     else if (strcmp(cmd, "CAL") == 0) {
         Serial.println("Calibrate altitude to 0");
+        //TODO: Figure out what to set to zero and do it
+        WriteGroundRadio(command);
     }
 
     // ---------- MEC: mechanical sub‑commands ----------
@@ -161,6 +166,8 @@ void Commlink::ParseCommand(const char* command){
 
             if (strcmp(onOff, "ON") == 0) {
                 Serial.println("Container/Payload release ACTIVATED");
+                WriteGroundRadio(command);
+                //TODO: Interact with hardware manager to release container/payload
             } else {
                 Serial.println("CPREL: invalid ON/OFF");
             }
@@ -172,6 +179,8 @@ void Commlink::ParseCommand(const char* command){
 
             if (strcmp(onOff, "ON") == 0) {
                 Serial.println("Egg instrument release ACTIVATED");
+                //TODO: Interact with hardware manager to release egg instrument
+                WriteGroundRadio(command);
             } else {
                 Serial.println("EGREL: invalid ON/OFF");
             }
@@ -183,6 +192,8 @@ void Commlink::ParseCommand(const char* command){
 
             if (strcmp(onOff, "ON") == 0) {
                 Serial.println("LiDAR/Camera EXTENDED");
+                //TODO: Interact with hardware manager to extend LiDAR
+                WriteGroundRadio(command);
             } else {
                 Serial.println("LDAR: invalid ON/OFF");
             }
@@ -197,3 +208,4 @@ void Commlink::ParseCommand(const char* command){
         Serial.print("Unknown command: ");
         Serial.println(cmd);
     }
+}
