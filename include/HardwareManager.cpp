@@ -10,15 +10,15 @@ bool HardwareManager::Initialize() {
     ok = radio_.Initialize() && ok;
     ok = audioBeacon_.Initialize() && ok;
     for (size_t i = 0; i < cameras_.size(); ++i) {
-        ok = cameras_[i].Initialize() && ok;
+        ok = cameras_[i]->Initialize() && ok;
     }
 
     for (size_t i = 0; i < mechServos_.size(); ++i) {
-        ok = mechServos_[i].Initialize() && ok;
+        ok = mechServos_[i]->Initialize() && ok;
     }
 
     for (size_t i = 0; i < steeringServos_.size(); ++i) {
-        ok = steeringServos_[i].Initialize() && ok;
+        ok = steeringServos_[i]->Initialize() && ok;
     }
     return ok;
 }

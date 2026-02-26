@@ -89,7 +89,7 @@ namespace Common{
         float current = 0.0f;
         LidarData lidarData;
     };
-    
+
     struct telemetry{ // This struct needs to be reordered for memory optimization
         const int teamID;
         float missionTime;
@@ -119,7 +119,7 @@ namespace Common{
             bufferSize,
             "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
             "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
-            "GPSLat:%f,GPSLon:%f,GPSSats:%d,CMDEcho:%s,EulerX:%f,EulerY:%f,EulerZ:%f,VelX:%f,VelY:%f,VelZ:%f,PosX:%f,PosY:%f,PosZ:%f",
+            "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,EulerX:%f,EulerY:%f,EulerZ:%f,VelX:%f,VelY:%f,VelZ:%f,PosX:%f,PosY:%f,PosZ:%f",
             data.teamID,
             data.missionTime,
             data.packetCount,

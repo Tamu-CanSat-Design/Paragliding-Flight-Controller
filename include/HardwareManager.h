@@ -16,8 +16,8 @@
 class HardwareManager{
 public:
     HardwareManager(IBarometer& barometer, IIMU& imu, IGPS& gps, ILidar& lidar, IVoltageSensor& voltageSensor, 
-        IRadio& radio, IAudioBeacon& audioBeacon, std::array<ICamera, 2> cameras, 
-        std::array<IServo, 3> mechServos, std::array<IServo, 2> steeringServos)
+        IRadio& radio, IAudioBeacon& audioBeacon, std::array<ICamera*, 2> cameras, 
+        std::array<IServo*, 3> mechServos, std::array<IServo*, 2> steeringServos)
         : barometer_(barometer), imu_(imu), gps_(gps), lidar_(lidar), voltageSensor_(voltageSensor),
          radio_(radio), audioBeacon_(audioBeacon), cameras_(cameras), mechServos_(mechServos), 
          steeringServos_(steeringServos) {}
@@ -34,9 +34,9 @@ private:
     IVoltageSensor& voltageSensor_;
     IRadio& radio_;
     IAudioBeacon& audioBeacon_;
-    std::array<ICamera, 2> cameras_;
-    std::array<IServo, 3> mechServos_;
-    std::array<IServo, 2> steeringServos_;
+    std::array<ICamera*, 2> cameras_;
+    std::array<IServo*, 3> mechServos_;
+    std::array<IServo*, 2> steeringServos_;
 };
 
 #endif // HARDWARE_HARDWAREMANAGER_H
