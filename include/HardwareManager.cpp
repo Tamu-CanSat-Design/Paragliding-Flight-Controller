@@ -1,4 +1,5 @@
 #include "HardwareManager.h"
+#include "SensorSnapshot.h"
 
 bool HardwareManager::Initialize() {
     bool ok = true;
@@ -32,9 +33,8 @@ void HardwareManager::ReadSensors() {
     snapshot_.gpsData = gps;
 
     snapshot_.lidarData = lidar_.ReadData();
-    Common::VoltageData power = voltageSensor_.ReadData();
-    snapshot_.voltage = power.voltage;
-    snapshot_.current = power.current;
+    Common::VoltageData voltage = voltageSensor_.ReadData();
+    snapshot_.voltage = voltage;
 }
 
 const Common::SensorSnapshot& HardwareManager::GetSnapshot() const {

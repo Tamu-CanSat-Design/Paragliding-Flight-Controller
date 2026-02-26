@@ -4,6 +4,7 @@
 class ICamera {
 public:
     virtual ~ICamera() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual bool StartCapture() = 0;
     virtual bool StopCapture() = 0;

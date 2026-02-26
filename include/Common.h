@@ -2,31 +2,30 @@
 #include <cstddef>
 #include <cstdio>
 #include <Arduino.h>
-namespace Common{
 
+namespace Common {
 
-    const int I2C_BAUDRATE = 400000;
+inline constexpr int I2C_BAUDRATE = 400000;
 
-    const uint16_t TEAM_ID = 1030;
-    const unsigned long TELEMETRY_INTERVAL_MS = 1000;
-    const uint8_t VOLTAGE_PIN = 48;
-    const uint8_t CURRENT_PIN = 49;
-    const uint8_t BAROMETER_PIN = 44;
-    const uint8_t IMU_PIN = 42;
-    const uint8_t GPS_PIN = 50;
-    const uint8_t MAGNETOMETER_PIN = 43;
+inline constexpr uint16_t TEAM_ID = 1030;
+inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
+inline constexpr uint8_t VOLTAGE_PIN = 48;
+inline constexpr uint8_t CURRENT_PIN = 49;
+inline constexpr uint8_t BAROMETER_PIN = 44;
+inline constexpr uint8_t IMU_PIN = 42;
+inline constexpr uint8_t GPS_PIN = 50;
+inline constexpr uint8_t MAGNETOMETER_PIN = 43;
 
-    
-    enum FlightState {
-        BOOTUP = 0,
-        STANDBY = 1,
-        ASCENT = 2,
-        DESCENT = 3,
-        PAYLOAD_RELEASE = 4,
-        RECOVERY = 5
-    };
+enum FlightState {
+    BOOTUP = 0,
+    STANDBY = 1,
+    ASCENT = 2,
+    DESCENT = 3,
+    PAYLOAD_RELEASE = 4,
+    RECOVERY = 5
+};
 
-    uint8_t EE_STATE = BOOTUP;
+inline uint8_t EE_STATE = BOOTUP;
 
 
     struct StateVector{
@@ -51,11 +50,11 @@ namespace Common{
         float z;
     };
 
-    struct BarometerData {
-        float pressure;
-        float temperature;
-        float altitude;
-    };
+struct BarometerData {
+    float pressure;
+    float temperature;
+    float altitude;
+};
 
     struct GPSData {
         float latitude;
@@ -85,32 +84,32 @@ namespace Common{
         BarometerData barometer;
         IMUData imu;
         GPSData gpsData;
-        float voltage = 0.0f;
-        float current = 0.0f;
+        VoltageData voltage;
+       
         LidarData lidarData;
     };
 
-    struct telemetry{ // This struct needs to be reordered for memory optimization
-        const int teamID;
-        float missionTime;
-        int packetCount;
-        char Mode;
-        char state[16]; //
-        float baroAltitude;
-        float temperature;
-        float pressure;
-        float voltage;
-        float current;
-        Vector3 gyroVel;   
-        Vector3 acceleration;      
-        float GPSTime;
-        Vector3 GPSLoc;
-        int GPSSats;
-        char CMDEcho[32];
-        Vector3 eulerAngles;
-        Vector3 velocity;
-        Vector3 position;
-    };
+struct telemetry {  // This struct needs to be reordered for memory optimization
+    const int teamID;
+    float missionTime;
+    int packetCount;
+    char Mode;
+    char state[16];
+    float baroAltitude;
+    float temperature;
+    float pressure;
+    float voltage;
+    float current;
+    Vector3 gyroVel;
+    Vector3 acceleration;
+    float GPSTime;
+    Vector3 GPSLoc;
+    int GPSSats;
+    char CMDEcho[32];
+    Vector3 eulerAngles;
+    Vector3 velocity;
+    Vector3 position;
+};
 
     int BuildPacket(const telemetry& data, char* buffer, size_t bufferSize){ // packet format is placeholder
         // Simple packet builder that writes into a fixed buffer (no heap).

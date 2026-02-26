@@ -1,4 +1,4 @@
-#include "Communications/Commlink.h"
+#include "Commlink.h"
 #include <Arduino.h>
 
 void Commlink::Initialize(){

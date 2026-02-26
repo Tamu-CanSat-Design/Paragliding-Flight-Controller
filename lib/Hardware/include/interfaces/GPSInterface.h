@@ -6,6 +6,7 @@
 class IGPS {
 public:
     virtual ~IGPS() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual Common::GPSData ReadData() = 0;
 };

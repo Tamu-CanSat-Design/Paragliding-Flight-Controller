@@ -1,61 +1,23 @@
 #include <Arduino.h>
-#include "HardwareManager.h"
 
-
-
-// HardwareManager hardwareManager(/*Barometer, IMU, GPS, whatever*/);
-
+#include <Tasks/Tasks.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
 
+  // Create tasks and initialize hardware before starting the scheduler.
+  Tasks::InitializeTasks();
 
-  // Start Tasks
-
-
-  // Sensor Tasks:
-  // Begin I2C
-  
-
-  // Initialize BMP390 and remember calibration data
-  // Initialize IMU
-  // Initialize GPS
-  // Initialize Current Sensor
-  // Initialize Voltage Sensor
- 
-  //Create mutex for all sensor data
-
-
-
-
-
-  //Watchdog Setup
-  // 
-
-
-
-  // Telemetry Setup
-  // Initialize Radio
-  // Initialize Telemetry Packet Structure
-
-
-
-
-  //Initialize Queues for inter-task communication
-
-
-
-
-
-  
-
+  // Start the scheduler if it is not already running.
+  if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+    vTaskStartScheduler();
+  }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-
+  // The scheduler should take over; loop stays as a low-priority idle fallback.
+  delay(1000);
 }
-

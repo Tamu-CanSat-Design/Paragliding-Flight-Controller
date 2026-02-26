@@ -6,6 +6,7 @@
 class ILidar {
 public:
     virtual ~ILidar() = default;
+    virtual const char* SensorName() const = 0;
     virtual bool Initialize() = 0;
     virtual Common::LidarData ReadData() = 0;
 };
