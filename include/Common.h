@@ -28,6 +28,23 @@ namespace Common{
 
     uint8_t EE_STATE = BOOTUP;
 
+
+    struct StateVector{
+        float x;
+        float y;
+        float z;
+        float vx;
+        float vy;
+        float vz;
+        float q0;
+        float q1;
+        float q2;
+        float q3;
+        float q4;
+        float accelBias;
+        float gyroBias;
+    };
+
     struct Vector3{
         float x;
         float y;
@@ -72,6 +89,7 @@ namespace Common{
         float current = 0.0f;
         LidarData lidarData;
     };
+    
     struct telemetry{ // This struct needs to be reordered for memory optimization
         const int teamID;
         float missionTime;
@@ -134,11 +152,6 @@ namespace Common{
             data.position.y,
             data.position.z
         );
-    }
-    
-    void ParseCommand(const char* command){
-        // Simple parser that extracts the command type from a command string
-        
     }
 
 
