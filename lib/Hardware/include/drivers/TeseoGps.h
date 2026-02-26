@@ -16,7 +16,7 @@ public:
     explicit GPS(uint8_t address);
     explicit GPS(I2CDevice& bus);
     bool Initialize() override;
-    GPSData ReadData() override;
+    Common::GPSData ReadData() override;
 
 private:
     static constexpr size_t kMaxSentenceLen = 128;
@@ -25,7 +25,7 @@ private:
 
     I2CDevice i2c_{};
     I2CDevice* bus_ = &i2c_;
-    GPSData data_{};
+    Common::GPSData data_{};
     char sentence_[kMaxSentenceLen]{};
     size_t sentence_len_ = 0;
     bool initialized_ = false;

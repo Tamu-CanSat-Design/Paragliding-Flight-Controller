@@ -1,13 +1,6 @@
-#include "interfaces/BarometerInterface.h"
+#include "drivers/Barometer.h"
 
-class Barometer : public IBarometer {
-public:
-    bool Initialize();
-    Common::BarometerData ReadData();
-private:
-    float pressure_;
-    float temperature_;
-};
+
 
 // Arduino core for delay and wire setup.
 #include <Arduino.h>

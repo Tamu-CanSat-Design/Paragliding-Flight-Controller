@@ -14,7 +14,6 @@ public:
     bool Initialize() override;
     Common::IMUData ReadData() override;
     void Calibrate() override;
-    void setIMUData(const Common::IMUData& data) override;
 
 private:
     // Cache of the most recent IMU sample.
