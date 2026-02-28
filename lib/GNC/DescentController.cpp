@@ -9,17 +9,19 @@ class DescentController{
 public:
     void Reset()
     {
+        integral = 0;
+        prevError = 0;
         return;
     }
 
-    float ComputePID(std::deque<float> SlidingWindow, float dt) //EKF Descent Velocity Window
+    float ComputePID(float Vel, float dt) //EKF Descent Velocity Window
     { 
         //Calculate error, integral, and derivative
         //error = measurement - desired velocity
         //integral - sum of elements in SlidingWindow queue
         //derivative - difference in two latest queue elements
         
-        float error = SlidingWindow.back() - DESCENT_VEL;
+        float error = Vel - DESCENT_VEL;
         integral += (error - prevError) * dt;
         float derivative = (error-prevError)/dt;
         prevError = error;
