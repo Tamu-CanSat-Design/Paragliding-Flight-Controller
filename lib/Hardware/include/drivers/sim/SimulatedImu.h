@@ -1,10 +1,13 @@
 #ifndef HARDWARE_SIMULATED_IMU_H
 #define HARDWARE_SIMULATED_IMU_H
 
-#include "interfaces/IMU.h"
+#include "interfaces/IMUInterface.h"
 
 class SimulatedImu : public IIMU {
 public:
+    static constexpr const char* kSensorName = "Simulated IMU";
+
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     IMUData ReadData() override;
     void Calibrate() override;

@@ -1,4 +1,11 @@
-#include "drivers/Camera.h"
+#include "interfaces/CameraInterface.h"
+
+class Camera : public ICamera {
+public:
+    bool Initialize();
+    bool StartCapture();
+    bool StopCapture();
+};
 
 bool Camera::Initialize() {
     return true;

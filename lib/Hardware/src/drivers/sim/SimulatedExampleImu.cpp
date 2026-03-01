@@ -1,4 +1,15 @@
-#include "drivers/sim/SimulatedExampleImu.h"
+#include "interfaces/IMUInterface.h"
+
+class SimulatedExampleImu : public IIMU {
+public:
+    bool Initialize();
+    Common::IMUData ReadData();
+    void Calibrate();
+    void setIMUData(const Common::IMUData& data);
+private:
+    Common::IMUData data_;
+};
+
 
 bool SimulatedExampleImu::Initialize() {
     // PSEUDOCODE (simulation setup):
@@ -11,7 +22,7 @@ bool SimulatedExampleImu::Initialize() {
     return true;
 }
 
-IMUData SimulatedExampleImu::ReadData() {
+Common::IMUData SimulatedExampleImu::ReadData() {
     // PSEUDOCODE (simple motion model):
     // This produces predictable motion so tests can assert expected values.
     // simTime_ += 0.01f;
@@ -33,7 +44,7 @@ void SimulatedExampleImu::Calibrate() {
     // gyroBias_ = {};
 }
 
-void SimulatedExampleImu::setIMUData(const IMUData& data) {
+void SimulatedExampleImu::setIMUData(const Common::IMUData& data) {
     // Allow tests to inject simulated values directly without a motion model.
     data_ = data;
 }

@@ -15,7 +15,7 @@ public:
     float ComputePID(std::deque<float> SlidingWindow, float dt) //EKF Descent Velocity Window
     { 
         //Calculate error, integral, and derivative
-        //error = measurement - desired vvelcity
+        //error = measurement - desired velocity
         //integral - sum of elements in SlidingWindow queue
         //derivative - difference in two latest queue elements
         

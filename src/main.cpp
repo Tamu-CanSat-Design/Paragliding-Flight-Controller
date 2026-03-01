@@ -1,36 +1,23 @@
 #include <Arduino.h>
 
+#include <Tasks/Tasks.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(115200);
+
+  // Create tasks and initialize hardware before starting the scheduler.
+  Tasks::InitializeTasks();
+
+  // Start the scheduler if it is not already running.
+  if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+    vTaskStartScheduler();
+  }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  // switch (States::EE_STATE)
-  // { 
-  //   case 1:
-  //     States::Ascent();
-  //     break;
-  //   case 2:
-  //     States::StartDescent();
-  //     break;
-  //   case 3:
-  //     States::PayloadRelease();
-  //     break;    
-  //   case 4:
-  //     States::Landing();
-  //     break;
-  //   case 5:
-  //     States::Recovery();
-  //     break;
-  //   default:
-  //     States::Ascent();
-  //     break;
-  // }
-  // delay(Common::TELEMETRY_DELAY);
-
+  // The scheduler should take over; loop stays as a low-priority idle fallback.
+  delay(1000);
 }
-

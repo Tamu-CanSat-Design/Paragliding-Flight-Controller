@@ -1,7 +1,7 @@
 #ifndef HARDWARE_STEERING_SERVO_H
 #define HARDWARE_STEERING_SERVO_H
 
-#include "interfaces/Servo.h"
+#include "interfaces/ServoInterface.h"
 
 class SteeringServo : public IServo {
 public:
