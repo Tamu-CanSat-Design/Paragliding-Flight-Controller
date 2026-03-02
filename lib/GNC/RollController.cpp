@@ -29,6 +29,12 @@ public:
         return PID;
         return 0;
     }
+
+    float L1Guidance(){
+        return 0;
+    }
+private:
+
     void SetLimits(float& PID){
         if (PID > max){
             PID = max;
@@ -38,10 +44,7 @@ public:
         }
         return;
     }
-    float L1Guidance(){
-        return 0;
-    }
-private:
+
     const float max = 100;
     const float min = 100;
     float integral = 0;

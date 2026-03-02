@@ -30,6 +30,9 @@ public:
         SetLimits(PID);        
         return PID;
     }
+
+
+private:
     void SetLimits(float& PID)
     {
         if(PID > max){
@@ -39,10 +42,7 @@ public:
             PID = min;
         }
     }
-    
-    void ActuatorOutputs(float PID){} //idk man
 
-private:
     const float min = -100;
     const float max = 100;
     float integral = 0;
