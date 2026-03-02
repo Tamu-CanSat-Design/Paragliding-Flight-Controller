@@ -27,7 +27,6 @@ public:
         float PID = ROLL_KP * error + ROLL_KI * integral + ROLL_KD * derivative;
         SetLimits(PID);        
         return PID;
-        return 0;
     }
 
     float L1Guidance(){
@@ -46,7 +45,7 @@ private:
     }
 
     const float max = 100;
-    const float min = 100;
+    const float min = -100;
     float integral = 0;
     float prevError = 0;
 };
