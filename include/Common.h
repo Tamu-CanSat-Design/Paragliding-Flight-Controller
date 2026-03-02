@@ -25,7 +25,6 @@ enum FlightState {
     RECOVERY = 5
 };
 
-inline uint8_t EE_STATE = BOOTUP;
 
 
     struct StateVector{
@@ -81,11 +80,10 @@ struct BarometerData {
     };
 
     struct SensorSnapshot {
-        BarometerData barometer;
-        IMUData imu;
+        BarometerData barometerData;
+        IMUData imuData;
         GPSData gpsData;
-        VoltageData voltage;
-       
+        VoltageData voltageData;
         LidarData lidarData;
     };
 

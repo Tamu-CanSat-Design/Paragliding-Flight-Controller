@@ -1,6 +1,5 @@
 #include "MissionManager.h"
-#include "TaskManager.h"
-#include "Common.h"
+
 
 
 void HandleStateTasks(Common::FlightState prevState, Common::FlightState& currentState) {
@@ -11,8 +10,9 @@ void HandleStateTasks(Common::FlightState prevState, Common::FlightState& curren
 
 void Tasks::MissionManagerTask(void* pvParameters){
     
-
-    switch(Common::EE_STATE){
+    //unlock mutex to read state
+    
+    switch(SharedData::gSD_State){
         case Common::ASCENT:
             States::Ascent();
 

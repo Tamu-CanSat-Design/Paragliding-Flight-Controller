@@ -1,8 +1,5 @@
-#include <Arduino.h>
+#include "TaskHandler.h"
 
-#include <Tasks/Tasks.h>
-#include <FreeRTOS.h>
-#include <task.h>
 
 
 void setup() {

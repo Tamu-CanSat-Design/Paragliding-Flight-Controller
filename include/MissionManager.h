@@ -1,6 +1,9 @@
 #pragma once
 #ifndef __STATES_H__
 #define __STATES_H__
+#include "TaskHandler.h"
+#include "Common.h"
+#include "SharedData.h"
 
 // State logic
 namespace States
