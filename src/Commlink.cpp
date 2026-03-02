@@ -1,21 +1,13 @@
 #include "Commlink.h"
-#include "HardwareManager.h"
-#include "Arduino.h"
-#include <string.h>
-#include <cstdio>
-#include <Common.h>
+
 
 int Commlink::index = 0;
 
 void Commlink::Initialize(){
 /* Initialize Ground Link */
     XBEE_SERIAL.begin(XBEE_BAUDRATE);
-    hardwareManager_ = nullptr;
 }
 
-void Commlink::SetHardwareManager(HardwareManager* hwManager){
-    hardwareManager_ = hwManager;
-}
 
 void Commlink::WriteGroundRadio(const char* data){
 /* If data exists, write to XBEE and flush buffer */
@@ -74,7 +66,7 @@ void Commlink::ParseCommand(const char* command){
     // 2) prefix: TEAM_ID
     char teamId[8];
     copyField(p, teamId, sizeof(teamId));
-    if (strcmp(teamId, TEAM_ID) != 0) {
+    if (atoi(teamId) != Common::TEAM_ID) {
         Serial.println("Invalid TEAM_ID");
         return;
     }

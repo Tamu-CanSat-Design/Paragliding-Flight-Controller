@@ -12,14 +12,22 @@ namespace {
 namespace Tasks
 {
     TaskHandle_t I2C1BusTaskHandle = nullptr;
+    StaticTask_t I2C1BusTaskBuffer;
+
     TaskHandle_t I2C2BusTaskHandle = nullptr;
+    StaticTask_t I2C2BusTaskBuffer;
 
     TaskHandle_t WriteTelemetryTaskHandle = nullptr;
+    StaticTask_t WriteTelemetryTaskBuffer;
     TaskHandle_t DataLoggingTaskHandle = nullptr;
+    StaticTask_t DataLoggingTaskBuffer;
     TaskHandle_t ReadCommandTaskHandle = nullptr;
+    StaticTask_t ReadCommandTaskBuffer;
 
     TaskHandle_t ControlTaskHandle = nullptr;
+    StaticTask_t ControlTaskBuffer;
     TaskHandle_t NavigationTaskHandle = nullptr;
+    StaticTask_t NavigationTaskBuffer;
 
     TaskHandle_t MissionManagerTaskHandle = nullptr;
     TaskHandle_t WatchdogTaskHandle = nullptr;
