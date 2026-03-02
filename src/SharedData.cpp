@@ -32,7 +32,18 @@ namespace SharedData {
 
 //Queues
     static StaticQueue_t gI2C1BarometerQueueBuffer;
-
+    static StaticQueue_t gI2C1GPSQueueBuffer;
+    static StaticQueue_t gI2C1LidarQueueBuffer;
+    QueueHandle_t gI2C1BarometerQueue = nullptr;
+    QueueHandle_t gI2C1GPSQueue = nullptr;
+    QueueHandle_t gI2C1LidarQueue = nullptr;
+    
+    static StaticQueue_t gI2C2IMUQueueBuffer;
+    static StaticQueue_t gI2C2MagQueueBuffer;
+    static StaticQueue_t gI2C2VoltageQueueBuffer;
+    QueueHandle_t gI2C2IMUQueue = nullptr;
+    QueueHandle_t gI2C2MagQueue = nullptr;
+    QueueHandle_t gI2C2VoltageQueue = nullptr;
 
 
 

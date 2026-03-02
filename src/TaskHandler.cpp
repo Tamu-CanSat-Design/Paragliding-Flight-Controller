@@ -1,12 +1,30 @@
 
 #include "TaskHandler.h"
-#include "SharedData.h"
 
 namespace {
     constexpr uint16_t kSensorTaskStackDepth = 2048;
     constexpr UBaseType_t kSensorTaskPriority = 2;
 
     
+}
+
+
+namespace Tasks
+{
+    TaskHandle_t I2C1BusTaskHandle = nullptr;
+    TaskHandle_t I2C2BusTaskHandle = nullptr;
+
+    TaskHandle_t WriteTelemetryTaskHandle = nullptr;
+    TaskHandle_t DataLoggingTaskHandle = nullptr;
+    TaskHandle_t ReadCommandTaskHandle = nullptr;
+
+    TaskHandle_t ControlTaskHandle = nullptr;
+    TaskHandle_t NavigationTaskHandle = nullptr;
+
+    TaskHandle_t MissionManagerTaskHandle = nullptr;
+    TaskHandle_t WatchdogTaskHandle = nullptr;
+
+
 }
 
 void Tasks::InitializeTasks() {
@@ -44,3 +62,5 @@ bool Tasks::GetSnapshot(Common::SensorSnapshot* outSnapshot) {
     xSemaphoreGive(SharedData::gSnapshotMutex);
     return true;
 }
+
+

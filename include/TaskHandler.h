@@ -5,6 +5,8 @@
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <task.h>
+#include "SharedData.h"
+
 #include "GNC/AdaptiveEKF.h"
 #include "Common.h"
 
@@ -24,6 +26,23 @@ namespace Tasks
     void WatchdogTask(void* pvParameters);
     void ReadCommandTask(void* pvParameters);
     
+
+    extern TaskHandle_t I2C1BusTaskHandle;
+    extern TaskHandle_t I2C2BusTaskHandle;
+
+    extern TaskHandle_t WriteTelemetryTaskHandle;
+    extern TaskHandle_t DataLoggingTaskHandle;
+    extern TaskHandle_t ReadCommandTaskHandle;
+
+    extern TaskHandle_t ControlTaskHandle;
+    extern TaskHandle_t NavigationTaskHandle;
+
+    extern TaskHandle_t MissionManagerTaskHandle;
+    extern TaskHandle_t WatchdogTaskHandle;
+    
+    
+    
+
 };
 
 
