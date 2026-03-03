@@ -9,7 +9,7 @@ bool Lidar::Initialize() {
   Wire.begin();
   Wire.setClock(Common::I2C_BAUDRATE);
 
-  g_lidar.begin(0xC5, true);
+  g_lidar.begin(0, true);
 
   return true;
 }
@@ -17,7 +17,8 @@ bool Lidar::Initialize() {
 Common::LidarData Lidar::ReadData() {
   Common::LidarData data{};
 
-  data.distanceMeters = g_lidar.distance();
+  uint16_t dist_cm = g_lidar.distance();
+  data.distanceMeters = static_cast<float>(dist_cm) / 100.0f;
 
   return data;
 }
