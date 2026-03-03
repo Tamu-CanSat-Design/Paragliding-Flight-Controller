@@ -5,7 +5,7 @@
 
 class Lidar : public ILidar {
 public:
-    static constexpr const char* kSensorName = "Generic Lidar";
+    static constexpr const char* kSensorName = "LIDARLite";
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;

@@ -1,17 +1,23 @@
-#include "Hardware/interfaces/LidarInterface.h"
+#include "Common.h"
+#include "Hardware/drivers/Lidar.h"
+#include "LIDARLite.h"
+#include <Wire.h>
 
-class Lidar : public ILidar {
-public:
-    bool Initialize();
-    Common::LidarData ReadData();
-};
-
-
+static LIDARLite g_lidar;
 
 bool Lidar::Initialize() {
-    return true;
+  Wire.begin();
+  Wire.setClock(Common::I2C_BAUDRATE);
+
+  g_lidar.begin(0, true);
+
+  return true;
 }
 
 Common::LidarData Lidar::ReadData() {
-    return {};
+  Common::LidarData data{};
+
+  data.distanceMeters = g_lidar.distance();
+
+  return data;
 }
