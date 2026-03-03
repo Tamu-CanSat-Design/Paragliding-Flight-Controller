@@ -9,7 +9,7 @@ bool Lidar::Initialize() {
   Wire.begin();
   Wire.setClock(Common::I2C_BAUDRATE);
 
-  g_lidar.begin(0, true);
+  g_lidar.begin(0xC5, true);
 
   return true;
 }
