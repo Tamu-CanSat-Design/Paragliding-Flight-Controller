@@ -1,7 +1,7 @@
 #pragma once
 #include "Hardware/drivers/Barometer.h"
 #include "Hardware/drivers/Imu.h"
-#include "Hardware/drivers/TeseoGPS.h"
+#include "Hardware/drivers/TeseoGps.h"
 #include "Hardware/drivers/Lidar.h"
 #include "Hardware/drivers/VoltageSensor.h"
 #include "Hardware/drivers/Radio.h" //

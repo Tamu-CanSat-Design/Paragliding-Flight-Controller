@@ -113,10 +113,10 @@ namespace Common {
         MagData magData;
     };
 
-    struct telemetry {  // This struct needs to be reordered for memory optimization
+    struct telemetry {
+        // Keep 4-byte-aligned members together first to reduce internal padding.
         float missionTime;
         int packetCount;
-        char Mode;
         FlightState state;
         float baroAltitude;
         float temperature;
@@ -128,8 +128,10 @@ namespace Common {
         float GPSTime;
         Vector3 GPSLoc;
         int GPSSats;
-        char CMDEcho[32];
         StateVector stateVector;
+        // Byte-aligned members are grouped at the end.
+        char CMDEcho[32];
+        char Mode;
     };
 
 
