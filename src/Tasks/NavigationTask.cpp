@@ -2,22 +2,49 @@
 
 
 
-
 void Tasks::NavigationTask(void* pvParameters) {
-    // Placeholder for navigation logic. This task would typically read the latest sensor snapshot,
-    // run the navigation algorithm (e.g., an Extended Kalman Filter), and update the estimated state.
-    // For now, it just runs an infinite loop with a delay.
+    //Predict
+    static AdaptiveEKF ekf;
+    ekf.Initialize();
 
+    static Common::IMUData       latestImu   = {}; //May put this within the EKF class
+    static Common::MagData      latestMag   = {};
+    static Common::BarometerData latestBaro  = {};
+    static Common::GPSData       latestGps   = {};
+    static Common::LidarData     latestLidar = {};
+
+
+    //Pseudocode for navigation task:
     while (true) {
-        // Example: Read the latest sensor snapshot.
-        Common::SensorSnapshot snapshot;
-        if (GetSnapshot(&snapshot)) {
-            // Run navigation algorithm here using the snapshot data.
-            // For example:
-            // AdaptiveEKF::Update(snapshot);
+        if(xSemaphoreTake(SharedData::gFlightStateMutex, 0) == pdTRUE) {
+            ekf.SetFlightState(SharedData::gFlightState);
+            xSemaphoreGive(SharedData::gFlightStateMutex);
         }
+        else{} 
 
-        // Delay to control task frequency (e.g., 50 Hz).
-        vTaskDelay(pdMS_TO_TICKS(20));
+        while(xQueueReceive(SharedData::gI2C1BarometerQueue, &latestBaro, 0) == pdTRUE) {
+            ekf.UpdateBarometer(latestBaro);
+        }
+        while(xQueueReceive(SharedData::gI2C1GPSQueue, &latestGps, 0) == pdTRUE) {
+            ekf.UpdateGPS(latestGps);
+        }
+        while(xQueueReceive(SharedData::gI2C1LidarQueue, &latestLidar, 0) == pdTRUE) {
+            ekf.UpdateLidar(latestLidar);
+        }
+        while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImu, 0) == pdTRUE) {
+            ekf.UpdateIMU(latestImu);
+        }
+        while(xQueueReceive(SharedData::gI2C2MagQueue, &latestMag, 0) == pdTRUE) {
+            ekf.UpdateMagnetometer(latestMag);
+        }
+    //EKF Predict
+    //unlock flight state mutex and read current flight state for adaptive noise tuning
+        ekf.Predict();
+    
+    //EKF Update when each queue notification is received
+    //Write output to the shared state vector with a timestamp
+    //vTaskDelay for a short period to yield to other tasks (e.g.,
     }
+    return;
+
 }

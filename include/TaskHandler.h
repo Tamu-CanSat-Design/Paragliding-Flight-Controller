@@ -8,6 +8,7 @@
 #include "SharedData.h"
 
 #include "GNC/AdaptiveEKF.h"
+#include "GNC/Controller.h"
 #include "Common.h"
 
 namespace Tasks
@@ -20,11 +21,14 @@ namespace Tasks
 
     void WriteTelemetryTask(void* pvParameters);
     void DataLoggingTask(void* pvParameters);
+    void ReadCommandTask(void* pvParameters);
+
     void ControlTask(void* pvParameters);
     void NavigationTask(void* pvParameters);
+    
     void MissionManagerTask(void* pvParameters);
     void WatchdogTask(void* pvParameters);
-    void ReadCommandTask(void* pvParameters);
+    
     
 
     extern TaskHandle_t I2C1BusTaskHandle;
@@ -40,7 +44,7 @@ namespace Tasks
     extern TaskHandle_t MissionManagerTaskHandle;
     extern TaskHandle_t WatchdogTaskHandle;
     
-    
+
     
 
 };

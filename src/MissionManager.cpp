@@ -12,7 +12,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
     
     //unlock mutex to read state
     
-    switch(SharedData::gSD_State){
+    switch(SharedData::gFlightState){
         case Common::ASCENT:
             States::Ascent();
 

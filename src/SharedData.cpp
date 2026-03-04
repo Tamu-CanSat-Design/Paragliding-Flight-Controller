@@ -18,17 +18,22 @@ namespace SharedData {
     static StaticSemaphore_t gSnapshotMutexBuffer;
 
 
-    Common::FlightState gSD_State;
-    SemaphoreHandle_t gSD_StateMutex = nullptr;
-    static StaticSemaphore_t gSD_StateMutexBuffer;
+    Common::FlightState gFlightState;
+    SemaphoreHandle_t gFlightStateMutex = nullptr;
+    static StaticSemaphore_t gFlightStateMutexBuffer;
 
 
+    bool gSimEnabled = false;
+    SemaphoreHandle_t gSimEnabledMutex = nullptr;
+    static StaticSemaphore_t gSimEnabledMutexBuffer;
 
     Common::StateVector gStateVector;
     SemaphoreHandle_t gStateVectorMutex = nullptr;
     static StaticSemaphore_t gStateVectorMutexBuffer;
 
-
+    char gCommand[10] = {0}; // Initialize with null terminator
+    SemaphoreHandle_t gCommandMutex = nullptr;
+    static StaticSemaphore_t gCommandMutexBuffer;
 
 //Queues
     static StaticQueue_t gI2C1BarometerQueueBuffer;
@@ -47,12 +52,15 @@ namespace SharedData {
 
 
 
+    
 
 
 
     void InitializeThreadSafeData() {
         gSnapshotMutex = xSemaphoreCreateMutexStatic(&gSnapshotMutexBuffer);
-        gSD_StateMutex = xSemaphoreCreateMutexStatic(&gSD_StateMutexBuffer);
+        gFlightStateMutex = xSemaphoreCreateMutexStatic(&gFlightStateMutexBuffer);
+        gSimEnabledMutex = xSemaphoreCreateMutexStatic(&gSimEnabledMutexBuffer);
         gStateVectorMutex = xSemaphoreCreateMutexStatic(&gStateVectorMutexBuffer);
+        gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
     }
 }

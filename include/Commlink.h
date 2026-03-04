@@ -3,7 +3,6 @@
 #define XBEE_SERIAL   Serial1
 #define XBEE_BAUDRATE 115200
 #include "Arduino.h"
-#include <string.h>
 #include <cstdio>
 #include "Common.h"
 

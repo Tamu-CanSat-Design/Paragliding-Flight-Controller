@@ -1,30 +1,50 @@
 #pragma once
-#include <cstddef>
+#include <cstdio>
 
 #include <Arduino.h>
 
 namespace Common {
 
-inline constexpr int I2C_BAUDRATE = 400000;
+    inline constexpr int I2C_BAUDRATE = 400000;
 
-inline constexpr uint16_t TEAM_ID = 1030;
-inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
-inline constexpr uint8_t VOLTAGE_PIN = 48;
-inline constexpr uint8_t CURRENT_PIN = 49;
-inline constexpr uint8_t BAROMETER_PIN = 44;
-inline constexpr uint8_t IMU_PIN = 42;
-inline constexpr uint8_t GPS_PIN = 50;
-inline constexpr uint8_t MAGNETOMETER_PIN = 43;
+    inline constexpr uint16_t TEAM_ID = 1030;
+    inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
 
-enum FlightState {
-    BOOTUP = 0,
-    STANDBY = 1,
-    ASCENT = 2,
-    DESCENT = 3,
-    PAYLOAD_RELEASE = 4,
-    RECOVERY = 5
-};
+    inline constexpr uint8_t VOLTAGE_PIN = 48;
+    inline constexpr uint8_t CURRENT_PIN = 49;
+    inline constexpr uint8_t BAROMETER_PIN = 44;
+    inline constexpr uint8_t IMU_PIN = 42;
+    inline constexpr uint8_t GPS_PIN = 50;
+    inline constexpr uint8_t MAGNETOMETER_PIN = 43;
+    inline constexpr uint8_t LIDAR_PIN = 45;
+    inline constexpr uint8_t SD_PIN = 46;
 
+
+    inline constexpr const char* LOG_FILE = "datalog.csv";
+
+    enum FlightState {
+        BOOTUP = 0,
+        STANDBY = 1,
+        ASCENT = 2,
+        DESCENT = 3,
+        PAYLOAD_RELEASE = 4,
+        RECOVERY = 5
+    };
+
+    inline static const char* const FlightStateNames[] = {
+        "BOOTUP",
+        "STANDBY",
+        "ASCENT",
+        "DESCENT",
+        "PAYLOAD_RELEASE",
+        "RECOVERY"
+    };
+    inline const char* GetFlightStateName(FlightState state) {
+        if (state >= BOOTUP && state <= RECOVERY) {
+            return FlightStateNames[state];
+        }
+        return "UNKNOWN";
+    }
 
 
     struct StateVector{
@@ -49,11 +69,11 @@ enum FlightState {
         float z;
     };
 
-struct BarometerData {
-    float pressure;
-    float temperature;
-    float altitude;
-};
+    struct BarometerData {
+        float pressure;
+        float temperature;
+        float altitude;
+    };
 
     struct GPSData {
         float latitude;
@@ -78,6 +98,11 @@ struct BarometerData {
     struct LidarData {
         float distanceMeters;
     };
+    struct MagData {
+        float magX;
+        float magY;
+        float magZ;
+    };
 
     struct SensorSnapshot {
         BarometerData barometerData;
@@ -85,12 +110,79 @@ struct BarometerData {
         GPSData gpsData;
         VoltageData voltageData;
         LidarData lidarData;
+        MagData magData;
+    };
+
+    struct telemetry {  // This struct needs to be reordered for memory optimization
+        float missionTime;
+        int packetCount;
+        char Mode;
+        FlightState state;
+        float baroAltitude;
+        float temperature;
+        float pressure;
+        float voltage;
+        float current;
+        IMUData imuData;
+        MagData magnetometer;
+        float GPSTime;
+        Vector3 GPSLoc;
+        int GPSSats;
+        char CMDEcho[32];
+        StateVector stateVector;
     };
 
 
 
     
-
+    inline int BuildPacket(const telemetry& data, char* buffer, size_t bufferSize){ // packet format is placeholder
+        // Simple packet builder that writes into a fixed buffer (no heap).
+        return std::snprintf(
+            buffer,
+            bufferSize,
+            "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
+            "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
+            "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f"
+            "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f,AccelBias:%f,GyroBias:%f",
+            TEAM_ID,
+            data.missionTime,
+            data.packetCount,
+            data.Mode,
+            Common::GetFlightStateName(data.state),
+            data.baroAltitude,
+            data.temperature,
+            data.pressure,
+            data.voltage,
+            data.current,
+            data.imuData.gyroVel.x,
+            data.imuData.gyroVel.y,
+            data.imuData.gyroVel.z,
+            data.imuData.acceleration.x,
+            data.imuData.acceleration.y,
+            data.imuData.acceleration.z,
+            data.GPSTime,
+            data.GPSLoc.x,
+            data.GPSLoc.y,
+            data.GPSLoc.z,
+            data.GPSSats,
+            data.CMDEcho,
+            data.magnetometer.magX,
+            data.magnetometer.magY,
+            data.magnetometer.magZ,
+            data.stateVector.q0,
+            data.stateVector.q1,
+            data.stateVector.q2,
+            data.stateVector.q3,
+            data.stateVector.x,
+            data.stateVector.y,
+            data.stateVector.z,
+            data.stateVector.vx,
+            data.stateVector.vy,
+            data.stateVector.vz,
+            data.stateVector.accelBias,
+            data.stateVector.gyroBias
+        );
+    }
 
 
 

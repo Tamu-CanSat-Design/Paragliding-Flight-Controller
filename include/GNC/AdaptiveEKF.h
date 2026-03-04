@@ -18,8 +18,19 @@ public:
     }
 
     void Predict();
-    void Measure();
+    void UpdateIMU(const Common::IMUData& imuData);
+    void UpdateMagnetometer(const Common::MagData& magData);
+    void UpdateBarometer(const Common::BarometerData& baroData);
+    void UpdateGPS(const Common::GPSData& gpsData);
+    void UpdateLidar(const Common::LidarData& lidarData);
 
+
+    void SetFlightState(Common::FlightState flightState) {
+        // Adjust process and measurement noise covariances based on flight state
+        currentFlightState = flightState;
+        SetProcessNoiseCovariance(flightState);
+        SetMeasurementNoiseCovariance(flightState);
+    }
 
     void SetProcessNoiseCovariance(Common::FlightState flightState);
 
@@ -33,5 +44,5 @@ private:
     BLA::Matrix<16, 16> processNoiseCovariance;
     BLA::Matrix<6, 16> measurementMatrix; // Maps state vector to measurement space
     BLA::Matrix<6, 6> measurementNoiseCovariance;
-    
+    Common::FlightState currentFlightState;
 };
