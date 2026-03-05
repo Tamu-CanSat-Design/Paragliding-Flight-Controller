@@ -4,9 +4,12 @@
 #include <Wire.h>
 
 namespace {
+// LLM-generated, be wary
 // INA260 register map (datasheet section 8.6).
 constexpr uint8_t kRegConfiguration = 0x00;
 constexpr uint8_t kRegCurrent = 0x01;
+constexpr uint8_t kRegBusVoltage = 0x02;
+constexpr uint8_t kRegPower = 0x03;
 constexpr uint8_t kRegManufacturerId = 0xFE;
 constexpr uint8_t kRegDieId = 0xFF;
 
@@ -58,19 +61,26 @@ Common::VoltageData VoltageSensor::ReadData() {
         return data_;
     }
 
-    // Read current, bus voltage, and power in one burst from register 0x01..0x03.
-    uint8_t raw[6] = {};
-    if (!device_.ReadRegisters(kRegCurrent, raw, sizeof(raw), false)) {
+    // Read each register explicitly (pointer write + 16-bit read) to avoid
+    // depending on multi-register auto-increment behavior.
+    uint16_t currentReg = 0;
+    uint16_t voltageReg = 0;
+    uint16_t powerReg = 0;
+
+    if (!ReadRegister16(kRegCurrent, &currentReg)) {
+        return data_;
+    }
+    if (!ReadRegister16(kRegBusVoltage, &voltageReg)) {
+        return data_;
+    }
+    if (!ReadRegister16(kRegPower, &powerReg)) {
         return data_;
     }
 
-    // INA260 transmits register words MSB first.
-    const int16_t rawCurrent = static_cast<int16_t>(
-        (static_cast<uint16_t>(raw[0]) << 8) | static_cast<uint16_t>(raw[1]));
-    const uint16_t rawVoltage = static_cast<uint16_t>(
-        (static_cast<uint16_t>(raw[2]) << 8) | static_cast<uint16_t>(raw[3]));
-    const uint16_t rawPower = static_cast<uint16_t>(
-        (static_cast<uint16_t>(raw[4]) << 8) | static_cast<uint16_t>(raw[5]));
+    // Current register is signed two's-complement; voltage and power are unsigned.
+    const int16_t rawCurrent = static_cast<int16_t>(currentReg);
+    const uint16_t rawVoltage = voltageReg;
+    const uint16_t rawPower = powerReg;
 
     // Convert fixed-point register values into engineering units.
     Common::VoltageData sample{};
@@ -84,21 +94,32 @@ Common::VoltageData VoltageSensor::ReadData() {
 
 bool VoltageSensor::ProbeAndSelectAddress() {
     // Scan all valid INA260 addresses and validate using manufacturer + die ID.
+    // A0/A1 can be tied to multiple things, another I2C device, ground, Vs, etc etc
+    // So first you need to validate that an I2C device is present, and then validate that it's this sensor via reading the ID registers.
     for (uint8_t address = kAddressMin; address <= kAddressMax; ++address) {
         device_.setAddress(address);
 
+        // The manufacturer ID register has a UIN for the manufacturer
         uint16_t manufacturerId = 0;
         if (!ReadRegister16(kRegManufacturerId, &manufacturerId)) {
             continue;
         }
+
+        // On page 25 of the datasheet, the reset value of register 0xFE is 0x5449.
+        // This means that on a fresh reset state, we should obtain this value when we read the register after boot.
         if (manufacturerId != kManufacturerIdTi) {
             continue;
         }
 
+        // Page 26, similarly to the manufacturer ID register, a UIN + revision ID for the die itself.
+        // The reset state values are 0x2270 for the device ID, and 0x0 for the die revision ID. 
         uint16_t dieId = 0;
         if (!ReadRegister16(kRegDieId, &dieId)) {
             continue;
         }
+        // die id mask = 0xFFF0
+        // Basically by masking the dieId with this, we are just taking out the last 4 bits (the revision ID).
+        // Then we check that it's equal to the expected value 0x2270.
         if ((dieId & kDieIdMask) != kDieIdExpectedMasked) {
             continue;
         }
@@ -117,6 +138,7 @@ bool VoltageSensor::Configure() {
     }
 
     // Small delay lets reset complete before writing final configuration.
+    // TODO: Not sure about how safe this is for flight software.
     delay(2);
 
     // Program documented default continuous measurement configuration.
