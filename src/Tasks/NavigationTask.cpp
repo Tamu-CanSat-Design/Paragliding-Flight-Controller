@@ -1,17 +1,24 @@
 #include "TaskHandler.h"
 
+namespace {
+    // This file implements the NavigationTask, which runs the EKF and state estimation logic.
+    // It receives sensor data from the I2C bus tasks via queues, updates the EKF, and writes
+    // the estimated state to shared memory for use by other tasks (e.g., control, telemetry).
 
+    AdaptiveEKF ekf; // EKF instance (could also be a pointer if dynamic allocation is needed)
+    Common::IMUData       latestImu   = {}; //May put this within the EKF class
+    Common::MagData      latestMag   = {};
+    Common::BarometerData latestBaro  = {};
+    Common::GPSData       latestGps   = {};
+    Common::LidarData     latestLidar = {};
+}
 
 void Tasks::NavigationTask(void* pvParameters) {
+    pvParameters = pvParameters; // Avoid unused parameter warning
     //Predict
-    static AdaptiveEKF ekf;
     ekf.Initialize();
 
-    static Common::IMUData       latestImu   = {}; //May put this within the EKF class
-    static Common::MagData      latestMag   = {};
-    static Common::BarometerData latestBaro  = {};
-    static Common::GPSData       latestGps   = {};
-    static Common::LidarData     latestLidar = {};
+    
 
 
     //Pseudocode for navigation task:
@@ -44,7 +51,7 @@ void Tasks::NavigationTask(void* pvParameters) {
     //EKF Update when each queue notification is received
     //Write output to the shared state vector with a timestamp
     //vTaskDelay for a short period to yield to other tasks (e.g.,
+    //control task might want to run at a different frequency)
+        vTaskDelay(pdMS_TO_TICKS(2)); // Adjust delay as needed for desired update rate
     }
-    return;
-
 }

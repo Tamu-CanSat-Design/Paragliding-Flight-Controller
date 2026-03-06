@@ -1,7 +1,6 @@
 #ifndef COMMLINK_H
 #define COMMLINK_H
-#define XBEE_SERIAL   Serial1
-#define XBEE_BAUDRATE 115200
+
 #include "Arduino.h"
 #include <cstdio>
 #include "Common.h"
@@ -11,7 +10,10 @@ public:
     void Initialize();
     void WriteGroundRadio(const char* data);
     void ReadGroundRadio(char* buffer, int length);
-    void ParseCommand(const char* command);
+    bool CheckCommand(const char* command);
+
+    inline HardwareSerial& GetXbeeSerial() { return Serial1; }
+    
 private:
     static int index;
 };

@@ -1,6 +1,5 @@
 #include "TaskHandler.h"
 #include <SD.h>
-#include <SPI.h>
 
 namespace{
     const char* CSV_HEADER = "ID,Time,PacketCount,Mode,State,BaroAlt,Temp,Pressure,"
@@ -32,9 +31,9 @@ void Tasks::DataLoggingTask(void* pvParameters) {
 
     Common::SensorSnapshot localSensorSnapshot = {};
     Common::StateVector localStateVector = {};
-    Common::FlightState localFlightState = Common::BOOTUP;
+    Common::FlightState localFlightState = Common::FlightState::BOOTUP;
     bool simEnabled = false;
-    char lineBuf[512]; // Buffer for one line of CSV
+    char lineBuf[1024]; // Buffer for one line of CSV
 
     while (true) {
         // 1) Copy snapshot under mutex (fast)
@@ -63,7 +62,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
         // 4) Format the CSV line (no mutex held)
         Common::telemetry dataToLog = {};
         dataToLog.missionTime = millis() / 1000.0f; //
-        dataToLog.Mode = simEnabled ? 'S' : 'N'; // 'S' for simulation mode, 'N' for normal mode
+        dataToLog.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'F' for flight mode
         dataToLog.state = localFlightState;
         dataToLog.baroAltitude = localSensorSnapshot.barometerData.altitude;
         dataToLog.temperature = localSensorSnapshot.barometerData.temperature;

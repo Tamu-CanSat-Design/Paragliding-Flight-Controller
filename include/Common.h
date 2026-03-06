@@ -1,4 +1,5 @@
-#pragma once
+#ifndef COMMON_H
+#define COMMON_H
 #include <cstdio>
 
 #include <Arduino.h>
@@ -6,9 +7,10 @@
 namespace Common {
 
     inline constexpr int I2C_BAUDRATE = 400000;
-
+    inline constexpr int XBEE_BAUDRATE = 115200;
     inline constexpr uint16_t TEAM_ID = 1030;
     inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
+    inline constexpr size_t COMMAND_BUFFER_LENGTH = 32;
 
     inline constexpr uint8_t VOLTAGE_PIN = 48;
     inline constexpr uint8_t CURRENT_PIN = 49;
@@ -19,10 +21,12 @@ namespace Common {
     inline constexpr uint8_t LIDAR_PIN = 45;
     inline constexpr uint8_t SD_PIN = 46;
 
+    
 
-    inline constexpr const char* LOG_FILE = "datalog.csv";
 
-    enum FlightState {
+    inline constexpr const char LOG_FILE[12] = "datalog.csv";
+
+    enum class FlightState {
         BOOTUP = 0,
         STANDBY = 1,
         ASCENT = 2,
@@ -30,7 +34,6 @@ namespace Common {
         PAYLOAD_RELEASE = 4,
         RECOVERY = 5
     };
-
     inline static const char* const FlightStateNames[] = {
         "BOOTUP",
         "STANDBY",
@@ -39,13 +42,43 @@ namespace Common {
         "PAYLOAD_RELEASE",
         "RECOVERY"
     };
+
+    
     inline const char* GetFlightStateName(FlightState state) {
-        if (state >= BOOTUP && state <= RECOVERY) {
-            return FlightStateNames[state];
+        if (state >= FlightState::BOOTUP && state <= FlightState::RECOVERY) {
+            return FlightStateNames[static_cast<int>(state)];
         }
         return "UNKNOWN";
     }
+    enum CommandType {
+        CX=0,
+        ST=1,
+        SIM=2,
+        SIMP=3,
+        CAL=4,
+        EGREL=5,
+        LDAR=6,
+        AUD=7,
+        UNKNOWN=8
+    };
 
+    inline static const char* CommandTable[] = {
+        {"CX"},
+        {"ST"},
+        {"SIM"},
+        {"SIMP"},
+        {"CAL"},
+        {"MEC,EGREL"},
+        {"MEC,LDAR"},
+        {"MEC,AUD"},
+    };
+
+    inline const char* GetCommandName(CommandType cmd) {
+        if (cmd >= CommandType::CX && cmd <= CommandType::AUD) {
+            return CommandTable[static_cast<int>(cmd)];
+        }
+        return "UNKNOWN";
+    }
 
     struct StateVector{
         float x;
@@ -142,7 +175,7 @@ namespace Common {
             bufferSize,
             "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
             "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
-            "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f"
+            "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f,"
             "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f,AccelBias:%f,GyroBias:%f",
             TEAM_ID,
             data.missionTime,
@@ -188,3 +221,5 @@ namespace Common {
 
     
 };
+
+#endif // COMMON_H

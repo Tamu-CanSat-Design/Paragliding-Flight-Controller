@@ -16,5 +16,4 @@ void setup() {
 
 void loop() {
   // The scheduler should take over; loop stays as a low-priority idle fallback.
-  delay(1000);
-}
+  }

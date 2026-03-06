@@ -4,6 +4,7 @@
 
 
 void Tasks::ControlTask(void* pvParameters) {
+    pvParameters = pvParameters; // Avoid unused parameter warning
     // Placeholder for control logic. This task would typically read the latest sensor snapshot,
     // run the control algorithms, and send commands to the actuators.
     // For now, it just runs an infinite loop with a delay.

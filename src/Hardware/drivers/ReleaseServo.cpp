@@ -1,12 +1,6 @@
-#include "Hardware/interfaces/ServoInterface.h"
+#include "Hardware/drivers/ReleaseServo.h"
 
 
-
-class ReleaseServo : public IServo {
-public:
-    bool Initialize();
-    void SetAngle(float degrees);
-};
 
 
 

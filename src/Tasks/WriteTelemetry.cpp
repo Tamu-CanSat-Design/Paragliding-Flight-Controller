@@ -2,14 +2,16 @@
 
 void Tasks::WriteTelemetryTask(void* pvParameters) {
     (void)pvParameters;
-    char telemetryBuf[512]; // Buffer for telemetry data (adjust size as needed)
+    char telemetryBuf[1024]; // Buffer for telemetry data
 
-    Common::SensorSnapshot localSnapshot;
-    Common::StateVector localStateVector;
-    Common::FlightState localFlightState;
-    char localCommand[10];
-    bool simEnabled;
+    Common::SensorSnapshot localSnapshot = {};
+    Common::StateVector localStateVector = {};
+    Common::FlightState localFlightState = Common::FlightState::BOOTUP;
+    char localCommand[16] = {};
+    bool simEnabled = false;
     Common::telemetry data;
+
+    bool localCXFlag = false;
     while (true) {
         if(xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
             localSnapshot = SharedData::gSnapshot;
@@ -24,8 +26,13 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             xSemaphoreGive(SharedData::gFlightStateMutex);
         }
         if(xSemaphoreTake(SharedData::gCommandMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            strncpy(localCommand, SharedData::gCommand, sizeof(localCommand));
+            strncpy(localCommand, SharedData::gCommand, sizeof(localCommand) - 1);
+            localCommand[sizeof(localCommand) - 1] = '\0'; // Copy command under mutex
             xSemaphoreGive(SharedData::gCommandMutex);
+        }
+        if(xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            simEnabled = SharedData::gSimEnabled;
+            xSemaphoreGive(SharedData::gSimEnabledMutex);
         }
         data.missionTime = millis() / 1000.0f; //
         data.Mode = simEnabled ? 'S' : 'N'; // 'S' for simulation mode, 'N' for normal mode
@@ -44,8 +51,13 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
         Common::BuildPacket(data, telemetryBuf, sizeof(telemetryBuf));
         
-
-        SharedData::commlink.WriteGroundRadio(telemetryBuf);
+        if(xSemaphoreTake(SharedData::gCXFlagMutex, portMAX_DELAY) == pdTRUE) {
+            localCXFlag = SharedData::gCXFlag;
+            xSemaphoreGive(SharedData::gCXFlagMutex);
+        }
+        if(localCXFlag) {
+            SharedData::commlink.WriteGroundRadio(telemetryBuf);
+        }
         vTaskDelay(pdMS_TO_TICKS(100)); // Adjust delay as needed
     }
 

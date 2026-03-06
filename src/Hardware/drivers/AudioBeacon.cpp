@@ -1,11 +1,5 @@
-#include "Hardware/interfaces/AudioBeaconInterface.h"
+#include "Hardware/drivers/AudioBeacon.h"
 
-class AudioBeacon : public IAudioBeacon {
-public:
-    bool Initialize();
-    void BuzzerOn();
-    void BuzzerOff();
-};
 
 bool AudioBeacon::Initialize() {
     return true;

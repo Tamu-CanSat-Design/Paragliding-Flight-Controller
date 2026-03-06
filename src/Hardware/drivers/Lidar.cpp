@@ -1,10 +1,6 @@
-#include "Hardware/interfaces/LidarInterface.h"
+#include "Hardware/drivers/Lidar.h"
 
-class Lidar : public ILidar {
-public:
-    bool Initialize();
-    Common::LidarData ReadData();
-};
+
 
 
 

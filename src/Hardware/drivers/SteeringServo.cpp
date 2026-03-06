@@ -1,11 +1,6 @@
-#include "Hardware/interfaces/ServoInterface.h"
+#include "Hardware/drivers/SteeringServo.h"
 
 
-class SteeringServo : public IServo {
-public:
-    bool Initialize();
-    void SetAngle(float degrees);
-};
 
 bool SteeringServo::Initialize() {
     return true;

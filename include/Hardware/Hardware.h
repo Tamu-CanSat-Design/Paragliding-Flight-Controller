@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HARDWARE_H
+#define HARDWARE_H
 #include "Hardware/drivers/Barometer.h"
 #include "Hardware/drivers/Imu.h"
 #include "Hardware/drivers/TeseoGPS.h"
@@ -11,7 +12,7 @@
 #include "Hardware/drivers/SteeringServo.h"
 
 #include "bus/I2CDevice.h"
-
+#include <array>
 
 namespace Hardware {
 
@@ -42,3 +43,5 @@ namespace Hardware {
     bool InitializeAllSensors();
 }
 
+
+#endif // HARDWARE_H
