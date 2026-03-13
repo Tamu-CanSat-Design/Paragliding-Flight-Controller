@@ -1,7 +1,7 @@
 #ifndef __MISSION_MANAGER_H__
 #define __MISSION_MANAGER_H__
 #include "Common.h"
-#include "States.h"
+#include "Hardware/Hardware.h"
 // State logic
 
 namespace MissionManager {
@@ -9,6 +9,7 @@ namespace MissionManager {
 
   extern char Command[32];
 
+  
   
   extern bool CXFlag;
   extern bool LDARFlag;
@@ -28,10 +29,8 @@ namespace MissionManager {
   void CAL();
   void EGREL();
   void LDAR();
-  void AUD();
 
 
-  void HandleStateTasks(Common::FlightState prevState, Common::FlightState& currentState);
   Common::FlightState CheckStateChange(Common::FlightState currentState, Common::StateVector ekfState, Common::SensorSnapshot sensorSnapshot);
 
 

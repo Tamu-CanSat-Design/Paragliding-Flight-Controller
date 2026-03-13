@@ -35,10 +35,13 @@ namespace Hardware {
     //Actuators
     extern Radio radio_;
     extern AudioBeacon audioBeacon_;
-    extern std::array<Camera, 2> cameras_;
-    extern std::array<ReleaseServo, 3> mechServos_;
-    extern std::array<SteeringServo, 2> steeringServos_;
-
+    extern Camera camera_;
+    extern ReleaseServo ContainerPayloadServo_;
+    extern ReleaseServo EggInstrumentServo_;
+    extern ReleaseServo LidarCameraServo_;
+    extern SteeringServo LeftServo_;
+    extern SteeringServo RightServo_;
+    
 
     bool InitializeAllSensors();
 }

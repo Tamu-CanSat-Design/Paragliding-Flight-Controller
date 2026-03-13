@@ -5,23 +5,24 @@
 
 namespace MissionManager {
 
+
+    char Command[32];
+
     bool simEnabled = false;
     bool CXFlag = false;
     bool LDARFlag = false;
     bool EGRELFlag = false;
     bool AUDFlag = false; 
+    
+    bool AscentStartedFlag = false;
+    bool DescentStartedFlag = false;
+    bool PayloadReleaseStartedFlag = false;
+    bool RecoveryStartedFlag = false;
 
-    void CX() {
-        
-        if(!CXFlag) {
-            // Perform CX actions (e.g., send telemetry, activate systems)
-            CXFlag = true;
 
-        }
-        else{
-            CXFlag = false;
-        }
-    }
+    
+
+    
 
     void ST() {
         // Implement ST command logic
@@ -34,6 +35,8 @@ namespace MissionManager {
 
     void SIMP() {
         // Implement SIMP command logic
+        // Turn pressure into an altitude
+        
     }
 
     void CAL() {
@@ -53,14 +56,7 @@ namespace MissionManager {
         }
     }
 
-    void AUD() {
-        if(!AUDFlag) {
-            AUDFlag = true;
-        }
-        else{
-            AUDFlag = false;
-        }
-    }
+    
 
   
 
@@ -68,11 +64,21 @@ namespace MissionManager {
 
 
 
-    void HandleStateTasks(Common::FlightState prevState, Common::FlightState& currentState) {
-
-    }
+    
     Common::FlightState CheckStateChange(Common::FlightState currentState, Common::StateVector ekfState, Common::SensorSnapshot sensorSnapshot){
+        //Ascent Starts when acceleration is above 
+        // if Inertial_Velocity > 1 m/s
 
+
+        if(!simEnabled){
+            // Logic for checking state changes
+            switch(currentState){
+
+            }
+        }
+        else{
+
+        }
     }
     
 

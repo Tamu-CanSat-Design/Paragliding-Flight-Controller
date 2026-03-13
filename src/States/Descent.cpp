@@ -1,6 +1,6 @@
 #include "MissionManager.h"
 
-void States::Descent(){
+// void States::Descent(){
     //Tasks to run during descent phase:
     //Sensor sampling
     //GPS sampling
@@ -10,4 +10,4 @@ void States::Descent(){
     //Telemetry Write
     //Telemetry Read
     //Mission Manager State Checks
-}
+// }

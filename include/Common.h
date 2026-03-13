@@ -165,8 +165,20 @@ namespace Common {
         StateVector stateVector;
     };
 
+    template<typename Float, int N>
+    class Window{
+    public:
+        void push(float value){
+            _buffer[idx % N] = value;
+            idx++;
+            if(count < N) count++;
+        }
 
-
+    private:
+        float _buffer[N];
+        int idx = 0;
+        int count = 0;
+    };
     
     inline int BuildPacket(const telemetry& data, char* buffer, size_t bufferSize){ // packet format is placeholder
         // Simple packet builder that writes into a fixed buffer (no heap).

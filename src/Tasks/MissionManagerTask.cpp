@@ -13,75 +13,104 @@ void Tasks::MissionManagerTask(void* pvParameters){
     bool simEnabled = false;
     Common::FlightState prevState;
     Common::FlightState currentState;
+    MissionManager::AscentStartedFlag = false;
+    MissionManager::DescentStartedFlag = false;
+    Common::StateVector LocalStateVector = {};
+    Common::SensorSnapshot LocalSensorSnapshot = {};
+    
     while(true){
         
         
         while(xQueueReceive(SharedData::gCommandQueue, &MissionManager::Command, 0) == pdTRUE) {
+
+            if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                LocalStateVector = SharedData::gStateVector;
+                xSemaphoreGive(SharedData::gStateVectorMutex);
+            }
+            if(xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                LocalSensorSnapshot = SharedData::gSnapshot;
+                xSemaphoreGive(SharedData::gSnapshotMutex);
+            }
             if(MissionManager::Command[0] == 'CX') {
                 if(!MissionManager::CXFlag) {
-                    xTaskNotify(Tasks::WriteTelemetryTaskHandle, 0, eNoAction); // notify telemetry to send CX packet immediately
+                    xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to send CX packet immediately
                     MissionManager::CXFlag = true;
                 }
                 else{
-                    xTaskNotify(Tasks::WriteTelemetryTaskHandle, 0, eNoAction); // notify telemetry to suspend until next CX command
-                }
-                MissionManager::CX();
-                
+                    xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to suspend until next CX command
+                }   
             }
             else if(MissionManager::Command[0] == 'ST') {
                 MissionManager::ST();
             }
             else if(MissionManager::Command[0] == 'SIM') {
-                MissionManager::SIM();
+                if(!simEnabled){
+                    simEnabled = true;
+                    xTaskNotifyGive(Tasks::NavigationTaskHandle);
+                    xTaskNotifyGive(Tasks::ControlTaskHandle);
+                }   
+                else{
+                    vTaskResume(Tasks::NavigationTaskHandle);
+                    vTaskResume(Tasks::ControlTaskHandle);
+                    simEnabled = false;
+                }
             }
             else if(MissionManager::Command[0] == 'SIMP') {
-                MissionManager::SIMP();
+                //Altitude calculated from pressure
             }
             else if(MissionManager::Command[0] == 'CAL') {
-                MissionManager::CAL();
+                //Calibrate altitude to be 0 by uploading current pressure and writing to EEPROM
             }
             else if(MissionManager::Command == "MEC,EGREL") {
-                MissionManager::EGREL();
+                //Trigger servo for egg release mechanism
+                Hardware::EggInstrumentServo_.SetAngle(15);
             }
             else if(MissionManager::Command == "MEC,LDAR") {
-                MissionManager::LDAR();
+                //Trigger servo for lidar/camera release mechanism
+                Hardware::EggInstrumentServo_.SetAngle(20);
             }
             else if(MissionManager::Command == "MEC,AUD") {
-                MissionManager::AUD();
+                //Trigger audio playback for recovery
+                if(!MissionManager::AUDFlag) {
+                    Hardware::audioBeacon_.BuzzerOn();
+                    MissionManager::AUDFlag = true;
+                }
+                else{
+                    Hardware::audioBeacon_.BuzzerOff();
+                    MissionManager::AUDFlag = false;
+                }
             }
         }
     
 
         
-        MissionManager::HandleStateTasks(prevState, currentState);
-        MissionManager::CheckStateChange(currentState, SharedData::gStateVector, SharedData::gSnapshot);
+        MissionManager::CheckStateChange(currentState, LocalStateVector, LocalSensorSnapshot);
+
+        if(xSemaphoreTake(SharedData::gFlightStateMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            SharedData::gFlightState = currentState;
+            xSemaphoreGive(SharedData::gFlightStateMutex);
+        }
 
 
-
-        switch(SharedData::gFlightState){
+        switch(currentState){
             case Common::FlightState::BOOTUP:
-                States::Bootup();
                 
                 break;
             case Common::FlightState::ASCENT:
-                States::Ascent();
                 if(!MissionManager::AscentStartedFlag) {
-                    xTaskNotify(Tasks::NavigationTaskHandle, 0, eNoAction); // notify nav to reset EKF and start ascent logic
+                    
                     MissionManager::AscentStartedFlag = true;
                 }
                 
                 break;
             case Common::FlightState::DESCENT:
-                States::Descent();
                 if(!MissionManager::DescentStartedFlag) {
                     MissionManager::DescentStartedFlag = true;
                 }
                 break;
             case Common::FlightState::PAYLOAD_RELEASE:
-                States::PayloadRelease();
                 break;
             case Common::FlightState::RECOVERY:
-                States::Recovery();
                 break;
             default:
                 //Error: Unknown State
@@ -89,7 +118,6 @@ void Tasks::MissionManagerTask(void* pvParameters){
 
         }
 
-    
 
                 
     }

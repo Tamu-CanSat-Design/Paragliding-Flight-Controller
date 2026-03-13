@@ -1,5 +1,5 @@
 #include "TaskHandler.h"
-
+#include "GNC/AdaptiveEKF.h"
 namespace {
     // This file implements the NavigationTask, which runs the EKF and state estimation logic.
     // It receives sensor data from the I2C bus tasks via queues, updates the EKF, and writes
@@ -16,13 +16,19 @@ namespace {
 void Tasks::NavigationTask(void* pvParameters) {
     pvParameters = pvParameters; // Avoid unused parameter warning
     //Predict
-    ekf.Initialize();
 
     
 
 
     //Pseudocode for navigation task:
     while (true) {
+
+        // Suspend Task forever if simulation mode 
+        if(ulTaskNotifyTake(pdFALSE,0) % 2 == 1){
+            vTaskSuspend(NULL);
+        }
+
+
         if(xSemaphoreTake(SharedData::gFlightStateMutex, 0) == pdTRUE) {
             ekf.SetFlightState(SharedData::gFlightState);
             xSemaphoreGive(SharedData::gFlightStateMutex);

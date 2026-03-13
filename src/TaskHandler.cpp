@@ -10,12 +10,21 @@ namespace {
     constexpr uint16_t kControlTaskStackDepth = 2048;
     constexpr uint16_t kNavigationTaskStackDepth = 2048;
     constexpr uint16_t kMissionManagerTaskStackDepth = 2048;
+    constexpr uint16_t kGuidanceTaskStackDepth = 2048;
+    constexpr uint16_t kWatchdogTaskStackDepth = 2048;
 
 
 
+    constexpr UBaseType_t kI2C1BusTaskPriority = 1;
+    constexpr UBaseType_t kI2C2BusTaskPriority = 2;
+    constexpr UBaseType_t kWriteTelemetryTaskPriority = 3;
+    constexpr UBaseType_t kDataLoggingTaskPriority = 4;
+    constexpr UBaseType_t kReadCommandTaskPriority = 5;
+    constexpr UBaseType_t kControlTaskPriority = 6;
+    constexpr UBaseType_t kNavigationTaskPriority = 7;
+    constexpr UBaseType_t kMissionManagerTaskPriority = 8;
+    constexpr UBaseType_t kGuidanceTaskPriority = 9;
 
-    constexpr UBaseType_t kI2C1BusTaskPriority = 2;
-    
 
     
 }
@@ -47,6 +56,10 @@ namespace Tasks
     StaticTask_t ControlTaskBuffer;
     StackType_t ControlTaskStack[kControlTaskStackDepth];
 
+    TaskHandle_t GuidanceTaskHandle = nullptr;
+    StaticTask_t GuidanceTaskBuffer;
+    StackType_t GuidanceTaskStack[kGuidanceTaskStackDepth];
+
     TaskHandle_t NavigationTaskHandle = nullptr;
     StaticTask_t NavigationTaskBuffer;
     StackType_t NavigationTaskStack[kNavigationTaskStackDepth];
@@ -59,7 +72,7 @@ namespace Tasks
 
 
 
-    void Tasks::InitializeTasks() {
+    void InitializeTasks() {
         // Initialize all hardware once before tasks start reading.
         // const bool ok = gHardwareManager.Initialize();
         // if (!ok) {
@@ -84,15 +97,16 @@ namespace Tasks
             "I2C Task 2", 
             kI2C2BusTaskStackDepth, 
             nullptr, 
-            2, //update
+            kI2C2BusTaskPriority, 
             I2C2BusTaskStack, &I2C2BusTaskBuffer);
 
+        
         xTaskCreateStatic(
             WriteTelemetryTask, 
             "Write Telemetry", 
             kWriteTelemetryTaskStackDepth, 
             nullptr, 
-            1, //update
+            kWriteTelemetryTaskPriority, 
             WriteTelemetryTaskStack, &WriteTelemetryTaskBuffer);
         
         xTaskCreateStatic(
@@ -100,7 +114,7 @@ namespace Tasks
             "Data Logging",
             kDataLoggingTaskStackDepth,
             nullptr,
-            1, //update
+            kDataLoggingTaskPriority, 
             DataLoggingTaskStack, &DataLoggingTaskBuffer);
         
         xTaskCreateStatic(
@@ -108,7 +122,7 @@ namespace Tasks
             "Read Command",
             kReadCommandTaskStackDepth,
             nullptr,
-            1, //update
+            kReadCommandTaskPriority,
             ReadCommandTaskStack, &ReadCommandTaskBuffer);
 
         xTaskCreateStatic(
@@ -116,7 +130,7 @@ namespace Tasks
             "Control Task",
             kControlTaskStackDepth,
             nullptr,
-            1, //update
+            kControlTaskPriority, 
             ControlTaskStack, &ControlTaskBuffer);
 
         xTaskCreateStatic(
@@ -124,15 +138,23 @@ namespace Tasks
             "Navigation Task",
             kNavigationTaskStackDepth,
             nullptr,
-            1, //update
+            kNavigationTaskPriority, 
             NavigationTaskStack, &NavigationTaskBuffer);
         
+        xTaskCreateStatic(
+            GuidanceTask,
+            "Guidance Task",
+            kGuidanceTaskStackDepth,
+            nullptr,
+            kGuidanceTaskPriority, 
+            GuidanceTaskStack, &GuidanceTaskBuffer);
+
         xTaskCreateStatic(
             MissionManagerTask,
             "Mission Manager Task",
             kMissionManagerTaskStackDepth,
             nullptr,
-            1, //update
+            kMissionManagerTaskPriority,
             MissionManagerTaskStack, &MissionManagerTaskBuffer);
 
         
