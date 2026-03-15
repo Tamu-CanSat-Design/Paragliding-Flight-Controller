@@ -4,7 +4,6 @@
 #include <Wire.h>
 
 namespace {
-// LLM-generated, be wary
 // INA260 register map (datasheet section 8.6).
 constexpr uint8_t kRegConfiguration = 0x00;
 constexpr uint8_t kRegCurrent = 0x01;
@@ -146,11 +145,11 @@ bool VoltageSensor::Configure() {
 }
 
 bool VoltageSensor::WriteRegister16(uint8_t reg, uint16_t value) const {
-    // INA260 expects register writes as pointer + MSB + LSB.
+    // INA260 expects register writes as pointer + MSB + LSByte.
     Wire.beginTransmission(device_.address());
     Wire.write(reg);
-    Wire.write(static_cast<uint8_t>((value >> 8) & 0xFF));
-    Wire.write(static_cast<uint8_t>(value & 0xFF));
+    Wire.write(static_cast<uint8_t>((value >> 8) & 0xFF)); // MSByte
+    Wire.write(static_cast<uint8_t>(value & 0xFF)); // LSByte
     return Wire.endTransmission() == 0;
 }
 

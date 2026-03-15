@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 namespace {
+// LLM-generated, be wary
 // XBee UART defaults:
 // - Datasheet default is typically 9600 baud in command mode.
 // - This project currently uses 115200 in Commlink, so we match that by default.

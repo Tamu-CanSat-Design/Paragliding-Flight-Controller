@@ -165,6 +165,7 @@ namespace Common {
         // Byte-aligned members are grouped at the end.
         char CMDEcho[32];
         char Mode;
+        // byte-alignment --> CPU reads more efficient, no need for compiler to insert padding bytes, thus reducing struct size and easier reading.
     };
 
     template<typename Float, int N>

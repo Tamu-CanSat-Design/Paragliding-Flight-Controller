@@ -17,8 +17,6 @@ void Tasks::NavigationTask(void* pvParameters) {
     pvParameters = pvParameters; // Avoid unused parameter warning
     //Predict
 
-    
-
 
     //Pseudocode for navigation task:
     while (true) {

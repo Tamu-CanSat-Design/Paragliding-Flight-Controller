@@ -18,9 +18,9 @@ constexpr uint8_t kI2cAddressHigh = 0x77;
 // Datasheet p31: "Register 0x00 \"CHIP_ID\"".
 // ID register used to confirm the device is really a BMP390.
 constexpr uint8_t kRegChipId = 0x00;
-// Datasheet p32: "Register 0x03 \"STATUS\"".
-// Status register used to avoid issuing commands mid-reset/config.
+// Datasheet p32: "Register 0x03 \"STATUS\"".set/config.
 constexpr uint8_t kRegStatus = 0x03;
+// Status register used to avoid issuing commands mid-re
 // Datasheet p32: "Register 0x04 .. 0x06 Pressure Data".
 // First data register of the pressure/temperature burst read to keep samples coherent.
 constexpr uint8_t kRegDataStart = 0x04;
@@ -66,8 +66,12 @@ constexpr uint8_t kIirFilter = 0x02; // Coefficient 3.
 // Power control: enable press+temp, normal mode for continuous measurements.
 constexpr uint8_t kPwrCtrl = 0x33;   // Press + temp enable, normal mode.
 
-// Reference sea-level pressure for altitude estimate (standard atmosphere).
-constexpr float kSeaLevelPressureHpa = 1013.25f;
+// Capture a launch baseline only after pressure settles for a full window.
+constexpr uint32_t kReferenceSamplePeriodMs = 100;
+constexpr uint32_t kReferenceStableWindowMs = 5000;
+constexpr uint32_t kReferenceCaptureTimeoutMs = 15000;
+constexpr float kReferenceStableSpanHpa = 0.12f;
+constexpr size_t kReferenceWindowSamples = kReferenceStableWindowMs / kReferenceSamplePeriodMs;
 
 // Read an unsigned 16-bit little-endian value from a byte buffer for coefficient unpacking.
 uint16_t ReadU16(const uint8_t* data, size_t index) {
@@ -89,6 +93,7 @@ bool Barometer::Initialize() {
     data_ = {};
     // Clear calibration cache so old trims are not reused.
     calib_ = {};
+    referencePressureHpa_ = 0.0f;
 
     // Start I2C bus so the device is addressable.
     Wire.begin();
@@ -122,6 +127,12 @@ bool Barometer::Initialize() {
     }
 
     // Mark device as ready for reads to avoid partial initialization use.
+    if (!CaptureReferencePressure()) {
+        return false;
+    }
+
+    // Baseline capture defines the startup point as zero altitude.
+    data_.altitude = 0.0f;
     initialized_ = true;
     return true;
 }
@@ -150,11 +161,68 @@ Common::BarometerData Barometer::ReadData() {
     // Convert Pa to hPa to match telemetry expectations and existing code.
     data.pressure = pressure_pa * 0.01f;  // Pa -> hPa
     // Estimate altitude from pressure ratio for approximate height.
-    data.altitude = PressureToAltitude(data.pressure);
+    data.altitude = PressureToAltitude(data.pressure, referencePressureHpa_);
 
     // Cache and return the latest sample so failures keep the last good data.
     data_ = data;
     return data_;
+}
+
+// Capture a startup pressure baseline so altitude is reported relative to launch.
+bool Barometer::CaptureReferencePressure() {
+    float window_pressures[kReferenceWindowSamples] = {};
+    size_t sample_count = 0;
+    size_t next_index = 0;
+    const uint32_t start_ms = millis();
+
+    while ((millis() - start_ms) < kReferenceCaptureTimeoutMs) {
+        uint32_t raw_press = 0;
+        uint32_t raw_temp = 0;
+        if (!ReadRaw(&raw_press, &raw_temp)) {
+            delay(kReferenceSamplePeriodMs);
+            continue;
+        }
+
+        // Temperature compensation must run first because pressure uses t_lin.
+        (void)CompensateTemperature(raw_temp);
+        const float pressure_hpa = CompensatePressure(raw_press) * 0.01f;
+        if (pressure_hpa <= 0.0f) {
+            delay(kReferenceSamplePeriodMs);
+            continue;
+        }
+
+        window_pressures[next_index] = pressure_hpa;
+        next_index = (next_index + 1) % kReferenceWindowSamples;
+        if (sample_count < kReferenceWindowSamples) {
+            ++sample_count;
+        }
+
+        if (sample_count == kReferenceWindowSamples) {
+            float pressure_sum_hpa = 0.0f;
+            float min_pressure_hpa = window_pressures[0];
+            float max_pressure_hpa = window_pressures[0];
+
+            for (size_t i = 0; i < kReferenceWindowSamples; ++i) {
+                const float sample_hpa = window_pressures[i];
+                pressure_sum_hpa += sample_hpa;
+                if (sample_hpa < min_pressure_hpa) {
+                    min_pressure_hpa = sample_hpa;
+                }
+                if (sample_hpa > max_pressure_hpa) {
+                    max_pressure_hpa = sample_hpa;
+                }
+            }
+
+            if ((max_pressure_hpa - min_pressure_hpa) <= kReferenceStableSpanHpa) {
+                referencePressureHpa_ = pressure_sum_hpa / static_cast<float>(kReferenceWindowSamples);
+                return true;
+            }
+        }
+
+        delay(kReferenceSamplePeriodMs);
+    }
+
+    return false;
 }
 
 // Send a soft reset command to the sensor to clear prior configuration.
@@ -328,14 +396,14 @@ float Barometer::CompensatePressure(uint32_t raw_press) {
 }
 
 // Convert pressure in hPa to altitude using barometric formula for approximate height.
-float Barometer::PressureToAltitude(float pressure_hpa) {
-    // Guard against invalid pressure to avoid NaNs.
-    if (pressure_hpa <= 0.0f) {
+float Barometer::PressureToAltitude(float pressure_hpa, float reference_pressure_hpa) {
+    // Guard against invalid pressures to avoid NaNs.
+    if (pressure_hpa <= 0.0f || reference_pressure_hpa <= 0.0f) {
         return 0.0f;
     }
 
-    // Compute ratio to sea-level pressure for scale-invariant altitude.
-    const float ratio = pressure_hpa / kSeaLevelPressureHpa;
-    // Compute altitude in meters using standard atmosphere approximation.
+    // Compute ratio to the startup pressure so altitude is relative to the launch point.
+    const float ratio = pressure_hpa / reference_pressure_hpa;
+    // Compute relative altitude in meters using the standard atmosphere approximation.
     return 44330.0f * (1.0f - std::pow(ratio, 0.190294957f));
 }
