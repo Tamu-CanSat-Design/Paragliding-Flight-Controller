@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHARED_DATA_H
+#define SHARED_DATA_H
 
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -20,10 +21,13 @@ namespace SharedData {
     extern bool gSimEnabled;
     extern SemaphoreHandle_t gSimEnabledMutex;
 
+    extern bool gCXFlag;
+    extern SemaphoreHandle_t gCXFlagMutex;
+
     extern Common::StateVector gStateVector;
     extern SemaphoreHandle_t gStateVectorMutex;
 
-    extern char gCommand[10];
+    extern char gCommand[Common::COMMAND_BUFFER_LENGTH];
     extern SemaphoreHandle_t gCommandMutex;
 
 // Shared queues
@@ -46,3 +50,5 @@ namespace SharedData {
 
     void InitializeThreadSafeData();
 }
+
+#endif // SHARED_DATA_H

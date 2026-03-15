@@ -4,7 +4,8 @@ int Commlink::index = 0;
 
 void Commlink::Initialize(){
 /* Initialize Ground Link */
-    XBEE_SERIAL.begin(XBEE_BAUDRATE);
+
+    GetXbeeSerial().begin(Common::XBEE_BAUDRATE);
 }
 
 
@@ -13,8 +14,8 @@ void Commlink::WriteGroundRadio(const char* data){
     if (!data){
         return;
     }
-    XBEE_SERIAL.println(data);
-    XBEE_SERIAL.flush();
+    GetXbeeSerial().println(data);
+    GetXbeeSerial().flush();
    
 }
 void Commlink::ReadGroundRadio(char* buffer, int length){
@@ -23,11 +24,10 @@ void Commlink::ReadGroundRadio(char* buffer, int length){
         return;
     }
 
-    while (XBEE_SERIAL.available() > 0) {
-        char c = XBEE_SERIAL.read();
+    while (GetXbeeSerial().available() > 0) {
+        char c = GetXbeeSerial().read();
         if (c == '\n') {
             buffer[index] = '\0';
-            ParseCommand(buffer);
             index = 0;
         } else {
             if (index < length - 1) {
@@ -50,8 +50,8 @@ static void copyField(const char*& s, char* dst, size_t dstSize) {
     if (*s == ',') ++s;
 }
 
-void Commlink::ParseCommand(const char* command){
-    if (!command || !*command) return;
+bool Commlink::CheckCommand(const char* command){
+    if (!command || !*command) return false;
 
     const char* p = command;
 
@@ -60,7 +60,7 @@ void Commlink::ParseCommand(const char* command){
     copyField(p, prefix, sizeof(prefix));
     if (strcmp(prefix, "CMD") != 0) {
         Serial.println("Invalid prefix");
-        return;
+        return false;
     }
 
     // 2) prefix: TEAM_ID
@@ -68,138 +68,8 @@ void Commlink::ParseCommand(const char* command){
     copyField(p, teamId, sizeof(teamId));
     if (atoi(teamId) != Common::TEAM_ID) {
         Serial.println("Invalid TEAM_ID");
-        return;
+        return false;
     }
-
-    // 3) main command: CX, ST, SIM, SIMP, CAL, MEC, ...
-    char cmd[8];
-    copyField(p, cmd, sizeof(cmd));
-
-    // ---------- CX: Payload Telemetry On/Off ----------
-    if (strcmp(cmd, "CX") == 0) {
-        char onOff[8];
-        copyField(p, onOff, sizeof(onOff));
-
-        if (strcmp(onOff, "ON") == 0) {
-            Serial.println("Telemetry ON");
-            WriteGroundRadio(command);
-            // TODO: Enable telemetry transmission
-        } else if (strcmp(onOff, "OFF") == 0) {
-            Serial.println("Telemetry OFF");
-            WriteGroundRadio(command);
-            // TODO: Disable telemetry transmission
-        } else {
-            Serial.println("CX: invalid telemetry ON/OFF");
-        }
-    }
-
-    // ---------- ST: Set Time ----------
-    else if (strcmp(cmd, "ST") == 0) {
-        char utcTime[24];              // e.g. "15:31:00"
-        copyField(p, utcTime, sizeof(utcTime));
-
-        if (*utcTime) {
-            Serial.print("Set RTC to UTC ");
-            Serial.println(utcTime);
-            WriteGroundRadio(command);
-            // TODO: Set RTC time from ground station
-        } else {
-            Serial.println("ST: missing/invalid time");
-        }
-    }
-
-    // ---------- SIM: Simulation Mode Control ----------
-    else if (strcmp(cmd, "SIM") == 0) {
-        char mode[16];                 // e.g. "ENABLE" / "DISABLE"
-        copyField(p, mode, sizeof(mode));
-
-        if (strcmp(mode, "ENABLE") == 0) {
-            Serial.println("Simulation mode ENABLE");
-            WriteGroundRadio(command);
-            // TODO: Simulation mode enable
-        } else if (strcmp(mode, "DISABLE") == 0) {
-            Serial.println("Simulation mode DISABLE");
-            // TODO: Simulation mode disable
-        } else {
-            Serial.println("SIM: unknown mode");
-        }
-    }
-
-    // ---------- SIMP: Simulated Pressure Data ----------
-    else if (strcmp(cmd, "SIMP") == 0) {
-        char pressure[16];
-        copyField(p, pressure, sizeof(pressure));
-
-        if (*pressure) {
-            Serial.print("Simulated pressure = ");
-            Serial.println(pressure);
-            //TODO: Set pressure in simulation
-            WriteGroundRadio(command);
-        } else {
-            Serial.println("SIMP: missing pressure");
-        }
-    }
-
-    // ---------- CAL: Calibrate Altitude to Zero ----------
-    else if (strcmp(cmd, "CAL") == 0) {
-        Serial.println("Calibrate altitude to 0");
-        //TODO: Figure out what to set to zero and do it
-        WriteGroundRadio(command);
-    }
-
-    // ---------- MEC: mechanical sub‑commands ----------
-    else if (strcmp(cmd, "MEC") == 0) {
-        char subcmd[8];
-        copyField(p, subcmd, sizeof(subcmd));
-
-        // CPREL: Release Container/Payload
-        if (strcmp(subcmd, "CPREL") == 0) {
-            char onOff[8];
-            copyField(p, onOff, sizeof(onOff));
-
-            if (strcmp(onOff, "ON") == 0) {
-                Serial.println("Container/Payload release ACTIVATED");
-                WriteGroundRadio(command);
-                //TODO: Interact with hardware manager to release container/payload
-            } else {
-                Serial.println("CPREL: invalid ON/OFF");
-            }
-        }
-        // EGREL: Release Egg Instrument
-        else if (strcmp(subcmd, "EGREL") == 0) {
-            char onOff[8];
-            copyField(p, onOff, sizeof(onOff));
-
-            if (strcmp(onOff, "ON") == 0) {
-                Serial.println("Egg instrument release ACTIVATED");
-                //TODO: Interact with hardware manager to release egg instrument
-                WriteGroundRadio(command);
-            } else {
-                Serial.println("EGREL: invalid ON/OFF");
-            }
-        }
-        // LDAR: Extend LiDAR/Camera
-        else if (strcmp(subcmd, "LDAR") == 0) {
-            char onOff[8];
-            copyField(p, onOff, sizeof(onOff));
-
-            if (strcmp(onOff, "ON") == 0) {
-                Serial.println("LiDAR/Camera EXTENDED");
-                //TODO: Interact with hardware manager to extend LiDAR
-                WriteGroundRadio(command);
-            } else {
-                Serial.println("LDAR: invalid ON/OFF");
-            }
-        }
-        else {
-            Serial.println("MEC: unknown subcommand");
-        }
-    }
-
-    // ---------- Unknown main command ----------
-    else {
-        Serial.print("Unknown command: ");
-        Serial.println(cmd);
-    }
+    return true;
 }
 

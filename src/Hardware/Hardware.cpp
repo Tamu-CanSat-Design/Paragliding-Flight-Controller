@@ -72,9 +72,12 @@ namespace Hardware {
     VoltageSensor voltageSensor_;
     Radio radio_;
     AudioBeacon audioBeacon_;
-    std::array<Camera, 2> cameras_;
-    std::array<ReleaseServo, 3> mechServos_;
-    std::array<SteeringServo, 2> steeringServos_;
+    Camera camera_;
+    ReleaseServo ContainerPayloadServo_;
+    ReleaseServo EggInstrumentServo_;
+    ReleaseServo LidarCameraServo_;
+    SteeringServo LeftServo_;
+    SteeringServo RightServo_;
     I2CDevice i2c1_{};
     I2CDevice i2c2_{};
 
