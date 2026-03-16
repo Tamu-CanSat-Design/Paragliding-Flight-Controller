@@ -1,7 +1,7 @@
 #ifndef HARDWARE_SIMULATED_LIDAR_H
 #define HARDWARE_SIMULATED_LIDAR_H
 
-#include "interfaces/LidarInterface.h"
+#include "Hardware/interfaces/LidarInterface.h"
 
 class SimulatedLidar : public ILidar {
 public:
@@ -9,10 +9,10 @@ public:
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
-    LidarData ReadData() override;
+    Common::LidarData ReadData() override;
 
 private:
-    LidarData data_{};
+    Common::LidarData data_{};
 };
 
 #endif  // HARDWARE_SIMULATED_LIDAR_H

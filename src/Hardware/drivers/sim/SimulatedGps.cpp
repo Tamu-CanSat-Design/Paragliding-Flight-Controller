@@ -1,12 +1,4 @@
-#include "Hardware/interfaces/GpsInterface.h"
-class SimulatedGps : public IGPS {
-public:
-    bool Initialize();
-    Common::GPSData ReadData();
-    void setGPSData(const Common::GPSData& data);
-private:
-    Common::GPSData data_;
-};
+#include "Hardware/drivers/sim/SimulatedGps.h"
 
 bool SimulatedGps::Initialize() {
     data_.latitude = 0.0f;

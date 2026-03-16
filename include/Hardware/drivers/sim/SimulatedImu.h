@@ -1,7 +1,7 @@
 #ifndef HARDWARE_SIMULATED_IMU_H
 #define HARDWARE_SIMULATED_IMU_H
 
-#include "interfaces/IMUInterface.h"
+#include "Hardware/interfaces/IMUInterface.h"
 
 class SimulatedImu : public IIMU {
 public:
@@ -9,12 +9,12 @@ public:
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
-    IMUData ReadData() override;
+    Common::IMUData ReadData() override;
     void Calibrate() override;
-    void setIMUData(const IMUData& data) override;
+    void setIMUData(const Common::IMUData& data);
 
 private:
-    IMUData data_{};
+    Common::IMUData data_{};
 };
 
 #endif  // HARDWARE_SIMULATED_IMU_H

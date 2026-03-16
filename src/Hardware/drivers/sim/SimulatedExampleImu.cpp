@@ -1,14 +1,4 @@
-#include "Hardware/interfaces/IMUInterface.h"
-
-class SimulatedExampleImu : public IIMU {
-public:
-    bool Initialize();
-    Common::IMUData ReadData();
-    void Calibrate();
-    void setIMUData(const Common::IMUData& data);
-private:
-    Common::IMUData data_;
-};
+#include "Hardware/drivers/sim/SimulatedExampleImu.h"
 
 
 bool SimulatedExampleImu::Initialize() {

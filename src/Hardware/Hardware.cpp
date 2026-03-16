@@ -30,19 +30,13 @@ namespace Hardware {
         ok = voltageSensor_.Initialize() && ok;
         ok = radio_.Initialize() && ok;
         ok = audioBeacon_.Initialize() && ok;
-        for (size_t i = 0; i < cameras_.size(); ++i) {
-            ok = cameras_[i].Initialize() && ok;
-        }
-
-        for (size_t i = 0; i < mechServos_.size(); ++i) {
-            ok = mechServos_[i].Initialize() && ok;
-        }
-
-        for (size_t i = 0; i < steeringServos_.size(); ++i) {
-            ok = steeringServos_[i].Initialize() && ok;
-        }
+        ok = camera_.Initialize() && ok;
+        ok = ContainerPayloadServo_.Initialize() && ok;
+        ok = EggInstrumentServo_.Initialize() && ok;
+        ok = LidarCameraServo_.Initialize() && ok;
+        ok = LeftServo_.Initialize() && ok;
+        ok = RightServo_.Initialize() && ok;
         return ok;
     }
 }
-
 
