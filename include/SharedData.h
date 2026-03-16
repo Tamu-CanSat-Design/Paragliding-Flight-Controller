@@ -35,6 +35,8 @@ namespace SharedData {
     extern QueueHandle_t gI2C1BarometerQueue;
     extern QueueHandle_t gI2C1GPSQueue;
     extern QueueHandle_t gI2C1LidarQueue;
+    extern QueueHandle_t gI2C1ControlQueue;
+    extern QueueHandle_t gI2C1ControlResultQueue;
     //I2C 2 queues to Nav
     extern QueueHandle_t gI2C2IMUQueue;
     extern QueueHandle_t gI2C2MagQueue;

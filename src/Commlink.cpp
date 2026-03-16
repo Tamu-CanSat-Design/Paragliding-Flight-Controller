@@ -1,6 +1,12 @@
 #include "Commlink.h"
 
+#include <cstring>
+
 int Commlink::index = 0;
+
+namespace {
+char gRxLineBuffer[Common::COMMAND_BUFFER_LENGTH] = {};
+}
 
 void Commlink::Initialize(){
 /* Initialize Ground Link */
@@ -24,16 +30,27 @@ void Commlink::ReadGroundRadio(char* buffer, int length){
         return;
     }
 
+    buffer[0] = '\0';
+
     while (GetXbeeSerial().available() > 0) {
         char c = GetXbeeSerial().read();
+        if (c == '\r') {
+            continue;
+        }
+
         if (c == '\n') {
-            buffer[index] = '\0';
+            gRxLineBuffer[index] = '\0';
+            std::strncpy(buffer, gRxLineBuffer, length - 1);
+            buffer[length - 1] = '\0';
             index = 0;
+            gRxLineBuffer[0] = '\0';
+            return;
         } else {
             if (index < length - 1) {
-                buffer[index++] = c;
+                gRxLineBuffer[index++] = c;
             } else {
                 index = 0;
+                gRxLineBuffer[0] = '\0';
                 return;
             }
         }
@@ -72,4 +89,3 @@ bool Commlink::CheckCommand(const char* command){
     }
     return true;
 }
-

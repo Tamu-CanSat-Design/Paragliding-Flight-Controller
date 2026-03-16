@@ -7,7 +7,7 @@
 namespace MissionManager {
 
 
-  extern char Command[32];
+  extern char Command[Common::COMMAND_BUFFER_LENGTH];
 
   
   
@@ -21,6 +21,9 @@ namespace MissionManager {
   extern bool PayloadReleaseStartedFlag;
   extern bool RecoveryStartedFlag;
 
+  void InitializeRuntimeState();
+  void HandleControlResults();
+  void DispatchCommand(const char* commandPayload);
 
   void CX();
   void ST();
@@ -29,6 +32,7 @@ namespace MissionManager {
   void CAL();
   void EGREL();
   void LDAR();
+  void AUD();
 
 
   Common::FlightState CheckStateChange(Common::FlightState currentState, Common::StateVector ekfState, Common::SensorSnapshot sensorSnapshot);
@@ -43,6 +47,5 @@ namespace MissionManager {
 
 
 #endif // __MISSION_MANAGER_H__
-
 
 

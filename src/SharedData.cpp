@@ -6,6 +6,7 @@ namespace{
     constexpr UBaseType_t BAROMETERQUEUEDEPTH = 10;
     constexpr UBaseType_t GPSQUEUEDEPTH = 10;
     constexpr UBaseType_t LIDARQUEUEDEPTH = 10;
+    constexpr UBaseType_t I2C1CONTROLQUEUEDEPTH = 4;
     constexpr UBaseType_t IMUQUEUEDEPTH = 10;
     constexpr UBaseType_t MAGQUEUEDEPTH = 10;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
@@ -14,6 +15,8 @@ namespace{
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
     uint8_t gI2C1LidarQueueStorage[LIDARQUEUEDEPTH * sizeof(Common::LidarData)];
+    uint8_t gI2C1ControlQueueStorage[I2C1CONTROLQUEUEDEPTH * sizeof(Common::I2C1ControlCommand)];
+    uint8_t gI2C1ControlResultQueueStorage[I2C1CONTROLQUEUEDEPTH * sizeof(Common::I2C1ControlResult)];
     uint8_t gI2C2IMUQueueStorage[IMUQUEUEDEPTH * sizeof(Common::IMUData)];
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C2VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
@@ -56,9 +59,13 @@ namespace SharedData {
     static StaticQueue_t gI2C1BarometerQueueBuffer;
     static StaticQueue_t gI2C1GPSQueueBuffer;
     static StaticQueue_t gI2C1LidarQueueBuffer;
+    static StaticQueue_t gI2C1ControlQueueBuffer;
+    static StaticQueue_t gI2C1ControlResultQueueBuffer;
     QueueHandle_t gI2C1BarometerQueue = nullptr;
     QueueHandle_t gI2C1GPSQueue = nullptr;
     QueueHandle_t gI2C1LidarQueue = nullptr;
+    QueueHandle_t gI2C1ControlQueue = nullptr;
+    QueueHandle_t gI2C1ControlResultQueue = nullptr;
     
     static StaticQueue_t gI2C2IMUQueueBuffer;
     static StaticQueue_t gI2C2MagQueueBuffer;
@@ -84,6 +91,8 @@ namespace SharedData {
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
         gI2C1LidarQueue = xQueueCreateStatic(LIDARQUEUEDEPTH, sizeof(Common::LidarData), gI2C1LidarQueueStorage, &gI2C1LidarQueueBuffer);
+        gI2C1ControlQueue = xQueueCreateStatic(I2C1CONTROLQUEUEDEPTH, sizeof(Common::I2C1ControlCommand), gI2C1ControlQueueStorage, &gI2C1ControlQueueBuffer);
+        gI2C1ControlResultQueue = xQueueCreateStatic(I2C1CONTROLQUEUEDEPTH, sizeof(Common::I2C1ControlResult), gI2C1ControlResultQueueStorage, &gI2C1ControlResultQueueBuffer);
         gI2C2IMUQueue = xQueueCreateStatic(IMUQUEUEDEPTH, sizeof(Common::IMUData), gI2C2IMUQueueStorage, &gI2C2IMUQueueBuffer);
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);

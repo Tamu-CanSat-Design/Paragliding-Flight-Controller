@@ -137,6 +137,21 @@ namespace Common {
         float magZ;
     };
 
+    enum class I2C1ControlCommandType : uint8_t {
+        kRezeroBarometer = 0,
+    };
+
+    // Small command/result structs let mission logic ask the I2C1 owner task
+    // to perform barometer maintenance without touching the driver directly.
+    struct I2C1ControlCommand {
+        I2C1ControlCommandType type;
+    };
+
+    struct I2C1ControlResult {
+        I2C1ControlCommandType type;
+        bool success;
+    };
+
     struct SensorSnapshot {
         BarometerData barometerData;
         IMUData imuData;

@@ -1,35 +1,32 @@
-#ifndef HARDWARE_HEALTHMONITOR_H
-#define HARDWARE_HEALTHMONITOR_H
+#ifndef HEALTH_MONITOR_H
+#define HEALTH_MONITOR_H
 
-#include <deque>
+#include <FreeRTOS.h>
+#include <task.h>
 
+#include <cstdint>
 
+// WORK IN PROGRESS:
+// This heartbeat tracker is part of an unfinished watchdog system. It currently
+// supports task liveness timestamps for bring-up and basic fault detection, but
+// it is not yet a complete flight-ready fault-management interface.
 
-enum StatusCheck{
-    HEALTHY=0,
-    WARN=1,
-    FAULT=2,
+namespace HealthMonitor {
+
+enum class TaskId : uint8_t {
+    I2C1Bus = 0,
+    I2C2Bus,
+    WriteTelemetry,
+    ReadCommand,
+    MissionManager,
+    Count,
 };
 
-struct SensorWindow{
-    std::deque<float> SlidingWindow;
-    unsigned int ExpectedSize;
-    float Sum = 0;
-    float mean;
-    
-};
+void Initialize();
+void Kick(TaskId task);
+TickType_t LastKick(TaskId task);
+const char* TaskName(TaskId task);
 
-class HealthMonitor{
+}
 
-public:
-    HealthMonitor(int _expectedSize);
-    void Initialize();
-    void UpdateWindow(float value);
-    void MovingAverage();
-
-private:
-    SensorWindow buffer;
-
-};
-
-#endif // HARDWARE_HEALTHMONITOR_H
+#endif // HEALTH_MONITOR_H

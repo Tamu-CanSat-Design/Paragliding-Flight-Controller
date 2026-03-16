@@ -1,17 +1,37 @@
 #include "HealthMonitor.h"
-// #define SLIDING_WINDOW_SIZE 5
 
+namespace {
+// Human-readable labels for watchdog fault messages.
+constexpr const char* kTaskNames[] = {
+    "I2C1Bus",
+    "I2C2Bus",
+    "WriteTelemetry",
+    "ReadCommand",
+    "MissionManager",
+};
 
-void HealthMonitor::UpdateWindow(float value){
-    if(buffer.SlidingWindow.size() == buffer.ExpectedSize)
-    {
-        buffer.Sum -= buffer.SlidingWindow.front();
-        buffer.SlidingWindow.pop_front();
-        buffer.SlidingWindow.push_back(value);
+TickType_t gLastKickTicks[static_cast<size_t>(HealthMonitor::TaskId::Count)] = {};
+}
+
+namespace HealthMonitor {
+
+void Initialize() {
+    const TickType_t now = xTaskGetTickCount();
+    for (size_t i = 0; i < static_cast<size_t>(TaskId::Count); ++i) {
+        gLastKickTicks[i] = now;
     }
+}
 
-    buffer.Sum += value;
-    buffer.SlidingWindow.push_back(value);
+void Kick(TaskId task) {
+    gLastKickTicks[static_cast<size_t>(task)] = xTaskGetTickCount();
+}
 
-    
+TickType_t LastKick(TaskId task) {
+    return gLastKickTicks[static_cast<size_t>(task)];
+}
+
+const char* TaskName(TaskId task) {
+    return kTaskNames[static_cast<size_t>(task)];
+}
+
 }

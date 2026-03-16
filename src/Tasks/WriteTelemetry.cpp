@@ -13,6 +13,8 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
     bool localCXFlag = false;
     while (true) {
+        HealthMonitor::Kick(HealthMonitor::TaskId::WriteTelemetry);
+
         if(ulTaskNotifyTake(pdFALSE, 0) % 2 == 1){
             localCXFlag = true;
         }

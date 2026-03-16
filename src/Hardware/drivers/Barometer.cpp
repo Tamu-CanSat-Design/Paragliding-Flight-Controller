@@ -168,6 +168,21 @@ Common::BarometerData Barometer::ReadData() {
     return data_;
 }
 
+bool Barometer::RezeroReferencePressure() {
+    if (!initialized_) {
+        return false;
+    }
+
+    // Reuse the same stable-baseline capture used at startup so a CAL command
+    // can redefine zero altitude without reinitializing the whole sensor.
+    if (!CaptureReferencePressure()) {
+        return false;
+    }
+
+    data_.altitude = 0.0f;
+    return true;
+}
+
 // Capture a startup pressure baseline so altitude is reported relative to launch.
 bool Barometer::CaptureReferencePressure() {
     float window_pressures[kReferenceWindowSamples] = {};

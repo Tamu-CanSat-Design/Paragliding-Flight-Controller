@@ -13,6 +13,7 @@ public:
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::BarometerData ReadData() override;
+    bool RezeroReferencePressure();
 
 private:
     struct Calibration {

@@ -6,6 +6,7 @@
 #include <semphr.h>
 #include <task.h>
 #include "SharedData.h"
+#include "HealthMonitor.h"
 
 #include "Hardware/Hardware.h"
 #include "GNC/Controller.h"
