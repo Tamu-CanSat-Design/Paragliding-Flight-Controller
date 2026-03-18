@@ -66,7 +66,6 @@ namespace Tasks
 
 
     TaskHandle_t MissionManagerTaskHandle = nullptr;
-    TaskHandle_t WatchdogTaskHandle = nullptr;
     StaticTask_t MissionManagerTaskBuffer;
     StackType_t MissionManagerTaskStack[kMissionManagerTaskStackDepth];
 

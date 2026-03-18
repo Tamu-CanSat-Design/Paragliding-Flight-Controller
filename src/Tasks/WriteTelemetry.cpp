@@ -66,10 +66,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
         Common::BuildPacket(data, telemetryBuf, sizeof(telemetryBuf));
         
-        if(xSemaphoreTake(SharedData::gCXFlagMutex, portMAX_DELAY) == pdTRUE) {
-            localCXFlag = SharedData::gCXFlag;
-            xSemaphoreGive(SharedData::gCXFlagMutex);
-        }
+        
         if(localCXFlag) {
             SharedData::commlink.WriteGroundRadio(telemetryBuf);
         }
