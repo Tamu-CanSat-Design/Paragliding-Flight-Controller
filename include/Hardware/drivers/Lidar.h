@@ -10,6 +10,7 @@ class Lidar : public ILidar {
 public:
     static constexpr const char* kSensorName = "Garmin LIDAR-Lite v4 LED";
 
+    explicit Lidar(TwoWire& wire = Wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::LidarData ReadData() override;

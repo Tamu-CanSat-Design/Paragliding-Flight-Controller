@@ -10,6 +10,7 @@ class IMU : public IIMU {
 public:
     static constexpr const char* kSensorName = "LSM6DSR + LIS2MDL";
 
+    explicit IMU(TwoWire& wire = Wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::IMUData ReadData() override;

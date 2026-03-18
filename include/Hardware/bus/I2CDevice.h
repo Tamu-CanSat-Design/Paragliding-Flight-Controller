@@ -19,6 +19,8 @@ public:
     void setAddress(uint8_t address) { address_ = address; }
     // Expose the current address for logging or debug.
     uint8_t address() const { return address_; }
+    // Expose the bound bus so drivers can initialize the correct peripheral.
+    TwoWire& wire() const { return *wire_; }
 
     bool WriteRegister(uint8_t reg, uint8_t value) const override {
         // Start a write transaction to the current device address.

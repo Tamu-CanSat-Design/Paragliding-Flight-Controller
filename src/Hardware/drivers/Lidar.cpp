@@ -42,14 +42,17 @@ constexpr uint8_t kHighAccuracyDefault = 0x14;
 constexpr float kCentimetersToMeters = 0.01f;
 }  // namespace
 
+Lidar::Lidar(TwoWire& wire)
+    : device_(0, wire) {}
+
 bool Lidar::Initialize() {
     // Clear state first so failed init leaves the object in a known-safe condition.
     data_ = {};
     initialized_ = false;
 
     // Bring up I2C using the shared project settings.
-    Wire.begin();
-    Wire.setClock(Common::I2C_BAUDRATE);
+    device_.wire().begin();
+    device_.wire().setClock(Common::I2C_BAUDRATE);
 
     // Configure the bus wrapper for the LIDAR-Lite default address.
     device_.setAddress(kI2cAddress);

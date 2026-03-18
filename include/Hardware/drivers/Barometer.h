@@ -10,6 +10,7 @@ class Barometer : public IBarometer {
 public:
     static constexpr const char* kSensorName = "BMP390";
 
+    explicit Barometer(TwoWire& wire = Wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::BarometerData ReadData() override;

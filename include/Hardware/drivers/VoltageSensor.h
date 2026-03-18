@@ -10,6 +10,7 @@ class VoltageSensor : public IVoltageSensor {
 public:
     static constexpr const char* kSensorName = "INA260";
 
+    explicit VoltageSensor(TwoWire& wire = Wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::VoltageData ReadData() override;

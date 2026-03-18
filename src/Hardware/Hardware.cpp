@@ -5,11 +5,11 @@ namespace Hardware {
     // Global hardware manager instance. Tasks can access this to read sensors, send radio messages, etc.
     // This is defined here in the .cpp file to avoid circular dependencies with the header.
     
-    Barometer barometer_;
-    IMU imu_;
-    TeseoGPS gps_;
-    Lidar lidar_;
-    VoltageSensor voltageSensor_;
+    Barometer barometer_{Wire};
+    IMU imu_{Wire1};
+    TeseoGPS gps_{Wire};
+    Lidar lidar_{Wire};
+    VoltageSensor voltageSensor_{Wire1};
     Radio radio_;
     AudioBeacon audioBeacon_;
     Camera camera_;
@@ -18,8 +18,8 @@ namespace Hardware {
     ReleaseServo LidarCameraServo_;
     SteeringServo LeftServo_;
     SteeringServo RightServo_;
-    I2CDevice i2c1_{};
-    I2CDevice i2c2_{};
+    I2CDevice i2c1_{0, Wire};
+    I2CDevice i2c2_{0, Wire1};
     
     bool InitializeAllSensors() {
         bool ok = true;
@@ -39,4 +39,3 @@ namespace Hardware {
         return ok;
     }
 }
-

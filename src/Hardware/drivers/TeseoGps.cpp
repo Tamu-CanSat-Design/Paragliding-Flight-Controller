@@ -31,6 +31,9 @@ constexpr size_t kGpsMaxBytesPerRead = static_cast<size_t>(GPS_I2C_MAX_BYTES_PER
 #endif
 }  // namespace
 
+TeseoGPS::TeseoGPS(TwoWire& wire)
+    : i2c_(0, wire), bus_(&i2c_) {}
+
 TeseoGPS::TeseoGPS(uint8_t address)
     : i2c_(address), bus_(&i2c_) {}
 
@@ -42,8 +45,8 @@ bool TeseoGPS::Initialize() {
     sentence_len_ = 0;
     initialized_ = false;
 
-    Wire.begin();
-    Wire.setClock(Common::I2C_BAUDRATE);
+    bus_->wire().begin();
+    bus_->wire().setClock(Common::I2C_BAUDRATE);
 
     if (bus_ == &i2c_ && bus_->address() == 0) {
         bus_->setAddress(kGpsI2cAddress);

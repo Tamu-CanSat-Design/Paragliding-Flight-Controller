@@ -11,10 +11,11 @@ class TeseoGPS : public IGPS {
 public:
     static constexpr const char* kSensorName = "Generic NMEA GPS";
 
-    const char* SensorName() const override { return kSensorName; }
     TeseoGPS() = default;
+    explicit TeseoGPS(TwoWire& wire);
     explicit TeseoGPS(uint8_t address);
     explicit TeseoGPS(I2CDevice& bus);
+    const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::GPSData ReadData() override;
 

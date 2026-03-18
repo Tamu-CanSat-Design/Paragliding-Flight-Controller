@@ -85,6 +85,9 @@ int16_t ReadS16(const uint8_t* data, size_t index) {
 }
 }  // namespace
 
+Barometer::Barometer(TwoWire& wire)
+    : device_(0, wire) {}
+
 // Initialize the sensor: bus, probe, reset, load calibration, configure for reliable readings.
 bool Barometer::Initialize() {
     // Reset state before touching hardware so stale values don't leak.
@@ -96,9 +99,9 @@ bool Barometer::Initialize() {
     referencePressureHpa_ = 0.0f;
 
     // Start I2C bus so the device is addressable.
-    Wire.begin();
+    device_.wire().begin();
     // Set bus speed to project-defined rate for consistent timing across sensors.
-    Wire.setClock(Common::I2C_BAUDRATE);
+    device_.wire().setClock(Common::I2C_BAUDRATE);
 
     // Probe device at both possible I2C addresses because SDO may be tied high/low.
     uint8_t chip_id = 0;

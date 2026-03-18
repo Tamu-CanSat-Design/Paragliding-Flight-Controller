@@ -31,14 +31,17 @@ constexpr float kBusVoltageLsbVolts = 0.00125f;  // 1.25 mV / LSB.
 constexpr float kPowerLsbWatts = 0.01f;          // 10 mW / LSB.
 }  // namespace
 
+VoltageSensor::VoltageSensor(TwoWire& wire)
+    : device_(0, wire) {}
+
 bool VoltageSensor::Initialize() {
     // Clear cached sample and state before touching hardware.
     data_ = {};
     initialized_ = false;
 
     // Initialize I2C bus at the project-wide configured bitrate.
-    Wire.begin();
-    Wire.setClock(Common::I2C_BAUDRATE);
+    device_.wire().begin();
+    device_.wire().setClock(Common::I2C_BAUDRATE);
 
     // Find the actual INA260 address from A0/A1 strap configuration.
     if (!ProbeAndSelectAddress()) {
@@ -146,11 +149,12 @@ bool VoltageSensor::Configure() {
 
 bool VoltageSensor::WriteRegister16(uint8_t reg, uint16_t value) const {
     // INA260 expects register writes as pointer + MSB + LSByte.
-    Wire.beginTransmission(device_.address());
-    Wire.write(reg);
-    Wire.write(static_cast<uint8_t>((value >> 8) & 0xFF)); // MSByte
-    Wire.write(static_cast<uint8_t>(value & 0xFF)); // LSByte
-    return Wire.endTransmission() == 0;
+    TwoWire& wire = device_.wire();
+    wire.beginTransmission(device_.address());
+    wire.write(reg);
+    wire.write(static_cast<uint8_t>((value >> 8) & 0xFF)); // MSByte
+    wire.write(static_cast<uint8_t>(value & 0xFF)); // LSByte
+    return wire.endTransmission() == 0;
 }
 
 bool VoltageSensor::ReadRegister16(uint8_t reg, uint16_t* value) const {
