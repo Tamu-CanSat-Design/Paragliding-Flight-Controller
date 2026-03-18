@@ -10,14 +10,14 @@ class Lidar : public ILidar {
 public:
     static constexpr const char* kSensorName = "Garmin LIDAR-Lite v4 LED";
 
-    explicit Lidar(TwoWire& wire = Wire);
+    explicit Lidar(TwoWire& wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::LidarData ReadData() override;
 
 private:
     // Talks to the sensor over I2C register transactions.
-    I2CDevice device_{};
+    I2CDevice device_;
     // Last successfully measured value so callers always get a stable sample.
     Common::LidarData data_{};
     // Prevents bus access before startup/config are complete.

@@ -20,8 +20,8 @@ constexpr uint32_t kReadPeriodMs = 500;
 constexpr const char* kBuildDate = __DATE__;
 constexpr const char* kBuildTime = __TIME__;
 
-Barometer gBarometer;
-I2CDevice gProbeDevice;
+Barometer gBarometer{Wire};
+I2CDevice gProbeDevice{0, Wire};
 
 bool ProbeBmp390(uint8_t* detectedAddress, uint8_t* chipId) {
     if (detectedAddress == nullptr || chipId == nullptr) {

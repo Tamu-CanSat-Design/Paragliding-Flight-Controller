@@ -34,12 +34,6 @@ constexpr size_t kGpsMaxBytesPerRead = static_cast<size_t>(GPS_I2C_MAX_BYTES_PER
 TeseoGPS::TeseoGPS(TwoWire& wire)
     : i2c_(0, wire), bus_(&i2c_) {}
 
-TeseoGPS::TeseoGPS(uint8_t address)
-    : i2c_(address), bus_(&i2c_) {}
-
-TeseoGPS::TeseoGPS(I2CDevice& bus)
-    : bus_(&bus) {}
-
 bool TeseoGPS::Initialize() {
     data_ = {};
     sentence_len_ = 0;

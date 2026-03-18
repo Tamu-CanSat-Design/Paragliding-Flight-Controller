@@ -10,7 +10,7 @@ class VoltageSensor : public IVoltageSensor {
 public:
     static constexpr const char* kSensorName = "INA260";
 
-    explicit VoltageSensor(TwoWire& wire = Wire);
+    explicit VoltageSensor(TwoWire& wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::VoltageData ReadData() override;
@@ -21,7 +21,7 @@ private:
     bool WriteRegister16(uint8_t reg, uint16_t value) const;
     bool ReadRegister16(uint8_t reg, uint16_t* value) const;
 
-    I2CDevice device_{};
+    I2CDevice device_;
     Common::VoltageData data_{};
     bool initialized_ = false;
 };

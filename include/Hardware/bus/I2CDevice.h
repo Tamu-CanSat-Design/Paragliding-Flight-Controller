@@ -12,7 +12,7 @@
 class I2CDevice : public IRegisterBus {
 public:
     // Store the address and wire instance so multiple devices can share a bus.
-    explicit I2CDevice(uint8_t address = 0, TwoWire& wire = Wire)
+    explicit I2CDevice(uint8_t address, TwoWire& wire)
         : address_(address), wire_(&wire) {}
 
     // Update the target I2C address (useful for probing alt addresses).

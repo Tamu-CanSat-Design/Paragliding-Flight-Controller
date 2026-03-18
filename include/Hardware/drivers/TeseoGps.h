@@ -11,10 +11,7 @@ class TeseoGPS : public IGPS {
 public:
     static constexpr const char* kSensorName = "Generic NMEA GPS";
 
-    TeseoGPS() = default;
     explicit TeseoGPS(TwoWire& wire);
-    explicit TeseoGPS(uint8_t address);
-    explicit TeseoGPS(I2CDevice& bus);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::GPSData ReadData() override;
@@ -24,7 +21,7 @@ private:
     static constexpr size_t kMaxFields = 20;
     static constexpr size_t kMaxI2cChunkLen = 32;
 
-    I2CDevice i2c_{};
+    I2CDevice i2c_;
     I2CDevice* bus_ = &i2c_;
     Common::GPSData data_{};
     char sentence_[kMaxSentenceLen]{};
