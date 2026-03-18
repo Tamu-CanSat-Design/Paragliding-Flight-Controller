@@ -81,6 +81,12 @@ namespace Common {
         return "UNKNOWN";
     }
 
+    struct DropZone{
+        float x;
+        float y;
+        float FinalHeading;
+    };
+
     struct StateVector{
         float x;
         float y;
@@ -92,6 +98,17 @@ namespace Common {
         float q1;
         float q2;
         float q3;
+        float wx;
+        float wy;
+        float wz;
+        float accelBias;
+        float gyroBias;
+    };
+
+    struct WindVector{
+        float vx;
+        float vy;
+        float vz;
     };
 
     struct Vector3{
