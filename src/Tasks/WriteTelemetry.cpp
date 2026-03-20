@@ -45,7 +45,6 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         }
         //Task Notification Receiving
 
-        ulTaskNotifyTake(pdFALSE, 0); // Clear any pending notifications
 
 
 

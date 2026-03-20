@@ -20,7 +20,7 @@ namespace MissionManager {
   extern bool DescentStartedFlag;
   extern bool PayloadReleaseStartedFlag;
   extern bool RecoveryStartedFlag;
-
+  extern float MaxAltitude;
 
   void CX();
   void ST();
