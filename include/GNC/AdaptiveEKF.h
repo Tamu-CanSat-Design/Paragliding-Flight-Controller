@@ -15,7 +15,7 @@ public:
 
     void Initialize();
     void Reset();
-    void Predict();
+    void Predict(const Common::IMUData& imuData);
     void UpdateIMU(const Common::IMUData& imuData);
     void UpdateMagnetometer(const Common::MagData& magData);
     void UpdateBarometer(const Common::BarometerData& baroData);
@@ -25,16 +25,19 @@ public:
 
     void SetFlightState(Common::FlightState flightState);
 
-    void SetProcessNoiseCovariance(Common::FlightState flightState);
+    void SetProcessNoiseCovariance();
 
 
-    void SetMeasurementNoiseCovariance(Common::FlightState flightState);
+    void SetMeasurementNoiseCovariance();
 
+    BLA::Matrix<17, 1> GetStateVector() {
+        return stateVector;
+    }
 
 private:
-    BLA::Matrix<13, 1> stateVector; // [x, y, z, vx, vy, vz, q0, q1, q2, q3, q4, accelBias, gyroBias]
-    BLA::Matrix<13, 13> processNoiseCovariance;
-    BLA::Matrix<6, 13> measurementMatrix; // [Accelerometer, Gyroscope, Magnetometer, GPS, Barometer, LiDAR]
+    BLA::Matrix<17, 1> stateVector; // [x, y, z, vx, vy, vz, q0, q1, q2, q3, q4, accelBiasx, accelBiasy, accelBiasz, gyroBiasx, gyroBiasy, gyroBiasz]
+    BLA::Matrix<17, 17> processNoiseCovariance;
+    BLA::Matrix<6, 17> measurementMatrix; // [Magnetometer, GPS, Barometer, LiDAR]
     BLA::Matrix<6, 6> measurementNoiseCovariance;
     Common::FlightState currentFlightState;
 };
