@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include <cstdio>
+#include <optional>
 
 #include <Arduino.h>
 
@@ -168,10 +169,62 @@ namespace Common {
     template<typename Float, int N>
     class Window{
     public:
-        void push(float value){
+        void push(Float value){
             _buffer[idx % N] = value;
             idx++;
             if(count < N) count++;
+        }
+
+        std::optional<Float> average() const {
+            if(count == 0) return std::nullopt;
+            Float sum = 0;
+            for(int i = 0; i < count; i++){
+                sum += _buffer[i];
+            }
+            return sum / static_cast<Float>(count);
+        }
+
+        int size() const {
+            return count;
+        }
+
+        bool isDescending() const {
+            if(count < 2) return false;
+            int down = 0;
+            for(int i = 1; i < count; i++){
+                float prev = _buffer[(i - 1) % count];
+                float curr = _buffer[i];
+                if(curr < prev) down++;
+            }
+            return down > (count - 1) / 2;
+        }
+
+        bool isAscending() const {
+            if(count < 2) return false;
+            int up = 0;
+            for(int i = 1; i < count; i++){
+                float prev = _buffer[(i - 1) % count];
+                float curr = _buffer[i];
+                if(curr > prev) up++;
+            }
+            return up > (count - 1) / 2;
+        }
+
+        bool isStatic() const {
+            if(count < 2) return false;
+            int flat = 0;
+            for(int i = 1; i < count; i++){
+                float prev = _buffer[(i - 1) % count];
+                float curr = _buffer[i];
+                if(abs(curr - prev) < 0.1f) flat++;
+            }
+            return flat > (count - 1) / 2;
+        }
+
+        void clear() {
+            idx = 0;
+            count = 0;
+            std::fill(std::begin(_buffer), std::end(_buffer), Float{});
         }
 
     private:
