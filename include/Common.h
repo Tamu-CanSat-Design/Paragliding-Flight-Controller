@@ -166,22 +166,22 @@ namespace Common {
         StateVector stateVector;
     };
 
-    template<typename Float, int N>
+    template<typename T, int N>
     class Window{
     public:
-        void push(Float value){
+        void push(T value){
             _buffer[idx % N] = value;
             idx++;
             if(count < N) count++;
         }
 
-        std::optional<Float> average() const {
+        std::optional<T> average() const {
             if(count == 0) return std::nullopt;
-            Float sum = 0;
+            float sum = 0;
             for(int i = 0; i < count; i++){
                 sum += _buffer[i];
             }
-            return sum / static_cast<Float>(count);
+            return sum / static_cast<T>(count);
         }
 
         int size() const {

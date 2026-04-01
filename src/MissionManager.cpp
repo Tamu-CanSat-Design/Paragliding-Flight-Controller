@@ -21,10 +21,10 @@ namespace MissionManager {
     bool RecoveryStartedFlag = false;
     float MaxAltitude = 0.0;
 
-    static Window<float, 10> altWindow;
-    static Window<float, 10> vzWindow;
-    static Window<float, 10> accelWindow;
-    static Window<float, 10> gyroWindow;
+    static Common::Window<float, 10> altWindow;
+    static Common::Window<float, 10> vzWindow;
+    static Common::Window<float, 10> accelWindow;
+    static Common::Window<float, 10> gyroWindow;
 
     void ST() {
         // Implement ST command logic
@@ -72,7 +72,7 @@ namespace MissionManager {
     }
 
     void EGREL() {
-        EGRELFlag = true;
+        EGRELFlag = !EGRELFlag;
     }
 
     void LDAR() {
@@ -96,7 +96,7 @@ namespace MissionManager {
 
         if(!simEnabled){
             // Logic for checking state changes
-            altWindow.push(sensorSnapshot.barometerData.altitude);
+            altWindow.push(ekfState.z);
             vzWindow.push(ekfState.vz);
             switch(currentState){
                 case Common::FlightState::BOOTUP:
@@ -105,15 +105,15 @@ namespace MissionManager {
                     }
                     break;
                 case Common::FlightState::ASCENT:
-                    if(ekfState.vz < 0.0f && sensorSnapshot.barometerData.altitude > 10.0f && altWindow.isDescending()) { // Using a sliding window, make sure altitude starts decreasing
+                    if(ekfState.vz < 0.0f && ekfState.z > 10.0f && altWindow.isDescending()) { // Using a sliding window, make sure altitude starts decreasing
                         return Common::FlightState::DESCENT;
                     }
-                    if (sensorSnapshot.barometerData.altitude > MaxAltitude) {
-                        MaxAltitude = sensorSnapshot.barometerData.altitude;
+                    if (ekfState.z > MaxAltitude) {
+                        MaxAltitude = ekfState.z;
                     }
                     break;
                 case Common::FlightState::DESCENT:
-                    if(sensorSnapshot.barometerData.altitude < 10.0f) { //store the max altitude, if 80% of max altitude is reached, trigger payload release
+                    if(ekfState.z < 10.0f) { //store the max altitude, if 80% of max altitude is reached, trigger payload release
                         //check with barometer sliding window and with extended kalman filter altitude (ekfstate.z)
                         if (ekfState.z * 0.8 <= MaxAltitude && sensorSnapshot.barometerData.altitude < MaxAltitude * 0.8) {
                             return Common::FlightState::PAYLOAD_RELEASE;
@@ -142,6 +142,8 @@ namespace MissionManager {
         }
         else{
             //idk
+
+            //altWindow.push(SimulationModeValues)
         }
     }
     
