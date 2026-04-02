@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <cmath>
+#include <FreeRTOS.h>
+#include <task.h>
 
 namespace {
 // Local register map + scaling constants live here to keep the driver readable.
@@ -299,7 +301,7 @@ void IMU::Calibrate() {
 
         // Track the number of valid samples used in the average.
         ++sampleCount;
-        delay(5);
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     // Guard against divide-by-zero if all reads failed.

@@ -83,8 +83,8 @@ namespace MissionManager {
         else if (std::strcmp(commandPayload, "SIM") == 0) {
             SIM();
         }
-        else if (std::strcmp(commandPayload, "SIMP") == 0) {
-            SIMP();
+        else if (std::strncmp(commandPayload, "SIMP,", 5) == 0) {
+            SIMP(std::atof(commandPayload + 5));
         }
         else if (std::strcmp(commandPayload, "CAL") == 0) {
             CAL();
@@ -135,8 +135,20 @@ namespace MissionManager {
         }
     }
 
-    void SIMP() {
-        // TODO: Implement simulated-pressure injection command behavior.
+    void SIMP(float pressureHpa) {
+        if (!gSimEnabled) {
+            Serial.println("MissionManager: SIMP ignored, SIM mode not active");
+            return;
+        }
+        if (pressureHpa <= 0.0f) {
+            Serial.printf("MissionManager: SIMP ignored, invalid pressure %.2f\n", pressureHpa);
+            return;
+        }
+        if (xSemaphoreTake(SharedData::gSimPressureMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            SharedData::gSimPressureHpa = pressureHpa;
+            xSemaphoreGive(SharedData::gSimPressureMutex);
+            Serial.printf("MissionManager: SIMP %.2f hPa\n", pressureHpa);
+        }
     }
 
     void CAL() {

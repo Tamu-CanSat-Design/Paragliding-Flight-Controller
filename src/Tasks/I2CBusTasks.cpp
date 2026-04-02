@@ -1,5 +1,7 @@
 #include "TaskHandler.h"
 
+#include <cmath>
+
 namespace {
 // The I2C1 task owns the barometer, so maintenance actions such as rezeroing
 // are routed here from mission logic instead of touching the driver cross-task.
@@ -21,6 +23,16 @@ void HandleI2C1ControlCommands() {
         xQueueSend(SharedData::gI2C1ControlResultQueue, &result, portMAX_DELAY);
     }
 }
+
+// Update a single field of gSnapshot without touching fields owned by other tasks.
+// Uses a non-blocking take so the bus task never stalls on a slow telemetry reader.
+template<typename Field, typename Value>
+void UpdateSnapshot(Field Common::SensorSnapshot::* field, const Value& value) {
+    if (xSemaphoreTake(SharedData::gSnapshotMutex, 0) == pdTRUE) {
+        SharedData::gSnapshot.*field = value;
+        xSemaphoreGive(SharedData::gSnapshotMutex);
+    }
+}
 }
 
 
@@ -32,7 +44,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     Common::LidarData     latestLidar = {};
 
     // Target rates: barometer 50 Hz, lidar 20 Hz, GPS 5 Hz.
-    constexpr TickType_t kBaroPeriod  = pdMS_TO_TICKS(20);  // 50 Hz — matches BMP390 ODR
+    constexpr TickType_t kBaroPeriod  = pdMS_TO_TICKS(20);  // 50 Hz
     constexpr TickType_t kLidarPeriod = pdMS_TO_TICKS(50);  // 20 Hz
     constexpr TickType_t kGpsPeriod   = pdMS_TO_TICKS(200); // 5 Hz
 
@@ -49,25 +61,51 @@ void Tasks::I2C1BusTask(void* pvParameters) {
         const TickType_t now = xTaskGetTickCount();
 
         if ((now - lastBaroTick) >= kBaroPeriod) {
-            latestBaro = Hardware::barometer_.ReadData();
+            // In SIM mode, substitute the ground-commanded pressure for the real read.
+            bool simEnabled = false;
+            if (xSemaphoreTake(SharedData::gSimEnabledMutex, 0) == pdTRUE) {
+                simEnabled = SharedData::gSimEnabled;
+                xSemaphoreGive(SharedData::gSimEnabledMutex);
+            }
+
+            if (simEnabled) {
+                float simPressure = 0.0f;
+                if (xSemaphoreTake(SharedData::gSimPressureMutex, 0) == pdTRUE) {
+                    simPressure = SharedData::gSimPressureHpa;
+                    xSemaphoreGive(SharedData::gSimPressureMutex);
+                }
+                if (simPressure > 0.0f) {
+                    const float refPressure = Hardware::barometer_.GetReferencePressureHpa();
+                    latestBaro.pressure = simPressure;
+                    latestBaro.altitude = (refPressure > 0.0f)
+                        ? 44330.0f * (1.0f - powf(simPressure / refPressure, 1.0f / 5.255f))
+                        : 0.0f;
+                    // Temperature retains the last real value.
+                }
+            } else {
+                latestBaro = Hardware::barometer_.ReadData();
+            }
+
             xQueueSend(SharedData::gI2C1BarometerQueue, &latestBaro, 0);
+            UpdateSnapshot(&Common::SensorSnapshot::barometerData, latestBaro);
             lastBaroTick = now;
         }
 
         if ((now - lastLidarTick) >= kLidarPeriod) {
             latestLidar = Hardware::lidar_.ReadData();
             xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, 0);
+            UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
             lastLidarTick = now;
         }
 
         if ((now - lastGpsTick) >= kGpsPeriod) {
             latestGps = Hardware::gps_.ReadData();
             xQueueSend(SharedData::gI2C1GPSQueue, &latestGps, 0);
+            UpdateSnapshot(&Common::SensorSnapshot::gpsData, latestGps);
             lastGpsTick = now;
         }
 
-        // 5 ms loop granularity gives 200 Hz scheduling resolution, which is
-        // tight enough to hit all three target sensor rates accurately.
+        // 5 ms loop granularity gives 200 Hz scheduling resolution.
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
@@ -79,8 +117,7 @@ void Tasks::I2C2BusTask(void* pvParameters) {
     Common::MagData     latestMag     = {};
     Common::VoltageData latestVoltage = {};
 
-    // Target rates: IMU+mag 104 Hz (10 ms is the closest integer-ms period),
-    // voltage 7 Hz (143 ms).
+    // Target rates: IMU+mag ~100 Hz, voltage 7 Hz.
     constexpr TickType_t kImuPeriod     = pdMS_TO_TICKS(10);  // ~100 Hz (LSM6DSR ODR is 104 Hz)
     constexpr TickType_t kVoltagePeriod = pdMS_TO_TICKS(143); // ~7 Hz
 
@@ -99,12 +136,15 @@ void Tasks::I2C2BusTask(void* pvParameters) {
             latestMag = Hardware::imu_.ReadMagData();
             xQueueSend(SharedData::gI2C2IMUQueue, &latestImu, 0);
             xQueueSend(SharedData::gI2C2MagQueue, &latestMag, 0);
+            UpdateSnapshot(&Common::SensorSnapshot::imuData, latestImu);
+            UpdateSnapshot(&Common::SensorSnapshot::magData, latestMag);
             lastImuTick = now;
         }
 
         if ((now - lastVoltageTick) >= kVoltagePeriod) {
             latestVoltage = Hardware::voltageSensor_.ReadData();
             xQueueSend(SharedData::gI2C2VoltageQueue, &latestVoltage, 0);
+            UpdateSnapshot(&Common::SensorSnapshot::voltageData, latestVoltage);
             lastVoltageTick = now;
         }
 

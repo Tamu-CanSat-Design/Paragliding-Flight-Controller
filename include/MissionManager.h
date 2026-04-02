@@ -29,7 +29,7 @@ namespace MissionManager {
   void CX();
   void ST();
   void SIM();
-  void SIMP();
+  void SIMP(float pressureHpa);
   void CAL();
   void EGREL();
   void LDAR();

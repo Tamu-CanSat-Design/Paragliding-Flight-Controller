@@ -4,6 +4,9 @@
 
 // Arduino core for delay and wire setup.
 #include <Arduino.h>
+// FreeRTOS for vTaskDelay used in the reference pressure capture loop.
+#include <FreeRTOS.h>
+#include <task.h>
 // I2C transport.
 #include <Wire.h>
 // Math helpers for scaling and altitude.
@@ -197,7 +200,7 @@ bool Barometer::CaptureReferencePressure() {
         uint32_t raw_press = 0;
         uint32_t raw_temp = 0;
         if (!ReadRaw(&raw_press, &raw_temp)) {
-            delay(kReferenceSamplePeriodMs);
+            vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
             continue;
         }
 
@@ -205,7 +208,7 @@ bool Barometer::CaptureReferencePressure() {
         (void)CompensateTemperature(raw_temp);
         const float pressure_hpa = CompensatePressure(raw_press) * 0.01f;
         if (pressure_hpa <= 0.0f) {
-            delay(kReferenceSamplePeriodMs);
+            vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
             continue;
         }
 
@@ -237,7 +240,7 @@ bool Barometer::CaptureReferencePressure() {
             }
         }
 
-        delay(kReferenceSamplePeriodMs);
+        vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
     }
 
     return false;

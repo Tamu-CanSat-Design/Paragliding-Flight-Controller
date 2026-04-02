@@ -15,6 +15,7 @@ public:
     bool Initialize() override;
     Common::BarometerData ReadData() override;
     bool RezeroReferencePressure();
+    float GetReferencePressureHpa() const { return referencePressureHpa_; }
 
 private:
     struct Calibration {

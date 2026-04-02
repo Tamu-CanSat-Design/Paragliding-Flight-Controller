@@ -30,6 +30,10 @@ namespace SharedData {
     extern char gCommand[Common::COMMAND_BUFFER_LENGTH];
     extern SemaphoreHandle_t gCommandMutex;
 
+    // Simulated pressure written by SIMP command; read by I2C1BusTask when gSimEnabled.
+    extern float gSimPressureHpa;
+    extern SemaphoreHandle_t gSimPressureMutex;
+
 // Shared queues
     //I2C 1 queues to Nav
     extern QueueHandle_t gI2C1BarometerQueue;

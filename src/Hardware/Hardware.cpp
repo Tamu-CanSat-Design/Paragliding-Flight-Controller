@@ -23,19 +23,61 @@ namespace Hardware {
     
     bool InitializeAllSensors() {
         bool ok = true;
-        ok = barometer_.Initialize() && ok;
-        ok = imu_.Initialize() && ok;
-        ok = gps_.Initialize() && ok;
-        ok = lidar_.Initialize() && ok;
-        ok = voltageSensor_.Initialize() && ok;
-        ok = radio_.Initialize() && ok;
-        ok = audioBeacon_.Initialize() && ok;
-        ok = camera_.Initialize() && ok;
-        ok = ContainerPayloadServo_.Initialize() && ok;
-        ok = EggInstrumentServo_.Initialize() && ok;
-        ok = LidarCameraServo_.Initialize() && ok;
-        ok = LeftServo_.Initialize() && ok;
-        ok = RightServo_.Initialize() && ok;
+        bool result;
+
+        result = barometer_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", barometer_.SensorName(), result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = imu_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", imu_.SensorName(), result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = gps_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", gps_.SensorName(), result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = lidar_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", lidar_.SensorName(), result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = voltageSensor_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", voltageSensor_.SensorName(), result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = radio_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "Radio", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = audioBeacon_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "AudioBeacon", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = camera_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "Camera", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = ContainerPayloadServo_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "ContainerServo", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = EggInstrumentServo_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "EggServo", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = LidarCameraServo_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "LidarCameraServo", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = LeftServo_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "LeftServo", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        result = RightServo_.Initialize();
+        Serial.printf("[HW] %-20s %s\n", "RightServo", result ? "OK" : "FAIL");
+        ok = result && ok;
+
+        Serial.printf("[HW] Init complete: %s\n", ok ? "ALL OK" : "ONE OR MORE FAILED");
         return ok;
     }
 }

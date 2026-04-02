@@ -55,6 +55,10 @@ namespace SharedData {
     SemaphoreHandle_t gCommandMutex = nullptr;
     static StaticSemaphore_t gCommandMutexBuffer;
 
+    float gSimPressureHpa = 0.0f;
+    SemaphoreHandle_t gSimPressureMutex = nullptr;
+    static StaticSemaphore_t gSimPressureMutexBuffer;
+
 //Queues
     static StaticQueue_t gI2C1BarometerQueueBuffer;
     static StaticQueue_t gI2C1GPSQueueBuffer;
@@ -87,6 +91,7 @@ namespace SharedData {
         gStateVectorMutex = xSemaphoreCreateMutexStatic(&gStateVectorMutexBuffer);
         gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
+        gSimPressureMutex = xSemaphoreCreateMutexStatic(&gSimPressureMutexBuffer);
 
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);

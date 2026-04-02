@@ -6,11 +6,12 @@ namespace {
     // the estimated state to shared memory for use by other tasks (e.g., control, telemetry).
 
     AdaptiveEKF ekf; // EKF instance (could also be a pointer if dynamic allocation is needed)
-    Common::IMUData       latestImu   = {}; //May put this within the EKF class
-    Common::MagData      latestMag   = {};
-    Common::BarometerData latestBaro  = {};
-    Common::GPSData       latestGps   = {};
-    Common::LidarData     latestLidar = {};
+    Common::IMUData       latestImu     = {}; //May put this within the EKF class
+    Common::MagData       latestMag     = {};
+    Common::BarometerData latestBaro    = {};
+    Common::GPSData       latestGps     = {};
+    Common::LidarData     latestLidar   = {};
+    Common::VoltageData   latestVoltage = {};
 }
 
 void Tasks::NavigationTask(void* pvParameters) {
@@ -47,6 +48,9 @@ void Tasks::NavigationTask(void* pvParameters) {
         }
         while(xQueueReceive(SharedData::gI2C2MagQueue, &latestMag, 0) == pdTRUE) {
             ekf.UpdateMagnetometer(latestMag);
+        }
+        while(xQueueReceive(SharedData::gI2C2VoltageQueue, &latestVoltage, 0) == pdTRUE) {
+            // Voltage is not fed into the EKF; draining prevents queue overflow.
         }
     //EKF Predict
     //unlock flight state mutex and read current flight state for adaptive noise tuning

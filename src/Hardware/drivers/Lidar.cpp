@@ -150,7 +150,7 @@ bool Lidar::WaitForMeasurementComplete(uint32_t timeoutMs) {
         }
 
         // Short sleep limits bus traffic while keeping latency low.
-        delay(1);
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 
     // Timed out waiting for BUSY to clear.
