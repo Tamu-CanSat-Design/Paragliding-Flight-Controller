@@ -36,6 +36,7 @@ namespace MissionManager {
     bool DescentStartedFlag = false;
     bool PayloadReleaseStartedFlag = false;
     bool RecoveryStartedFlag = false;
+    float MaxAltitude = 0.0;
 
     void InitializeRuntimeState() {
         gSimEnabled = false;
@@ -170,19 +171,34 @@ namespace MissionManager {
     }
 
     Common::FlightState CheckStateChange(Common::FlightState currentState, Common::StateVector ekfState, Common::SensorSnapshot sensorSnapshot) {
-        (void)ekfState;
-        (void)sensorSnapshot;
-        // Ascent starts when acceleration/velocity thresholds are met.
-
         if (!gSimEnabled) {
             switch (currentState) {
+                case Common::FlightState::BOOTUP:
+                    if (ekfState.vz > 1.0f) {
+                        return Common::FlightState::ASCENT;
+                    }
+                    break;
+                case Common::FlightState::ASCENT:
+                    if (ekfState.vz < 0.0f && sensorSnapshot.barometerData.altitude > 10.0f) {
+                        return Common::FlightState::DESCENT;
+                    }
+                    break;
+                case Common::FlightState::DESCENT:
+                    if (sensorSnapshot.barometerData.altitude < 10.0f) {
+                        return Common::FlightState::PAYLOAD_RELEASE;
+                    }
+                    break;
+                case Common::FlightState::PAYLOAD_RELEASE:
+                    // Check if sensor data is static for a duration to confirm landing
+                    break;
+                case Common::FlightState::RECOVERY:
+                    // Final state, may not transition out of this
+                    break;
                 default:
                     break;
             }
         }
 
-        // Until the mission-state transition logic is filled in, preserve the
-        // existing state so MissionManagerTask has deterministic behavior.
         return currentState;
     }
 }

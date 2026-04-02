@@ -58,6 +58,9 @@ void Tasks::MissionManagerTask(void* pvParameters){
 
             if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                 LocalStateVector = SharedData::gStateVector;
+                if(MissionManager::MaxAltitude < LocalStateVector.z) {
+                    MissionManager::MaxAltitude = LocalStateVector.z;
+                }
                 xSemaphoreGive(SharedData::gStateVectorMutex);
             }
             if(xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
@@ -80,17 +83,30 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 break;
             case Common::FlightState::ASCENT:
                 if(!MissionManager::AscentStartedFlag) {
+                    //write to eeprom
                     MissionManager::AscentStartedFlag = true;
                 }
                 break;
             case Common::FlightState::DESCENT:
                 if(!MissionManager::DescentStartedFlag) {
+                    //write to eeprom
                     MissionManager::DescentStartedFlag = true;
                 }
                 break;
             case Common::FlightState::PAYLOAD_RELEASE:
+                if(!MissionManager::PayloadReleaseStartedFlag) {
+                    //write to eeprom
+                    MissionManager::PayloadReleaseStartedFlag = true;
+                }
+                // Egg drop logic
                 break;
             case Common::FlightState::RECOVERY:
+                if(!MissionManager::RecoveryStartedFlag) {
+                    //write to eeprom
+                    //start audio beacon
+                    MissionManager::RecoveryStartedFlag = true;
+                }
+
                 break;
             default:
                 break;
