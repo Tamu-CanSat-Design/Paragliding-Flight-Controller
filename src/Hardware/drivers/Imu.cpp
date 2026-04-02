@@ -244,7 +244,7 @@ Common::IMUData IMU::ReadData() {
         mag.x -= magBias_.x;
         mag.y -= magBias_.y;
         mag.z -= magBias_.z;
-        // data_.magneticField = mag; MAKE NEW STRUCT///////////////////////////////////////////////////////////////////////////
+        magData_ = Common::MagData{mag.x, mag.y, mag.z};
 
         // Simple tilt-compensated heading; adequate for basic yaw feedback.
         // Compute roll/pitch from accel for tilt compensation.
@@ -262,6 +262,10 @@ Common::IMUData IMU::ReadData() {
     }
 
     return data_;
+}
+
+Common::MagData IMU::ReadMagData() const {
+    return magData_;
 }
 
 void IMU::Calibrate() {

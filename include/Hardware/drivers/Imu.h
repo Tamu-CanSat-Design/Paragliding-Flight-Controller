@@ -14,11 +14,13 @@ public:
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::IMUData ReadData() override;
+    Common::MagData ReadMagData() const;
     void Calibrate() override;
 
 private:
-    // Cache of the most recent IMU sample.
+    // Cache of the most recent IMU and magnetometer samples.
     Common::IMUData data_{};
+    Common::MagData magData_{};
     // Biases are computed in Calibrate() and subtracted on each read.
     Common::Vector3 accelBias_{};
     Common::Vector3 gyroBias_{};
