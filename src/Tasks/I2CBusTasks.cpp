@@ -3,6 +3,10 @@
 #include <cmath>
 
 namespace {
+uint32_t CaptureTimestampMs() {
+    return millis();
+}
+
 // The I2C1 task owns the barometer, so maintenance actions such as rezeroing
 // are routed here from mission logic instead of touching the driver cross-task.
 void HandleI2C1ControlCommands() {
@@ -85,6 +89,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
             } else {
                 latestBaro = Hardware::barometer_.ReadData();
             }
+            latestBaro.timestampMs = CaptureTimestampMs();
 
             xQueueSend(SharedData::gI2C1BarometerQueue, &latestBaro, 0);
             UpdateSnapshot(&Common::SensorSnapshot::barometerData, latestBaro);
@@ -93,6 +98,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
 
         if ((now - lastLidarTick) >= kLidarPeriod) {
             latestLidar = Hardware::lidar_.ReadData();
+            latestLidar.timestampMs = CaptureTimestampMs();
             xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, 0);
             UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
             lastLidarTick = now;
@@ -100,6 +106,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
 
         if ((now - lastGpsTick) >= kGpsPeriod) {
             latestGps = Hardware::gps_.ReadData();
+            latestGps.timestampMs = CaptureTimestampMs();
             xQueueSend(SharedData::gI2C1GPSQueue, &latestGps, 0);
             UpdateSnapshot(&Common::SensorSnapshot::gpsData, latestGps);
             lastGpsTick = now;
@@ -134,6 +141,9 @@ void Tasks::I2C2BusTask(void* pvParameters) {
             // ReadMagData() returns the mag values cached during that read.
             latestImu = Hardware::imu_.ReadData();
             latestMag = Hardware::imu_.ReadMagData();
+            const uint32_t sampleTimestampMs = CaptureTimestampMs();
+            latestImu.timestampMs = sampleTimestampMs;
+            latestMag.timestampMs = sampleTimestampMs;
             xQueueSend(SharedData::gI2C2IMUQueue, &latestImu, 0);
             xQueueSend(SharedData::gI2C2MagQueue, &latestMag, 0);
             UpdateSnapshot(&Common::SensorSnapshot::imuData, latestImu);
@@ -143,6 +153,7 @@ void Tasks::I2C2BusTask(void* pvParameters) {
 
         if ((now - lastVoltageTick) >= kVoltagePeriod) {
             latestVoltage = Hardware::voltageSensor_.ReadData();
+            latestVoltage.timestampMs = CaptureTimestampMs();
             xQueueSend(SharedData::gI2C2VoltageQueue, &latestVoltage, 0);
             UpdateSnapshot(&Common::SensorSnapshot::voltageData, latestVoltage);
             lastVoltageTick = now;

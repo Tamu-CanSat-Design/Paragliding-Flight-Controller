@@ -106,6 +106,7 @@ namespace Common {
         float pressure;
         float temperature;
         float altitude;
+        uint32_t timestampMs;
     };
 
     struct GPSData {
@@ -114,27 +115,32 @@ namespace Common {
         float altitude;
         float time;
         int satellites;
+        uint32_t timestampMs;
     };
     
     struct IMUData {
         Vector3 gyroVel;
         Vector3 acceleration;
         Vector3 eulerAngles;
+        uint32_t timestampMs;
     };
 
     struct VoltageData {
         float voltage;
         float current;
         float power;
+        uint32_t timestampMs;
     };
 
     struct LidarData {
         float distanceMeters;
+        uint32_t timestampMs;
     };
     struct MagData {
         float magX;
         float magY;
         float magZ;
+        uint32_t timestampMs;
     };
 
     enum class I2C1ControlCommandType : uint8_t {
