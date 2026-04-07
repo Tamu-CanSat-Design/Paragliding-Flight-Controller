@@ -7,25 +7,30 @@ uint32_t CaptureTimestampMs() {
     return millis();
 }
 
+void SendI2C1ControlResult(Common::I2C1ControlCommandType type, bool success) {
+    Common::I2C1ControlResult result{};
+    result.type = type;
+    result.success = success;
+    xQueueSend(SharedData::gI2C1ControlResultQueue, &result, portMAX_DELAY);
+}
+
 // The I2C1 task owns the barometer, so maintenance actions such as rezeroing
 // are routed here from mission logic instead of touching the driver cross-task.
-void HandleI2C1ControlCommands() {
+bool HandleI2C1ControlCommands() {
+    bool rezeroRequested = false;
     Common::I2C1ControlCommand command{};
     while (xQueueReceive(SharedData::gI2C1ControlQueue, &command, 0) == pdTRUE) {
-        Common::I2C1ControlResult result{};
-        result.type = command.type;
-
         switch (command.type) {
             case Common::I2C1ControlCommandType::kRezeroBarometer:
-                result.success = Hardware::barometer_.RezeroReferencePressure();
+                rezeroRequested = true;
                 break;
             default:
-                result.success = false;
+                SendI2C1ControlResult(command.type, false);
                 break;
         }
-
-        xQueueSend(SharedData::gI2C1ControlResultQueue, &result, portMAX_DELAY);
     }
+
+    return rezeroRequested;
 }
 
 // Update a single field of gSnapshot without touching fields owned by other tasks.
@@ -51,16 +56,23 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     constexpr TickType_t kBaroPeriod  = pdMS_TO_TICKS(20);  // 50 Hz
     constexpr TickType_t kLidarPeriod = pdMS_TO_TICKS(50);  // 20 Hz
     constexpr TickType_t kGpsPeriod   = pdMS_TO_TICKS(200); // 5 Hz
+    constexpr TickType_t kLidarTimeout = pdMS_TO_TICKS(40);
 
     TickType_t lastBaroTick  = 0;
     TickType_t lastLidarTick = 0;
     TickType_t lastGpsTick   = 0;
+    TickType_t lidarMeasurementStartTick = 0;
+    bool lidarMeasurementPending = false;
+    bool barometerCalCommandPending = false;
 
     while (true) {
         HealthMonitor::Kick(HealthMonitor::TaskId::I2C1Bus);
 
         // Process pending control actions before publishing the next sensor sample.
-        HandleI2C1ControlCommands();
+        if (HandleI2C1ControlCommands()) {
+            Hardware::barometer_.StartReferencePressureCapture(CaptureTimestampMs());
+            barometerCalCommandPending = true;
+        }
 
         const TickType_t now = xTaskGetTickCount();
 
@@ -93,15 +105,61 @@ void Tasks::I2C1BusTask(void* pvParameters) {
 
             xQueueSend(SharedData::gI2C1BarometerQueue, &latestBaro, 0);
             UpdateSnapshot(&Common::SensorSnapshot::barometerData, latestBaro);
+
+            Common::BarometerData captureSample{};
+            bool hasCaptureSample = false;
+            if (Hardware::barometer_.ReferencePressureCaptureInProgress()) {
+                if (simEnabled) {
+                    captureSample = Hardware::barometer_.ReadData();
+                    if (Hardware::barometer_.LastReadSucceeded()) {
+                        captureSample.timestampMs = latestBaro.timestampMs;
+                        hasCaptureSample = true;
+                    }
+                } else if (Hardware::barometer_.LastReadSucceeded()) {
+                    captureSample = latestBaro;
+                    hasCaptureSample = true;
+                }
+
+                const Common::BarometerData sampleForCapture = hasCaptureSample
+                    ? captureSample
+                    : Common::BarometerData{};
+                const auto captureStatus = Hardware::barometer_.ProcessReferencePressureSample(
+                    sampleForCapture, latestBaro.timestampMs);
+                if (barometerCalCommandPending) {
+                    if (captureStatus == Barometer::ReferenceCaptureStatus::kReady) {
+                        SendI2C1ControlResult(Common::I2C1ControlCommandType::kRezeroBarometer, true);
+                        barometerCalCommandPending = false;
+                    } else if (captureStatus == Barometer::ReferenceCaptureStatus::kTimedOut) {
+                        SendI2C1ControlResult(Common::I2C1ControlCommandType::kRezeroBarometer, false);
+                        barometerCalCommandPending = false;
+                    }
+                }
+            }
+
             lastBaroTick = now;
         }
 
-        if ((now - lastLidarTick) >= kLidarPeriod) {
-            latestLidar = Hardware::lidar_.ReadData();
-            latestLidar.timestampMs = CaptureTimestampMs();
-            xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, 0);
-            UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
+        if (!lidarMeasurementPending && (now - lastLidarTick) >= kLidarPeriod) {
+            if (Hardware::lidar_.StartMeasurement(true)) {
+                lidarMeasurementPending = true;
+                lidarMeasurementStartTick = now;
+            }
             lastLidarTick = now;
+        }
+
+        if (lidarMeasurementPending) {
+            Common::LidarData completedLidar = latestLidar;
+            const auto lidarStatus = Hardware::lidar_.ReadMeasurementIfReady(&completedLidar);
+            if (lidarStatus == Lidar::MeasurementStatus::kReady) {
+                completedLidar.timestampMs = CaptureTimestampMs();
+                latestLidar = completedLidar;
+                xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, 0);
+                UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
+                lidarMeasurementPending = false;
+            } else if (lidarStatus == Lidar::MeasurementStatus::kError
+                       || (now - lidarMeasurementStartTick) >= kLidarTimeout) {
+                lidarMeasurementPending = false;
+            }
         }
 
         if ((now - lastGpsTick) >= kGpsPeriod) {
@@ -135,6 +193,10 @@ void Tasks::I2C2BusTask(void* pvParameters) {
         HealthMonitor::Kick(HealthMonitor::TaskId::I2C2Bus);
 
         const TickType_t now = xTaskGetTickCount();
+
+        if (Hardware::imu_.CalibrationInProgress()) {
+            Hardware::imu_.CalibrationStep();
+        }
 
         if ((now - lastImuTick) >= kImuPeriod) {
             // ReadData() reads accel/gyro and magnetometer in one pass;

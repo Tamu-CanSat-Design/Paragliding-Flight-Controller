@@ -8,6 +8,7 @@
 
 class IMU : public IIMU {
 public:
+    static constexpr int kCalibrationSamples = 200;
     static constexpr const char* kSensorName = "LSM6DSR + LIS2MDL";
 
     explicit IMU(TwoWire& wire);
@@ -16,6 +17,8 @@ public:
     Common::IMUData ReadData() override;
     Common::MagData ReadMagData() const;
     void Calibrate() override;
+    void CalibrationStep();
+    bool CalibrationInProgress() const { return calibrationInProgress_; }
 
 private:
     // Cache of the most recent IMU and magnetometer samples.
@@ -30,6 +33,11 @@ private:
     I2CDevice magDevice_;
     // Guards against reads before hardware is configured.
     bool initialized_{false};
+    bool calibrationInProgress_{false};
+    int calibrationAttemptCount_{0};
+    int calibrationSampleCount_{0};
+    Common::Vector3 calibrationAccelSum_{};
+    Common::Vector3 calibrationGyroSum_{};
 };
 
 #endif  // HARDWARE_IMU_DRIVER_H

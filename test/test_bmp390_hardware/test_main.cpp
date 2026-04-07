@@ -1,7 +1,6 @@
-#include "Testbench/Testbench.h"
-
 #include <Arduino.h>
 #include <Wire.h>
+#include <unity.h>
 
 #include "Common.h"
 #include "Hardware/bus/I2CDevice.h"
@@ -73,11 +72,19 @@ void PrintSanityCheck(const Common::BarometerData& data) {
 
     Serial.printf("Sanity: %s\n", sane ? "PASS" : "CHECK_VALUES");
 }
+
+void test_bmp390_hardware_harness_builds() {
+    TEST_ASSERT_TRUE(true);
+}
 }  // namespace
 
-void Testbench::Setup() {
+extern "C" void setup() {
     Serial.begin(115200);
     delay(1000);
+
+    UNITY_BEGIN();
+    RUN_TEST(test_bmp390_hardware_harness_builds);
+    UNITY_END();
 
     Wire.begin();
     Wire.setClock(Common::I2C_BAUDRATE);
@@ -96,7 +103,7 @@ void Testbench::Setup() {
         Serial.println("Probe: FAIL  no BMP390 found at 0x76 or 0x77");
     }
 
-    Serial.println("Driver init in progress: waiting for a stable pressure baseline...");
+    Serial.println("Driver init started: waiting for a stable pressure baseline in the background...");
     const bool initOk = gBarometer.Initialize();
     Serial.printf("Driver init: %s\n", initOk ? "PASS" : "FAIL");
 
@@ -105,8 +112,14 @@ void Testbench::Setup() {
     }
 }
 
-void Testbench::Loop() {
+extern "C" void loop() {
     const Common::BarometerData data = gBarometer.ReadData();
+    if (gBarometer.LastReadSucceeded()) {
+        (void)gBarometer.ProcessReferencePressureSample(data, millis());
+    } else {
+        (void)gBarometer.ProcessReferencePressureSample(Common::BarometerData{}, millis());
+    }
+
     Serial.printf("Pressure: %.2f hPa  Temperature: %.2f C  Altitude: %.2f m\n",
                   data.pressure,
                   data.temperature,

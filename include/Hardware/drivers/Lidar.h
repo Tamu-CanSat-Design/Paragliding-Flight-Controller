@@ -8,12 +8,20 @@
 
 class Lidar : public ILidar {
 public:
+    enum class MeasurementStatus : uint8_t {
+        kBusy = 0,
+        kReady = 1,
+        kError = 2,
+    };
+
     static constexpr const char* kSensorName = "Garmin LIDAR-Lite v4 LED";
 
     explicit Lidar(TwoWire& wire);
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::LidarData ReadData() override;
+    bool StartMeasurement(bool withBiasCorrection = true);
+    MeasurementStatus ReadMeasurementIfReady(Common::LidarData* data);
 
 private:
     // Talks to the sensor over I2C register transactions.
@@ -22,6 +30,7 @@ private:
     Common::LidarData data_{};
     // Prevents bus access before startup/config are complete.
     bool initialized_ = false;
+    bool measurementInProgress_ = false;
 
     // Reads STATUS (0x01), which includes the BUSY bit and error flags.
     bool ReadStatus(uint8_t* status) const;

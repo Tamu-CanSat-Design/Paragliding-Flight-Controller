@@ -4,9 +4,6 @@
 
 // Arduino core for delay and wire setup.
 #include <Arduino.h>
-// FreeRTOS for vTaskDelay used in the reference pressure capture loop.
-#include <FreeRTOS.h>
-#include <task.h>
 // I2C transport.
 #include <Wire.h>
 // Math helpers for scaling and altitude.
@@ -100,6 +97,14 @@ bool Barometer::Initialize() {
     // Clear calibration cache so old trims are not reused.
     calib_ = {};
     referencePressureHpa_ = 0.0f;
+    lastReadSucceeded_ = false;
+    referenceCaptureInProgress_ = false;
+    referenceCaptureHasSample_ = false;
+    referenceCaptureStartMs_ = 0;
+    lastReferenceSampleMs_ = 0;
+    referenceSampleCount_ = 0;
+    nextReferenceSampleIndex_ = 0;
+    referenceWindowPressures_.fill(0.0f);
 
     // Start I2C bus so the device is addressable.
     device_.wire().begin();
@@ -132,14 +137,10 @@ bool Barometer::Initialize() {
         return false;
     }
 
-    // Mark device as ready for reads to avoid partial initialization use.
-    if (!CaptureReferencePressure()) {
-        return false;
-    }
-
+    initialized_ = true;
+    StartReferencePressureCapture(millis());
     // Baseline capture defines the startup point as zero altitude.
     data_.altitude = 0.0f;
-    initialized_ = true;
     return true;
 }
 
@@ -154,6 +155,7 @@ Common::BarometerData Barometer::ReadData() {
     uint32_t raw_press = 0;
     uint32_t raw_temp = 0;
     if (!ReadRaw(&raw_press, &raw_temp)) {
+        lastReadSucceeded_ = false;
         return data_;
     }
 
@@ -171,6 +173,7 @@ Common::BarometerData Barometer::ReadData() {
 
     // Cache and return the latest sample so failures keep the last good data.
     data_ = data;
+    lastReadSucceeded_ = true;
     return data_;
 }
 
@@ -179,71 +182,71 @@ bool Barometer::RezeroReferencePressure() {
         return false;
     }
 
-    // Reuse the same stable-baseline capture used at startup so a CAL command
-    // can redefine zero altitude without reinitializing the whole sensor.
-    if (!CaptureReferencePressure()) {
-        return false;
-    }
-
-    data_.altitude = 0.0f;
+    StartReferencePressureCapture(millis());
     return true;
 }
 
-// Capture a startup pressure baseline so altitude is reported relative to launch.
-bool Barometer::CaptureReferencePressure() {
-    float window_pressures[kReferenceWindowSamples] = {};
-    size_t sample_count = 0;
-    size_t next_index = 0;
-    const uint32_t start_ms = millis();
+void Barometer::StartReferencePressureCapture(uint32_t startMs) {
+    referenceCaptureInProgress_ = true;
+    referenceCaptureHasSample_ = false;
+    referenceCaptureStartMs_ = startMs;
+    lastReferenceSampleMs_ = startMs;
+    referenceSampleCount_ = 0;
+    nextReferenceSampleIndex_ = 0;
+    referenceWindowPressures_.fill(0.0f);
+}
 
-    while ((millis() - start_ms) < kReferenceCaptureTimeoutMs) {
-        uint32_t raw_press = 0;
-        uint32_t raw_temp = 0;
-        if (!ReadRaw(&raw_press, &raw_temp)) {
-            vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
-            continue;
-        }
-
-        // Temperature compensation must run first because pressure uses t_lin.
-        (void)CompensateTemperature(raw_temp);
-        const float pressure_hpa = CompensatePressure(raw_press) * 0.01f;
-        if (pressure_hpa <= 0.0f) {
-            vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
-            continue;
-        }
-
-        window_pressures[next_index] = pressure_hpa;
-        next_index = (next_index + 1) % kReferenceWindowSamples;
-        if (sample_count < kReferenceWindowSamples) {
-            ++sample_count;
-        }
-
-        if (sample_count == kReferenceWindowSamples) {
-            float pressure_sum_hpa = 0.0f;
-            float min_pressure_hpa = window_pressures[0];
-            float max_pressure_hpa = window_pressures[0];
-
-            for (size_t i = 0; i < kReferenceWindowSamples; ++i) {
-                const float sample_hpa = window_pressures[i];
-                pressure_sum_hpa += sample_hpa;
-                if (sample_hpa < min_pressure_hpa) {
-                    min_pressure_hpa = sample_hpa;
-                }
-                if (sample_hpa > max_pressure_hpa) {
-                    max_pressure_hpa = sample_hpa;
-                }
-            }
-
-            if ((max_pressure_hpa - min_pressure_hpa) <= kReferenceStableSpanHpa) {
-                referencePressureHpa_ = pressure_sum_hpa / static_cast<float>(kReferenceWindowSamples);
-                return true;
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(kReferenceSamplePeriodMs));
+Barometer::ReferenceCaptureStatus Barometer::ProcessReferencePressureSample(const Common::BarometerData& sample,
+                                                                            uint32_t nowMs) {
+    if (!referenceCaptureInProgress_) {
+        return ReferenceCaptureStatus::kIdle;
     }
 
-    return false;
+    if ((nowMs - referenceCaptureStartMs_) >= kReferenceCaptureTimeoutMs) {
+        referenceCaptureInProgress_ = false;
+        return ReferenceCaptureStatus::kTimedOut;
+    }
+
+    const bool sampleDue = !referenceCaptureHasSample_
+        || ((nowMs - lastReferenceSampleMs_) >= kReferenceSamplePeriodMs);
+    if (!sampleDue || sample.pressure <= 0.0f) {
+        return ReferenceCaptureStatus::kPending;
+    }
+
+    referenceCaptureHasSample_ = true;
+    lastReferenceSampleMs_ = nowMs;
+    referenceWindowPressures_[nextReferenceSampleIndex_] = sample.pressure;
+    nextReferenceSampleIndex_ = (nextReferenceSampleIndex_ + 1) % kReferenceWindowSampleCount;
+    if (referenceSampleCount_ < kReferenceWindowSampleCount) {
+        ++referenceSampleCount_;
+    }
+
+    if (referenceSampleCount_ < kReferenceWindowSampleCount) {
+        return ReferenceCaptureStatus::kPending;
+    }
+
+    float pressureSumHpa = 0.0f;
+    float minPressureHpa = referenceWindowPressures_[0];
+    float maxPressureHpa = referenceWindowPressures_[0];
+    for (size_t i = 0; i < kReferenceWindowSampleCount; ++i) {
+        const float sampleHpa = referenceWindowPressures_[i];
+        pressureSumHpa += sampleHpa;
+        if (sampleHpa < minPressureHpa) {
+            minPressureHpa = sampleHpa;
+        }
+        if (sampleHpa > maxPressureHpa) {
+            maxPressureHpa = sampleHpa;
+        }
+    }
+
+    if ((maxPressureHpa - minPressureHpa) > kReferenceStableSpanHpa) {
+        return ReferenceCaptureStatus::kPending;
+    }
+
+    referencePressureHpa_ = pressureSumHpa / static_cast<float>(kReferenceWindowSampleCount);
+    referenceCaptureInProgress_ = false;
+    data_.altitude = 0.0f;
+    return ReferenceCaptureStatus::kReady;
 }
 
 // Send a soft reset command to the sensor to clear prior configuration.

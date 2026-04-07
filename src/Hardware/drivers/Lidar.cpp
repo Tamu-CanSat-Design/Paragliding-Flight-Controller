@@ -49,6 +49,7 @@ bool Lidar::Initialize() {
     // Clear state first so failed init leaves the object in a known-safe condition.
     data_ = {};
     initialized_ = false;
+    measurementInProgress_ = false;
 
     // Bring up I2C using the shared project settings.
     device_.wire().begin();
@@ -94,31 +95,64 @@ Common::LidarData Lidar::ReadData() {
         return data_;
     }
 
-    // Start a new range measurement with receiver bias correction enabled.
-    // Datasheet "Obtaining Measurements from the I2C Interface", step 1.
-    if (!TriggerMeasurement(true)) {
+    if (!measurementInProgress_ && !StartMeasurement(true)) {
         return data_;
     }
 
-    // Poll STATUS.BUSY until the conversion is complete or timeout is hit.
-    if (!WaitForMeasurementComplete(kMeasurementTimeoutMs)) {
-        return data_;
+    Common::LidarData latestData = data_;
+    (void)ReadMeasurementIfReady(&latestData);
+    return data_;
+}
+
+bool Lidar::StartMeasurement(bool withBiasCorrection) {
+    if (!initialized_) {
+        return false;
+    }
+
+    if (measurementInProgress_) {
+        return true;
+    }
+
+    measurementInProgress_ = TriggerMeasurement(withBiasCorrection);
+    return measurementInProgress_;
+}
+
+Lidar::MeasurementStatus Lidar::ReadMeasurementIfReady(Common::LidarData* data) {
+    if (data == nullptr || !initialized_ || !measurementInProgress_) {
+        return MeasurementStatus::kError;
+    }
+
+    uint8_t status = 0;
+    if (!ReadStatus(&status)) {
+        measurementInProgress_ = false;
+        return MeasurementStatus::kError;
+    }
+
+    if ((status & kStatusBitBusy) != 0) {
+        return MeasurementStatus::kBusy;
+    }
+
+    if ((status & kStatusBitDcError) != 0) {
+        measurementInProgress_ = false;
+        return MeasurementStatus::kError;
     }
 
     // Read the 16-bit distance result in centimeters (LOW then HIGH byte).
     uint16_t distanceCm = 0;
     if (!ReadDistanceCentimeters(&distanceCm)) {
-        return data_;
+        measurementInProgress_ = false;
+        return MeasurementStatus::kError;
     }
 
     // Datasheet notes that invalid signal conditions can return 1 cm.
     // Ignore this sentinel and keep the previous valid sample for flight logic.
-    if (distanceCm <= 1) {
-        return data_;
+    if (distanceCm > 1) {
+        data_.distanceMeters = static_cast<float>(distanceCm) * kCentimetersToMeters;
     }
 
-    data_.distanceMeters = static_cast<float>(distanceCm) * kCentimetersToMeters;
-    return data_;
+    *data = data_;
+    measurementInProgress_ = false;
+    return MeasurementStatus::kReady;
 }
 
 bool Lidar::ReadStatus(uint8_t* status) const {
@@ -148,9 +182,6 @@ bool Lidar::WaitForMeasurementComplete(uint32_t timeoutMs) {
             // DC correction failure means the returned distance is expected to be inaccurate.
             return (status & kStatusBitDcError) == 0;
         }
-
-        // Short sleep limits bus traffic while keeping latency low.
-        vTaskDelay(pdMS_TO_TICKS(1));
     }
 
     // Timed out waiting for BUSY to clear.

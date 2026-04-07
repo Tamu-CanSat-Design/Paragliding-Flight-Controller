@@ -1,17 +1,3 @@
-#ifdef SENSOR_TESTBENCH
-
-#include "Testbench/Testbench.h"
-
-extern "C" void setup() {
-  Testbench::Setup();
-}
-
-extern "C" void loop() {
-  Testbench::Loop();
-}
-
-#else
-
 #include "TaskHandler.h"
 
 namespace {
@@ -40,5 +26,3 @@ extern "C" void setup() {
 extern "C" void loop() {
   // The scheduler should take over; loop stays as a low-priority idle fallback.
 }
-
-#endif

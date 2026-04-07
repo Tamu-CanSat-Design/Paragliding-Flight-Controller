@@ -3,8 +3,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <cmath>
-#include <FreeRTOS.h>
-#include <task.h>
 
 namespace {
 // Local register map + scaling constants live here to keep the driver readable.
@@ -138,6 +136,11 @@ bool IMU::Initialize() {
     gyroBias_ = {};
     magBias_ = {};
     initialized_ = false;
+    calibrationInProgress_ = false;
+    calibrationAttemptCount_ = 0;
+    calibrationSampleCount_ = 0;
+    calibrationAccelSum_ = {};
+    calibrationGyroSum_ = {};
 
     // IMU uses I2C for both chips; keep setup centralized here for now.
     imuDevice_.wire().begin();
@@ -276,50 +279,59 @@ void IMU::Calibrate() {
     }
 
     // Bias calibration assumes the device is stationary.
-    constexpr int kSamples = 200;
-    Common::Vector3 accelSum{};
-    Common::Vector3 gyroSum{};
-    int sampleCount = 0;
+    calibrationInProgress_ = true;
+    calibrationAttemptCount_ = 0;
+    calibrationSampleCount_ = 0;
+    calibrationAccelSum_ = {};
+    calibrationGyroSum_ = {};
+}
 
-    for (int i = 0; i < kSamples; ++i) {
-        // Read raw data each iteration; skip samples that fail.
-        RawImuSample imuRaw{};
-        if (!ReadImuRaw(imuDevice_, &imuRaw)) {
-            continue;
-        }
+void IMU::CalibrationStep() {
+    if (!initialized_ || !calibrationInProgress_) {
+        return;
+    }
 
+    // Read raw data each iteration; skip samples that fail.
+    RawImuSample imuRaw{};
+    if (ReadImuRaw(imuDevice_, &imuRaw)) {
         Common::Vector3 accel = ConvertAccel(imuRaw);
         Common::Vector3 gyro = ConvertGyro(imuRaw);
 
-        accelSum.x += accel.x;
-        accelSum.y += accel.y;
-        accelSum.z += accel.z;
+        calibrationAccelSum_.x += accel.x;
+        calibrationAccelSum_.y += accel.y;
+        calibrationAccelSum_.z += accel.z;
 
-        gyroSum.x += gyro.x;
-        gyroSum.y += gyro.y;
-        gyroSum.z += gyro.z;
+        calibrationGyroSum_.x += gyro.x;
+        calibrationGyroSum_.y += gyro.y;
+        calibrationGyroSum_.z += gyro.z;
 
         // Track the number of valid samples used in the average.
-        ++sampleCount;
-        vTaskDelay(pdMS_TO_TICKS(5));
+        ++calibrationSampleCount_;
     }
 
+    ++calibrationAttemptCount_;
+    if (calibrationAttemptCount_ < kCalibrationSamples) {
+        return;
+    }
+
+    calibrationInProgress_ = false;
+
     // Guard against divide-by-zero if all reads failed.
-    if (sampleCount == 0) {
+    if (calibrationSampleCount_ == 0) {
         return;
     }
 
     // Bias is the mean of the stationary readings.
     accelBias_ = Common::Vector3{
-        accelSum.x / sampleCount,
-        accelSum.y / sampleCount,
-        (accelSum.z / sampleCount) - kGravityMps2,
+        calibrationAccelSum_.x / calibrationSampleCount_,
+        calibrationAccelSum_.y / calibrationSampleCount_,
+        (calibrationAccelSum_.z / calibrationSampleCount_) - kGravityMps2,
     };
 
     // Gyro bias should converge near zero for a stationary device.
     gyroBias_ = Common::Vector3{
-        gyroSum.x / sampleCount,
-        gyroSum.y / sampleCount,
-        gyroSum.z / sampleCount,
+        calibrationGyroSum_.x / calibrationSampleCount_,
+        calibrationGyroSum_.y / calibrationSampleCount_,
+        calibrationGyroSum_.z / calibrationSampleCount_,
     };
 }
