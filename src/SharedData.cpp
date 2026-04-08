@@ -44,6 +44,10 @@ namespace SharedData {
     SemaphoreHandle_t gCXFlagMutex = nullptr;
     static StaticSemaphore_t gCXFlagMutexBuffer;
 
+    float missionTime = 0.0f;
+    SemaphoreHandle_t gMissionTimeMutex = nullptr;
+    static StaticSemaphore_t gMissionTimeMutexBuffer;
+
     Common::StateVector gStateVector;
     SemaphoreHandle_t gStateVectorMutex = nullptr;
     static StaticSemaphore_t gStateVectorMutexBuffer;
@@ -71,8 +75,6 @@ namespace SharedData {
     QueueHandle_t gCommandQueue = nullptr;
     
 
-
-
     void InitializeThreadSafeData() {
         gSnapshotMutex = xSemaphoreCreateMutexStatic(&gSnapshotMutexBuffer);
         gFlightStateMutex = xSemaphoreCreateMutexStatic(&gFlightStateMutexBuffer);
@@ -80,6 +82,7 @@ namespace SharedData {
         gStateVectorMutex = xSemaphoreCreateMutexStatic(&gStateVectorMutexBuffer);
         gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
+        gMissionTimeMutex = xSemaphoreCreateMutexStatic(&gMissionTimeMutexBuffer);
 
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);

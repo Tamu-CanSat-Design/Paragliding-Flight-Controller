@@ -175,6 +175,11 @@ namespace Common {
             if(count < N) count++;
         }
 
+        Float operator[](int index) const {
+            const int start = (idx - count + N) % N;
+            return _buffer[(start + index) % N];
+        }
+
         std::optional<Float> average() const {
             if(count == 0) return std::nullopt;
             Float sum = 0;
@@ -186,39 +191,6 @@ namespace Common {
 
         int size() const {
             return count;
-        }
-
-        bool isDescending() const {
-            if(count < 2) return false;
-            int down = 0;
-            for(int i = 1; i < count; i++){
-                float prev = _buffer[(i - 1) % count];
-                float curr = _buffer[i];
-                if(curr < prev) down++;
-            }
-            return down > (count - 1) / 2;
-        }
-
-        bool isAscending() const {
-            if(count < 2) return false;
-            int up = 0;
-            for(int i = 1; i < count; i++){
-                float prev = _buffer[(i - 1) % count];
-                float curr = _buffer[i];
-                if(curr > prev) up++;
-            }
-            return up > (count - 1) / 2;
-        }
-
-        bool isStatic() const {
-            if(count < 2) return false;
-            int flat = 0;
-            for(int i = 1; i < count; i++){
-                float prev = _buffer[(i - 1) % count];
-                float curr = _buffer[i];
-                if(abs(curr - prev) < 0.1f) flat++;
-            }
-            return flat > (count - 1) / 2;
         }
 
         void clear() {

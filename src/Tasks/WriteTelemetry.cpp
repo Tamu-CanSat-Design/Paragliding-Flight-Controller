@@ -9,6 +9,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
     Common::FlightState localFlightState = Common::FlightState::BOOTUP;
     char localCommand[32] = {};
     bool simEnabled = false;
+    float localMissionTime = 0.0f;
     Common::telemetry data;
 
     bool localCXFlag = false;
@@ -17,7 +18,6 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             localCXFlag = true;
         }
         else{
-            localCXFlag = false;
         }
 
 
@@ -43,12 +43,15 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             simEnabled = SharedData::gSimEnabled;
             xSemaphoreGive(SharedData::gSimEnabledMutex);
         }
+        if(xSemaphoreTake(SharedData::gMissionTimeMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            localMissionTime = SharedData::missionTime;
+            xSemaphoreGive(SharedData::gMissionTimeMutex);
+        }
         //Task Notification Receiving
 
 
-
-
-        data.missionTime = millis() / 1000.0f; //
+                    data.missionTime = SharedData::missionTime;
+        data.missionTime = localMissionTime;
         data.Mode = simEnabled ? 'S' : 'N'; // 'S' for simulation mode, 'N' for normal mode
         data.state = localFlightState;
         data.baroAltitude = localSnapshot.barometerData.altitude;

@@ -24,6 +24,9 @@ namespace SharedData {
     extern bool gCXFlag;
     extern SemaphoreHandle_t gCXFlagMutex;
 
+    extern float missionTime;
+    extern SemaphoreHandle_t gMissionTimeMutex;
+
     extern Common::StateVector gStateVector;
     extern SemaphoreHandle_t gStateVectorMutex;
 

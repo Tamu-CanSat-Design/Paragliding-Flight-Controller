@@ -21,21 +21,38 @@ namespace MissionManager {
     bool RecoveryStartedFlag = false;
     float MaxAltitude = 0.0;
 
-    static Window<float, 10> altWindow;
-    static Window<float, 10> vzWindow;
-    static Window<float, 10> accelWindow;
-    static Window<float, 10> gyroWindow;
+    Common::Window<float, 10> altWindow;
+    Common::Window<float, 10> vzWindow;
+    Common::Window<float, 10> accelWindow;
+    Common::Window<float, 10> gyroWindow;
 
     void ST() {
-        // Implement ST command logic
         char* token = strrchr(Command, ',');
         if (!token) return;
         token++;
         if (strncmp(token, "GPS", 3) == 0) {
-            //mission time = gpstime
+            if (xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                if (xSemaphoreTake(SharedData::gMissionTimeMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    SharedData::missionTime = SharedData::gSnapshot.gpsData.time;
+                    xSemaphoreGive(SharedData::gMissionTimeMutex);
+                }
+                xSemaphoreGive(SharedData::gSnapshotMutex);
+            }
         }
         else {
-            // mission time == token
+            int hours = 0;
+            int minutes = 0;
+            int seconds = 0;
+
+            if (sscanf(token, "%d:%d:%d", &hours, &minutes, &seconds) == 3 &&
+                hours >= 0 && hours < 24 &&
+                minutes >= 0 && minutes < 60 &&
+                seconds >= 0 && seconds < 60) {
+                if (xSemaphoreTake(SharedData::gMissionTimeMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    SharedData::missionTime = static_cast<float>(hours * 3600 + minutes * 60 + seconds);
+                    xSemaphoreGive(SharedData::gMissionTimeMutex);
+                }
+            }
         }
     }
 
@@ -57,7 +74,7 @@ namespace MissionManager {
         token++;
         float pressure = strtof(token, nullptr) / 100.0f;
         if (pressure <= 0.0f) return;
-        float altitude = 44330.0f * (1.0f - powf(pressure / /* ground pressure */, 0.1903f));
+        float altitude = 44330.0f * (1.0f - powf(pressure / 101, 0.1903f));
         altWindow.push(altitude);
     }
 
@@ -72,7 +89,7 @@ namespace MissionManager {
     }
 
     void EGREL() {
-        EGRELFlag = true;
+        EGRELFlag = !EGRELFlag;
     }
 
     void LDAR() {
@@ -80,7 +97,41 @@ namespace MissionManager {
     }
 
     
+    bool isDescending(const Common::Window<float, 10>& window) {
+        int count = window.size();
+        if(count < 2) return false;
+        int down = 0;
+        for(int i = 1; i < count; i++){
+            float prev = window[i - 1];
+            float curr = window[i];
+            if(curr < prev) down++;
+        }
+        return down > (count - 1) / 2;
+    }
 
+    bool isAscending(const Common::Window<float, 10>& window) {
+        int count = window.size();
+        if(count < 2) return false;
+        int up = 0;
+        for(int i = 1; i < count; i++){
+            float prev = window[i - 1];
+            float curr = window[i];
+            if(curr > prev) up++;
+        }
+        return up > (count - 1) / 2;
+    }
+
+    bool isStatic(const Common::Window<float, 10>& window) {
+        int count = window.size();
+        if(count < 2) return false;
+        int flat = 0;
+        for(int i = 1; i < count; i++){
+            float prev = window[i - 1];
+            float curr = window[i];
+            if(std::fabs(curr - prev) < 0.1f) flat++;
+        }
+        return flat > (count - 1) / 2;
+    }
   
 
 
@@ -105,7 +156,7 @@ namespace MissionManager {
                     }
                     break;
                 case Common::FlightState::ASCENT:
-                    if(ekfState.vz < 0.0f && sensorSnapshot.barometerData.altitude > 10.0f && altWindow.isDescending()) { // Using a sliding window, make sure altitude starts decreasing
+                    if(ekfState.vz < 0.0f && sensorSnapshot.barometerData.altitude > 10.0f && isDescending(altWindow)) { // Using a sliding window, make sure altitude starts decreasing
                         return Common::FlightState::DESCENT;
                     }
                     if (sensorSnapshot.barometerData.altitude > MaxAltitude) {
@@ -115,7 +166,7 @@ namespace MissionManager {
                 case Common::FlightState::DESCENT:
                     if(sensorSnapshot.barometerData.altitude < 10.0f) { //store the max altitude, if 80% of max altitude is reached, trigger payload release
                         //check with barometer sliding window and with extended kalman filter altitude (ekfstate.z)
-                        if (ekfState.z * 0.8 <= MaxAltitude && sensorSnapshot.barometerData.altitude < MaxAltitude * 0.8) {
+                        if (ekfState.z * 0.8 <= MaxAltitude) {
                             return Common::FlightState::PAYLOAD_RELEASE;
                         }
                     }
@@ -128,7 +179,7 @@ namespace MissionManager {
                     gyroWindow.push(sqrtf(sensorSnapshot.imuData.gyroVel.x * sensorSnapshot.imuData.gyroVel.x +
                                         sensorSnapshot.imuData.gyroVel.y * sensorSnapshot.imuData.gyroVel.y +
                                         sensorSnapshot.imuData.gyroVel.z * sensorSnapshot.imuData.gyroVel.z));
-                    if (accelWindow.isStatic() && gyroWindow.isStatic()) {
+                    if (isStatic(accelWindow) && isStatic(gyroWindow)) {
                         return Common::FlightState::RECOVERY;
                     }
                     break;
@@ -141,7 +192,49 @@ namespace MissionManager {
             }
         }
         else{
-            //idk
+            altWindow.push(sensorSnapshot.barometerData.altitude);
+            vzWindow.push(ekfState.vz);
+            switch(currentState){
+                case Common::FlightState::BOOTUP:
+                    if(ekfState.vz > 1.0f) {
+                        return Common::FlightState::ASCENT;
+                    }
+                    break;
+                case Common::FlightState::ASCENT:
+                    if(ekfState.vz < 0.0f && sensorSnapshot.barometerData.altitude > 10.0f && isDescending(altWindow)) { // Using a sliding window, make sure altitude starts decreasing
+                        return Common::FlightState::DESCENT;
+                    }
+                    if (sensorSnapshot.barometerData.altitude > MaxAltitude) {
+                        MaxAltitude = sensorSnapshot.barometerData.altitude;
+                    }
+                    break;
+                case Common::FlightState::DESCENT:
+                    if(sensorSnapshot.barometerData.altitude < 10.0f) { //store the max altitude, if 80% of max altitude is reached, trigger payload release
+                        //check with barometer sliding window and with extended kalman filter altitude (ekfstate.z)
+                        if (ekfState.z * 0.8 <= MaxAltitude) {
+                            return Common::FlightState::PAYLOAD_RELEASE;
+                        }
+                    }
+                    break;
+                case Common::FlightState::PAYLOAD_RELEASE:
+                    // Check if sensor data is static (e.g., low acceleration, low gyro rates) for a certain duration to confirm landing
+                    accelWindow.push(sqrtf(sensorSnapshot.imuData.acceleration.x * sensorSnapshot.imuData.acceleration.x +
+                                            sensorSnapshot.imuData.acceleration.y * sensorSnapshot.imuData.acceleration.y +
+                                            sensorSnapshot.imuData.acceleration.z * sensorSnapshot.imuData.acceleration.z));
+                    gyroWindow.push(sqrtf(sensorSnapshot.imuData.gyroVel.x * sensorSnapshot.imuData.gyroVel.x +
+                                        sensorSnapshot.imuData.gyroVel.y * sensorSnapshot.imuData.gyroVel.y +
+                                        sensorSnapshot.imuData.gyroVel.z * sensorSnapshot.imuData.gyroVel.z));
+                    if (isStatic(accelWindow) && isStatic(gyroWindow)) {
+                        return Common::FlightState::RECOVERY;
+                    }
+                    break;
+                case Common::FlightState::RECOVERY:
+                    // Final state, may not transition out of this
+                    break;
+                default:
+                    // Handle unexpected state
+                    break;
+            }
         }
     }
     
