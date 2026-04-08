@@ -1,9 +1,11 @@
 #include "TaskHandler.h"
 #include "MissionManager.h"
+#include <EEPROM.h>
+#include "SharedData.h"
 
-
-
-
+static void PersistFlightState(Common::FlightState state) {
+    EEPROM.update(SharedData::kFlightStateEepromAddr, static_cast<uint8_t>(state));
+}
 
 void Tasks::MissionManagerTask(void* pvParameters){
     
@@ -12,7 +14,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
 
     bool simEnabled = false;
     Common::FlightState prevState;
-    Common::FlightState currentState;
+    Common::FlightState currentState = SharedData::gFlightState;
     MissionManager::AscentStartedFlag = false;
     MissionManager::DescentStartedFlag = false;
     Common::StateVector LocalStateVector = {};
@@ -102,6 +104,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
             case Common::FlightState::ASCENT:
                 if(!MissionManager::AscentStartedFlag) {
                     //write to eeprom
+                    PersistFlightState(Common::FlightState::ASCENT);
                     MissionManager::AscentStartedFlag = true;
                 }
                 
@@ -109,12 +112,14 @@ void Tasks::MissionManagerTask(void* pvParameters){
             case Common::FlightState::DESCENT:
                 if(!MissionManager::DescentStartedFlag) {
                     //write to eeprom
+                    PersistFlightState(Common::FlightState::DESCENT);
                     MissionManager::DescentStartedFlag = true;
                 }
                 break;
             case Common::FlightState::PAYLOAD_RELEASE:
                 if(!MissionManager::PayloadReleaseStartedFlag) {
                     //write to eeprom
+                    PersistFlightState(Common::FlightState::PAYLOAD_RELEASE);
                     MissionManager::PayloadReleaseStartedFlag = true;
                 }
                 // Egg drop logic
@@ -122,6 +127,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
             case Common::FlightState::RECOVERY:
                 if(!MissionManager::RecoveryStartedFlag) {
                     //write to eeprom
+                    PersistFlightState(Common::FlightState::RECOVERY);
                     //start audio beacon
                     MissionManager::RecoveryStartedFlag = true;
                 }

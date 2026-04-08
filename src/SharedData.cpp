@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "SharedData.h"
+#include <EEPROM.h>
 
 namespace{
     constexpr UBaseType_t BAROMETERQUEUEDEPTH = 10;
@@ -92,7 +93,12 @@ namespace SharedData {
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
 
-        gFlightState = Common::FlightState::BOOTUP;
+        uint8_t raw = EEPROM.read(SharedData::kFlightStateEepromAddr);
+        if (raw <= static_cast<uint8_t>(Common::FlightState::RECOVERY)) {
+            gFlightState = static_cast<Common::FlightState>(raw);
+        } else {
+            gFlightState = Common::FlightState::BOOTUP;
+        }
         gSimEnabled = false;
         gCXFlag = false;
         memset(gCommand, 0, sizeof(gCommand));

@@ -11,6 +11,8 @@
 namespace SharedData {
 // Shared Data structures and Mutexes
 
+    inline constexpr int kFlightStateEepromAddr = 0;
+
     // Shared sensor snapshot and its protecting mutex sent to telemetry
     extern Common::SensorSnapshot gSnapshot;
     extern SemaphoreHandle_t gSnapshotMutex;

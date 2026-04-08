@@ -18,6 +18,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             localCXFlag = true;
         }
         else{
+            localCXFlag = false;
         }
 
 
@@ -50,8 +51,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         //Task Notification Receiving
 
 
-                    data.missionTime = SharedData::missionTime;
-        data.missionTime = localMissionTime;
+        data.missionTime = SharedData::missionTime;
         data.Mode = simEnabled ? 'S' : 'N'; // 'S' for simulation mode, 'N' for normal mode
         data.state = localFlightState;
         data.baroAltitude = localSnapshot.barometerData.altitude;
