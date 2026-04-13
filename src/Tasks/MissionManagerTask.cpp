@@ -6,13 +6,12 @@
 
 
 void Tasks::MissionManagerTask(void* pvParameters){
-    
+    (void)pvParameters; // Avoid unused parameter warning
     //unlock mutex to read state
     
 
     bool simEnabled = false;
-    Common::FlightState prevState;
-    Common::FlightState currentState;
+    Common::FlightState currentState = Common::FlightState::BOOTUP;
     MissionManager::AscentStartedFlag = false;
     MissionManager::DescentStartedFlag = false;
     Common::StateVector LocalStateVector = {};

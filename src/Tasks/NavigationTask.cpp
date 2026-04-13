@@ -35,6 +35,9 @@ void Tasks::NavigationTask(void* pvParameters) {
         }
         else{} 
 
+        while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImu, 0) == pdTRUE) {
+            ekf.Predict(latestImu);
+        }
         while(xQueueReceive(SharedData::gI2C1BarometerQueue, &latestBaro, 0) == pdTRUE) {
             ekf.UpdateBarometer(latestBaro);
         }
@@ -44,15 +47,18 @@ void Tasks::NavigationTask(void* pvParameters) {
         while(xQueueReceive(SharedData::gI2C1LidarQueue, &latestLidar, 0) == pdTRUE) {
             ekf.UpdateLidar(latestLidar);
         }
-        while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImu, 0) == pdTRUE) {
-            ekf.UpdateIMU(latestImu);
-        }
         while(xQueueReceive(SharedData::gI2C2MagQueue, &latestMag, 0) == pdTRUE) {
             ekf.UpdateMagnetometer(latestMag);
         }
     //EKF Predict
     //unlock flight state mutex and read current flight state for adaptive noise tuning
-        ekf.Predict();
+        
+
+
+        if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            // SharedData::gStateVector = ekf.GetStateVector();
+            xSemaphoreGive(SharedData::gStateVectorMutex);
+        }
     
     //EKF Update when each queue notification is received
     //Write output to the shared state vector with a timestamp

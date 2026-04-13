@@ -25,6 +25,8 @@ namespace Common {
     
 
 
+
+
     inline constexpr const char LOG_FILE[12] = "datalog.csv";
 
     enum class FlightState {
@@ -92,9 +94,6 @@ namespace Common {
         float q1;
         float q2;
         float q3;
-        float q4;
-        float accelBias;
-        float gyroBias;
     };
 
     struct Vector3{
@@ -241,7 +240,7 @@ namespace Common {
             "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
             "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
             "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f,"
-            "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f,AccelBias:%f,GyroBias:%f",
+            "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f",
             TEAM_ID,
             data.missionTime,
             data.packetCount,
@@ -267,18 +266,16 @@ namespace Common {
             data.magnetometer.magX,
             data.magnetometer.magY,
             data.magnetometer.magZ,
-            data.stateVector.q0,
-            data.stateVector.q1,
-            data.stateVector.q2,
-            data.stateVector.q3,
             data.stateVector.x,
             data.stateVector.y,
             data.stateVector.z,
             data.stateVector.vx,
             data.stateVector.vy,
             data.stateVector.vz,
-            data.stateVector.accelBias,
-            data.stateVector.gyroBias
+            data.stateVector.q0,
+            data.stateVector.q1,
+            data.stateVector.q2,
+            data.stateVector.q3
         );
     }
 
