@@ -10,7 +10,7 @@ namespace GNC{
 
 
     
-    BLA::Matrix<3,1> RotationBodyToInertial(const BLA::Matrix<4,1> q, const BLA::Matrix<3,1> v_body){
+    BLA::Matrix<3,1> RotationBodyToInertial(const BLA::Matrix<4,1>& q, const BLA::Matrix<3,1>& v_body){
 
         float q0 = q(0);
         float q1 = q(1);
@@ -26,7 +26,7 @@ namespace GNC{
         
     }
     
-    BLA::Matrix<3,1> RotationInertialToBody(const BLA::Matrix<4,1> q, const BLA::Matrix<3,1> v_inertial){
+    BLA::Matrix<3,1> RotationInertialToBody(const BLA::Matrix<4,1>& q, const BLA::Matrix<3,1>& v_inertial){
 
         float q0 = q(0);
         float q1 = q(1);
@@ -44,7 +44,7 @@ namespace GNC{
 
 
 
-    BLA::Matrix<3,1> NMEAToNED(BLA::Matrix<3,1> GPSVector){
+    BLA::Matrix<3,1> NMEAToNED(const BLA::Matrix<3,1>& GPSVector){
         float latitude = GPSVector(0);
         float longitude = GPSVector(1);
         float altitude = GPSVector(2);
@@ -69,7 +69,7 @@ namespace GNC{
 
 
 
-    BLA::Matrix<4,1> QuaternionMultiplication(const BLA::Matrix<4,1> q, const BLA::Matrix<4,1> r){
+    BLA::Matrix<4,1> QuaternionMultiplication(const BLA::Matrix<4,1>& q, const BLA::Matrix<4,1>& r){
         float q0 = q(0);
         float q1 = q(1);
         float q2 = q(2);
@@ -86,17 +86,17 @@ namespace GNC{
         result(2) = r0*q2 + r1*q3 + r2*q0 - r3*q1;
         result(3) = r0*q3 - r1*q2 - r2*q1 + r3*q0;
 
-        return result;
+        return result * 1.0f;
 
         
     }
 
-    BLA::Matrix<3,3> SkewSymmetric(const BLA::Matrix<3,1> v){
+    BLA::Matrix<3,3> SkewSymmetric(const BLA::Matrix<3,1>& v){
         BLA::Matrix<3,3> result;
         result(0,0) = 0;       result(0,1) = -v(2);   result(0,2) = v(1);
         result(1,0) = v(2);    result(1,1) = 0;       result(1,2) = -v(0);
         result(2,0) = -v(1);   result(2,1) = v(0);    result(2,2) = 0;
-        return result;
+        return result * 1.0f;
     }
 }
 

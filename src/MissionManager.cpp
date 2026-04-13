@@ -99,7 +99,7 @@ namespace MissionManager {
             altWindow.push(ekfState.z);
             vzWindow.push(ekfState.vz);
             switch(currentState){
-                case Common::FlightState::BOOTUP:
+                case Common::FlightState::STANDBY:
                     if(ekfState.vz > 1.0f) {
                         return Common::FlightState::ASCENT;
                     }

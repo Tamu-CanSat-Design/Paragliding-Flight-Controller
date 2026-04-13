@@ -6,7 +6,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
     Common::SensorSnapshot localSnapshot = {};
     Common::StateVector localStateVector = {};
-    Common::FlightState localFlightState = Common::FlightState::BOOTUP;
+    Common::FlightState localFlightState = Common::FlightState::STANDBY;
     char localCommand[32] = {};
     bool simEnabled = false;
     Common::telemetry data;

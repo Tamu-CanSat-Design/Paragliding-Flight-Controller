@@ -11,7 +11,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
     
 
     bool simEnabled = false;
-    Common::FlightState currentState = Common::FlightState::BOOTUP;
+    Common::FlightState currentState = Common::FlightState::STANDBY;
     MissionManager::AscentStartedFlag = false;
     MissionManager::DescentStartedFlag = false;
     Common::StateVector LocalStateVector = {};
@@ -95,7 +95,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
 
 
         switch(currentState){
-            case Common::FlightState::BOOTUP:
+            case Common::FlightState::STANDBY:
                 
                 break;
             case Common::FlightState::ASCENT:

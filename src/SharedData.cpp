@@ -89,7 +89,7 @@ namespace SharedData {
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
 
-        gFlightState = Common::FlightState::BOOTUP;
+        gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
         gCXFlag = false;
         memset(gCommand, 0, sizeof(gCommand));

@@ -30,7 +30,6 @@ namespace Common {
     inline constexpr const char LOG_FILE[12] = "datalog.csv";
 
     enum class FlightState {
-        BOOTUP = 0,
         STANDBY = 1,
         ASCENT = 2,
         DESCENT = 3,
@@ -38,7 +37,6 @@ namespace Common {
         RECOVERY = 5
     };
     inline static const char* const FlightStateNames[] = {
-        "BOOTUP",
         "STANDBY",
         "ASCENT",
         "DESCENT",
@@ -48,7 +46,7 @@ namespace Common {
 
     
     inline const char* GetFlightStateName(FlightState state) {
-        if (state >= FlightState::BOOTUP && state <= FlightState::RECOVERY) {
+        if (state >= FlightState::STANDBY && state <= FlightState::RECOVERY) {
             return FlightStateNames[static_cast<int>(state)];
         }
         return "UNKNOWN";

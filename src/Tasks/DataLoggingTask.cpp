@@ -31,7 +31,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
 
     Common::SensorSnapshot localSensorSnapshot = {};
     Common::StateVector localStateVector = {};
-    Common::FlightState localFlightState = Common::FlightState::BOOTUP;
+    Common::FlightState localFlightState = Common::FlightState::STANDBY;
     bool simEnabled = false;
     char lineBuf[1024]; // Buffer for one line of CSV
 

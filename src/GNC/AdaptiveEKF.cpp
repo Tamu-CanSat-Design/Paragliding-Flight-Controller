@@ -2,16 +2,16 @@
 
 AdaptiveEKF::AdaptiveEKF(){
         stateVector.Fill(0.0);
-        processNoiseCovariance.Fill(0.1); // Initial process noise
-        // measurementNoiseCovariance.Fill(0.1); // Initial measurement noise
+        processNoiseCovariance.Fill(0.1f); // Initial process noise
+        // measurementNoiseCovariance.Fill(0.1f); // Initial measurement noise
         
         // Constant Barometer Jacobian (linear measurement)
         barometerMeasurementJacobian.Fill(0.0); 
-        barometerMeasurementJacobian(0, 2) = -1.0; // Barometer measures altitude (z position)
+        barometerMeasurementJacobian(0, 2) = -1.0f; // Barometer measures altitude (z position)
 
         // Constant GPS Jacobian (linear measurement)
         gpsMeasurementJacobian.Fill(0.0); 
-        gpsMeasurementJacobian(0, 0) = 1.0; gpsMeasurementJacobian(1, 1) = 1.0; gpsMeasurementJacobian(2, 2) = 1.0; // GPS measures x, y, z position
+        gpsMeasurementJacobian(0, 0) = 1.0f; gpsMeasurementJacobian(1, 1) = 1.0f; gpsMeasurementJacobian(2, 2) = 1.0f; // GPS measures x, y, z position
 
         hprProcessJacobian.Fill(0.0);
         paragliderProcessJacobian.Fill(0.0);
@@ -58,6 +58,8 @@ void AdaptiveEKF::Predict(const Common::IMUData& imuData){
     const BLA::Matrix<3,1> bodyAccelerationBias = -GNC::RotationBodyToInertial(stateVector.Submatrix<4,1>(6,0), {1.0f, 1.0f, 1.0f});
     const BLA::Matrix<3,3> gyroSkew = -GNC::SkewSymmetric({wx, wy, wz});
     switch(currentFlightState){
+        case Common::FlightState::STANDBY:
+            return;
         case Common::FlightState::ASCENT:
             // Strapdown IMU EOMs
 
@@ -96,11 +98,13 @@ void AdaptiveEKF::Predict(const Common::IMUData& imuData){
         case Common::FlightState::PAYLOAD_RELEASE:
             // Implement payload release-specific prediction logic using imuData
             break;
+        case Common::FlightState::RECOVERY:
+            return;
     }
 
     const BLA::Matrix<15,15> Phi = GNC::kIdentity + hprProcessJacobian; // multiply by dt // State transition matrix for discrete-time EKF, approximated using first-order Taylor expansion
-    const BLA::Matrix<15,15> Qd = processNoiseCovariance; // multiply by dt// Discrete process noise covariance, can be approximated as continuous process noise covariance multiplied by dt for small dt
-    errorStateCovariance = Phi * errorStateCovariance * BLA::MatrixTranspose(Phi) + processNoiseCovariance;
+    const BLA::Matrix<15,15>& Qd = processNoiseCovariance; // multiply by dt// Discrete process noise covariance, can be approximated as continuous process noise covariance multiplied by dt for small dt
+    errorStateCovariance = Phi * errorStateCovariance * BLA::MatrixTranspose(Phi) + Qd;
 
 
 }
@@ -120,8 +124,7 @@ void AdaptiveEKF::UpdateEKFMeasurement(const BLA::Matrix<MEAS,15>& H, const BLA:
     InjectMultiplicativeQuaternionCorrection(KalmanGain * y);
 
     // stateCovariance = (I_n - Kalman Gain * H) * stateCovariance * (I_n - Kalman Gain * H)^T + Kalman Gain * R * Kalman Gain^T
-    BLA::Matrix<15,15> IKH = GNC::kIdentity;
-    IKH -= KalmanGain * H;
+    BLA::Matrix<15,15> IKH = GNC::kIdentity - KalmanGain * H;
     errorStateCovariance = IKH * errorStateCovariance * BLA::MatrixTranspose(IKH) + KalmanGain * R * BLA::MatrixTranspose(KalmanGain);
    
 }
@@ -133,9 +136,9 @@ void AdaptiveEKF::InjectMultiplicativeQuaternionCorrection(const BLA::Matrix<15,
 
     //Quaternion states are updated using multiplicative correction to maintain unit norm constraint
     const float dq0 = 1.0f;
-    const float dq1 = 0.5 * dx(6);
-    const float dq2 = 0.5 * dx(7);
-    const float dq3 = 0.5 * dx(8);
+    const float dq1 = 0.5f * dx(6);
+    const float dq2 = 0.5f * dx(7);
+    const float dq3 = 0.5f * dx(8);
 
     
 
@@ -163,21 +166,23 @@ void AdaptiveEKF::InjectMultiplicativeQuaternionCorrection(const BLA::Matrix<15,
 void AdaptiveEKF::SetProcessNoiseCovariance() {
 
         if(currentFlightState == Common::FlightState::ASCENT) {
-            processNoiseCovariance.Fill(0.1); // 
+            processNoiseCovariance.Fill(0.1f); // 
 
 
         } else if (currentFlightState == Common::FlightState::DESCENT) {
-            processNoiseCovariance.Fill(0.5); // Example value for descent
+            processNoiseCovariance.Fill(0.5f); // Example value for descent
 
 
         } else if(currentFlightState == Common::FlightState::PAYLOAD_RELEASE) {
-            processNoiseCovariance.Fill(0.2); // Default value for other states
+            processNoiseCovariance.Fill(0.2f); // Default value for other states
         }
 }
 
 void AdaptiveEKF::SetMeasurementNoiseCovariance(){
 
     switch(currentFlightState){ // Fix this
+        case Common::FlightState::STANDBY:
+            return;
         case Common::FlightState::ASCENT:
             // measurementNoiseCovariance.Fill(0.1); // Example value for ascent
             break;
@@ -188,9 +193,7 @@ void AdaptiveEKF::SetMeasurementNoiseCovariance(){
             // measurementNoiseCovariance.Fill(0.2); // Example value for payload release
             break;
         case Common::FlightState::RECOVERY:
-            // On ground, GPS and magnetometer measurements may be more reliable, so we can reduce their measurement noise covariance
-            break;
-
+            return;
     }
 }
 

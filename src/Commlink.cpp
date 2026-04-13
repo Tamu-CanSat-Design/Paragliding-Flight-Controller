@@ -25,13 +25,13 @@ void Commlink::ReadGroundRadio(char* buffer, int length){
     }
 
     while (GetXbeeSerial().available() > 0) {
-        char c = GetXbeeSerial().read();
+        int c = GetXbeeSerial().read();
         if (c == '\n') {
             buffer[index] = '\0';
             index = 0;
         } else {
             if (index < length - 1) {
-                buffer[index++] = c;
+                buffer[index++] = static_cast<char>(c);
             } else {
                 index = 0;
                 return;
