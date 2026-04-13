@@ -21,10 +21,10 @@ namespace MissionManager {
     bool RecoveryStartedFlag = false;
     float MaxAltitude = 0.0;
 
-    static Common::Window<float, 10> altWindow;
-    static Common::Window<float, 10> vzWindow;
-    static Common::Window<float, 10> accelWindow;
-    static Common::Window<float, 10> gyroWindow;
+    static Common::Window<10> altWindow;
+    static Common::Window<10> vzWindow;
+    static Common::Window<10> accelWindow;
+    static Common::Window<10> gyroWindow;
 
     void ST() {
         // Implement ST command logic
@@ -57,7 +57,7 @@ namespace MissionManager {
         token++;
         float pressure = strtof(token, nullptr) / 100.0f;
         if (pressure <= 0.0f) return;
-        float altitude = 44330.0f * (1.0f - powf(pressure / /* ground pressure */, 0.1903f));
+        float altitude = 44330.0f * (1.0f - powf(pressure / 1013.25f, 0.1903f)); //need to change ground pressure with Kyle's value
         altWindow.push(altitude);
     }
 
