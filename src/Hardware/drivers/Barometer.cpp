@@ -66,9 +66,6 @@ constexpr uint8_t kIirFilter = 0x02; // Coefficient 3.
 // Power control: enable press+temp, normal mode for continuous measurements.
 constexpr uint8_t kPwrCtrl = 0x33;   // Press + temp enable, normal mode.
 
-// Reference sea-level pressure for altitude estimate (standard atmosphere).
-constexpr float kSeaLevelPressureHpa = 1013.25f;
-
 // Read an unsigned 16-bit little-endian value from a byte buffer for coefficient unpacking.
 uint16_t ReadU16(const uint8_t* data, size_t index) {
     return static_cast<uint16_t>(data[index])
@@ -149,8 +146,8 @@ Common::BarometerData Barometer::ReadData() {
     const float pressure_pa = CompensatePressure(raw_press);
     // Convert Pa to hPa to match telemetry expectations and existing code.
     data.pressure = pressure_pa * 0.01f;  // Pa -> hPa
-    // Estimate altitude from pressure ratio for approximate height.
-    data.altitude = PressureToAltitude(data.pressure);
+    // Altitude zeroing is owned outside the driver by the sensor publication path.
+    data.altitude = 0.0f;
 
     // Cache and return the latest sample so failures keep the last good data.
     data_ = data;
@@ -325,17 +322,4 @@ float Barometer::CompensatePressure(uint32_t raw_press) {
 
     // Sum all branches to get compensated pressure in Pa.
     return partial_out1 + partial_out2 + partial_data4;
-}
-
-// Convert pressure in hPa to altitude using barometric formula for approximate height.
-float Barometer::PressureToAltitude(float pressure_hpa) {
-    // Guard against invalid pressure to avoid NaNs.
-    if (pressure_hpa <= 0.0f) {
-        return 0.0f;
-    }
-
-    // Compute ratio to sea-level pressure for scale-invariant altitude.
-    const float ratio = pressure_hpa / kSeaLevelPressureHpa;
-    // Compute altitude in meters using standard atmosphere approximation.
-    return 44330.0f * (1.0f - std::pow(ratio, 0.190294957f));
 }

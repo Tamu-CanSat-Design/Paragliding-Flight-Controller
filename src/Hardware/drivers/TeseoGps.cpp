@@ -1,4 +1,4 @@
-#include "Hardware/drivers/TeseoGps.h"
+#include "Hardware/drivers/TeseoGPS.h"
 
 #include <cstdlib>
 #include <cstring>
