@@ -58,8 +58,8 @@ constexpr uint8_t kStatusCmdReady = 1 << 4;
 constexpr uint8_t kOsrPress = 0x03;  // x8 oversampling.
 // Oversampling settings for temperature: adequate for compensation without extra delay.
 constexpr uint8_t kOsrTemp = 0x01;   // x2 oversampling.
-// Output data rate setting: 25 Hz is a balanced rate for flight telemetry.
-constexpr uint8_t kOdr = 0x03;       // 25 Hz output data rate.
+// Output data rate setting: 50 Hz matches the current flight sensor budget.
+constexpr uint8_t kOdr = 0x02;       // 50 Hz output data rate.
 // IIR filter coefficient selection: modest smoothing without too much lag.
 constexpr uint8_t kIirFilter = 0x02; // Coefficient 3.
 

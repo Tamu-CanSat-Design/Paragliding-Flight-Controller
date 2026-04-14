@@ -10,7 +10,7 @@ public:
     AdaptiveEKF();
 
     void Reset();
-    void Predict(const Common::IMUData& imuData);
+    void Predict(const Common::IMUData& imuData, float dt);
     template<int MEAS>
     void UpdateEKFMeasurement(const BLA::Matrix<MEAS,15>& H, const BLA::Matrix<MEAS,1>& y, const BLA::Matrix<MEAS,MEAS>& R);
     void InjectMultiplicativeQuaternionCorrection(const BLA::Matrix<15,1>& dx);

@@ -4,13 +4,32 @@ namespace {
     // This file implements the NavigationTask, which runs the EKF and state estimation logic.
     // It receives sensor data from the I2C bus tasks via queues, updates the EKF, and writes
     // the estimated state to shared memory for use by other tasks (e.g., control, telemetry).
+    //
+    // IMPORTANT: The IMU queue carries FIFO-drained batches, not single samples.
+    // Each batch preserves IMU sample ordering plus reconstructed sample
+    // timestamps at the 416 Hz sensor cadence. The MEKF must therefore step
+    // through each sample in the batch sequentially rather than treating the
+    // whole batch as one combined update.
 
     AdaptiveEKF ekf; // EKF instance (could also be a pointer if dynamic allocation is needed)
-    Common::IMUData       latestImu   = {}; //May put this within the EKF class
+    constexpr float kImuPredictDtSec = IMU::kSamplePeriodSeconds;
+    Common::IMUBatch      latestImuBatch = {};
     Common::MagData      latestMag   = {};
     Common::BarometerData latestBaro  = {};
     Common::GPSData       latestGps   = {};
     Common::LidarData     latestLidar = {};
+    // Keeps the first sample in a new batch time-continuous with the previous batch.
+    uint32_t lastImuTimestampMicros = 0;
+    bool haveLastImuTimestamp = false;
+
+    float TimestampDeltaSeconds(uint32_t earlierMicros, uint32_t laterMicros) {
+        const uint32_t deltaMicros = laterMicros - earlierMicros;
+        if (deltaMicros == 0) {
+            return kImuPredictDtSec;
+        }
+
+        return static_cast<float>(deltaMicros) * 1.0e-6f;
+    }
 }
 
 void Tasks::NavigationTask(void* pvParameters) {
@@ -35,8 +54,25 @@ void Tasks::NavigationTask(void* pvParameters) {
         }
         else{} 
 
-        while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImu, 0) == pdTRUE) {
-            ekf.Predict(latestImu);
+        while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImuBatch, 0) == pdTRUE) {
+            // FIFO transport is batched, but the MEKF still consumes one IMU
+            // predict step per sensor sample in time order.
+            for (uint8_t i = 0; i < latestImuBatch.count; ++i) {
+                float dt = kImuPredictDtSec;
+                if (i > 0) {
+                    dt = TimestampDeltaSeconds(latestImuBatch.samples[i - 1].timestampMicros,
+                                               latestImuBatch.samples[i].timestampMicros);
+                } else if (haveLastImuTimestamp) {
+                    // The first sample in each batch uses the previous batch tail
+                    // so timing stays continuous across FIFO drains.
+                    dt = TimestampDeltaSeconds(lastImuTimestampMicros,
+                                               latestImuBatch.samples[i].timestampMicros);
+                }
+
+                ekf.Predict(latestImuBatch.samples[i].sample, dt);
+                lastImuTimestampMicros = latestImuBatch.samples[i].timestampMicros;
+                haveLastImuTimestamp = true;
+            }
         }
         while(xQueueReceive(SharedData::gI2C1BarometerQueue, &latestBaro, 0) == pdTRUE) {
             ekf.UpdateBarometer(latestBaro);
