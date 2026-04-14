@@ -23,8 +23,8 @@ namespace MissionManager {
 
     static Common::Window<10> altWindow;
     static Common::Window<10> vzWindow;
-    static Common::Window<10> accelWindow;
-    static Common::Window<10> gyroWindow;
+    static Common::Window<30> accelWindow;
+    static Common::Window<30> gyroWindow;
 
     void ST() {
         // Implement ST command logic

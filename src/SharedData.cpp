@@ -3,11 +3,11 @@
 #include "SharedData.h"
 
 namespace{
-    constexpr UBaseType_t BAROMETERQUEUEDEPTH = 10;
+    constexpr UBaseType_t BAROMETERQUEUEDEPTH = 20;
     constexpr UBaseType_t GPSQUEUEDEPTH = 10;
-    constexpr UBaseType_t LIDARQUEUEDEPTH = 10;
-    constexpr UBaseType_t IMUQUEUEDEPTH = 10;
-    constexpr UBaseType_t MAGQUEUEDEPTH = 10;
+    constexpr UBaseType_t LIDARQUEUEDEPTH = 20;
+    constexpr UBaseType_t IMUQUEUEDEPTH = 200;
+    constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
 
@@ -72,7 +72,6 @@ namespace SharedData {
     
 
 
-
     void InitializeThreadSafeData() {
         gSnapshotMutex = xSemaphoreCreateMutexStatic(&gSnapshotMutexBuffer);
         gFlightStateMutex = xSemaphoreCreateMutexStatic(&gFlightStateMutexBuffer);
@@ -93,5 +92,12 @@ namespace SharedData {
         gSimEnabled = false;
         gCXFlag = false;
         memset(gCommand, 0, sizeof(gCommand));
+
+        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex ||
+           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
+            // Handle error: insufficient resources to create mutexes or queues
+            Serial.println("Error initializing shared data mutexes or queues");
+            while (true) {} // Halt execution
+        }
     }
 }

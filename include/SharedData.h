@@ -43,9 +43,6 @@ namespace SharedData {
     //Command queue
     extern QueueHandle_t gCommandQueue;
 
-    // Mutex protecting Serial1 TX (shared by WriteTelemetry and ReadCommand/echo)
-    extern SemaphoreHandle_t gSerialTxMutex;
-
     extern Commlink commlink;
 
     void InitializeThreadSafeData();

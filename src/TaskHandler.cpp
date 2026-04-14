@@ -11,7 +11,7 @@ namespace {
     constexpr uint16_t kNavigationTaskStackDepth = 2048;
     constexpr uint16_t kMissionManagerTaskStackDepth = 2048;
     constexpr uint16_t kGuidanceTaskStackDepth = 2048;
-    constexpr uint16_t kWatchdogTaskStackDepth = 2048;
+    // constexpr uint16_t kWatchdogTaskStackDepth = 2048;
 
 
 
@@ -72,18 +72,13 @@ namespace Tasks
 
 
     void InitializeTasks() {
-        // Initialize all hardware once before tasks start reading.
-        // const bool ok = gHardwareManager.Initialize();
-        // if (!ok) {
-        //     Serial.println("Hardware init failed");
-        // }
+        
 
-        // Create the shared-data mutex before any tasks start.
+        // Create the shared-data before any tasks start.
         SharedData::InitializeThreadSafeData();
 
         // Create Each Task
-
-        xTaskCreateStatic(
+        I2C1BusTaskHandle = xTaskCreateStatic(
             I2C1BusTask, // entry function
             "I2C Task 1", // name
             kI2C1BusTaskStackDepth, // stack size for tasks (words, not bytes)
@@ -91,7 +86,7 @@ namespace Tasks
             kI2C1BusTaskPriority, // priority (higher number means higher priority)
             I2C1BusTaskStack, &I2C1BusTaskBuffer); // task handle
 
-        xTaskCreateStatic(
+        I2C2BusTaskHandle = xTaskCreateStatic(
             I2C2BusTask, 
             "I2C Task 2", 
             kI2C2BusTaskStackDepth, 
@@ -100,7 +95,7 @@ namespace Tasks
             I2C2BusTaskStack, &I2C2BusTaskBuffer);
 
         
-        xTaskCreateStatic(
+        WriteTelemetryTaskHandle = xTaskCreateStatic(
             WriteTelemetryTask, 
             "Write Telemetry", 
             kWriteTelemetryTaskStackDepth, 
@@ -108,7 +103,7 @@ namespace Tasks
             kWriteTelemetryTaskPriority, 
             WriteTelemetryTaskStack, &WriteTelemetryTaskBuffer);
         
-        xTaskCreateStatic(
+        DataLoggingTaskHandle = xTaskCreateStatic(
             DataLoggingTask,
             "Data Logging",
             kDataLoggingTaskStackDepth,
@@ -116,7 +111,7 @@ namespace Tasks
             kDataLoggingTaskPriority, 
             DataLoggingTaskStack, &DataLoggingTaskBuffer);
         
-        xTaskCreateStatic(
+        ReadCommandTaskHandle = xTaskCreateStatic(
             ReadCommandTask,
             "Read Command",
             kReadCommandTaskStackDepth,
@@ -124,7 +119,7 @@ namespace Tasks
             kReadCommandTaskPriority,
             ReadCommandTaskStack, &ReadCommandTaskBuffer);
 
-        xTaskCreateStatic(
+        ControlTaskHandle = xTaskCreateStatic(
             ControlTask,
             "Control Task",
             kControlTaskStackDepth,
@@ -132,7 +127,7 @@ namespace Tasks
             kControlTaskPriority, 
             ControlTaskStack, &ControlTaskBuffer);
 
-        xTaskCreateStatic(
+        NavigationTaskHandle = xTaskCreateStatic(
             NavigationTask,
             "Navigation Task",
             kNavigationTaskStackDepth,
@@ -140,7 +135,7 @@ namespace Tasks
             kNavigationTaskPriority, 
             NavigationTaskStack, &NavigationTaskBuffer);
         
-        xTaskCreateStatic(
+        GuidanceTaskHandle = xTaskCreateStatic(
             GuidanceTask,
             "Guidance Task",
             kGuidanceTaskStackDepth,
@@ -148,7 +143,7 @@ namespace Tasks
             kGuidanceTaskPriority, 
             GuidanceTaskStack, &GuidanceTaskBuffer);
 
-        xTaskCreateStatic(
+        MissionManagerTaskHandle = xTaskCreateStatic(
             MissionManagerTask,
             "Mission Manager Task",
             kMissionManagerTaskStackDepth,

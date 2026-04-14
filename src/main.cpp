@@ -11,8 +11,9 @@ void setup() {
   }
 
   // Create tasks and initialize hardware before starting the scheduler.
+  
   Tasks::InitializeTasks();
-
+  
 
   
   // Start the scheduler if it is not already running.

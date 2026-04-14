@@ -33,7 +33,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 LocalSensorSnapshot = SharedData::gSnapshot;
                 xSemaphoreGive(SharedData::gSnapshotMutex);
             }
-            if(MissionManager::Command[0] == 'CX') {
+            if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'X' && MissionManager::Command[2] == '\0') {
                 if(!MissionManager::CXFlag) {
                     xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to send CX packet immediately
                     MissionManager::CXFlag = true;
@@ -42,10 +42,10 @@ void Tasks::MissionManagerTask(void* pvParameters){
                     xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to suspend until next CX command
                 }   
             }
-            else if(MissionManager::Command[0] == 'ST') {
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T' && MissionManager::Command[2] == '\0') {
                 MissionManager::ST();
             }
-            else if(MissionManager::Command[0] == 'SIM') {
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == '\0') {
                 if(!simEnabled){
                     simEnabled = true;
                     xTaskNotifyGive(Tasks::NavigationTaskHandle);
@@ -57,21 +57,26 @@ void Tasks::MissionManagerTask(void* pvParameters){
                     simEnabled = false;
                 }
             }
-            else if(MissionManager::Command[0] == 'SIMP') {
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == 'P' && MissionManager::Command[4] == '\0') {
                 //Altitude calculated from pressure
             }
-            else if(MissionManager::Command[0] == 'CAL') {
+            else if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'A' && MissionManager::Command[2] == 'L' && MissionManager::Command[3] == '\0') {
                 //Calibrate altitude to be 0 by uploading current pressure and writing to EEPROM
             }
-            else if(MissionManager::Command == "MEC,EGREL") {
+            else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' && MissionManager::Command[3] == ',' 
+                && MissionManager::Command[4] == 'E' && MissionManager::Command[5] == 'G' && MissionManager::Command[6] == 'R' && MissionManager::Command[7] == 'E' 
+                && MissionManager::Command[8] == 'L' && MissionManager::Command[9] == '\0') {
                 //Trigger servo for egg release mechanism
                 Hardware::EggInstrumentServo_.SetAngle(15);
             }
-            else if(MissionManager::Command == "MEC,LDAR") {
+            else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' && MissionManager::Command[3] == ',' 
+                && MissionManager::Command[4] == 'L' && MissionManager::Command[5] == 'D' && MissionManager::Command[6] == 'A' && MissionManager::Command[7] == 'R' 
+                && MissionManager::Command[8] == '\0') {
                 //Trigger servo for lidar/camera release mechanism
                 Hardware::EggInstrumentServo_.SetAngle(20);
             }
-            else if(MissionManager::Command == "MEC,AUD") {
+            else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' && MissionManager::Command[3] == ',' 
+                && MissionManager::Command[4] == 'A' && MissionManager::Command[5] == 'U' && MissionManager::Command[6] == 'D' && MissionManager::Command[7] == '\0') {
                 //Trigger audio playback for recovery
                 if(!MissionManager::AUDFlag) {
                     Hardware::audioBeacon_.BuzzerOn();
@@ -133,6 +138,6 @@ void Tasks::MissionManagerTask(void* pvParameters){
         }
 
 
-                
+       vTaskDelay(pdMS_TO_TICKS(100)); // Adjust delay as needed         
     }
 }
