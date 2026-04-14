@@ -61,7 +61,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
 
         // 4) Format the CSV line (no mutex held)
         Common::telemetry dataToLog = {};
-        dataToLog.missionTime = millis() / 1000.0f; //
+        dataToLog.missionTime = static_cast<float>(millis()) * 0.001f;
         dataToLog.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'F' for flight mode
         dataToLog.state = localFlightState;
         dataToLog.baroAltitude = localSensorSnapshot.barometerData.altitude;

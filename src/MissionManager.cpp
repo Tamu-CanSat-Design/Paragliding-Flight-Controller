@@ -1,69 +1,107 @@
 #include "MissionManager.h"
+
 #include "SharedData.h"
+#include "TaskHandler.h"
 
+#include <cmath>
+#include <cstring>
+#include <cstdlib>
 
+namespace {
+    // void SetSharedSimEnabled(bool enabled) {
+    //     if (SharedData::gSimEnabledMutex == nullptr) {
+    //         return;
+    //     }
+
+    //     if (xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+    //         SharedData::gSimEnabled = enabled;
+    //         xSemaphoreGive(SharedData::gSimEnabledMutex);
+    //     }
+    // }
+
+    bool TryGetCurrentBarometerPressure(float* outPressureHpa) {
+        if (outPressureHpa == nullptr || SharedData::gSnapshotMutex == nullptr) {
+            return false;
+        }
+
+        if (xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(10)) != pdTRUE) {
+            return false;
+        }
+
+        const float pressure = SharedData::gSnapshot.barometerData.pressure;
+        xSemaphoreGive(SharedData::gSnapshotMutex);
+
+        if (pressure <= 0.0f) {
+            return false;
+        }
+
+        *outPressureHpa = pressure;
+        return true;
+    }
+}  // namespace
 
 namespace MissionManager {
 
-
-    char Command[32];
+    char Command[Common::COMMAND_BUFFER_LENGTH] = {};
 
     bool simArmed = false;
     bool simEnabled = false;
     bool CXFlag = false;
     bool LDARFlag = false;
     bool EGRELFlag = false;
-    bool AUDFlag = false; 
-    
+    bool AUDFlag = false;
+
     bool AscentStartedFlag = false;
     bool DescentStartedFlag = false;
     bool PayloadReleaseStartedFlag = false;
     bool RecoveryStartedFlag = false;
-    float MaxAltitude = 0.0;
+    float MaxAltitude = 0.0f;
 
-    static Common::Window<10> altWindow;
-    static Common::Window<10> vzWindow;
-    static Common::Window<30> accelWindow;
-    static Common::Window<30> gyroWindow;
+        static Common::Window<10> altWindow;
+        static Common::Window<10> vzWindow;
+        static Common::Window<30> accelWindow;
+        static Common::Window<30> gyroWindow;
 
-    void ST() {
-        // Implement ST command logic
-        char* token = strrchr(Command, ',');
-        if (!token) return;
-        token++;
-        if (strncmp(token, "GPS", 3) == 0) {
-            //mission time = gpstime
-        }
-        else {
-            // mission time == token
-        }
-    }
 
-    void SIM() {
-        char* token = strrchr(Command, ',');
-        if (!token) return;
-        token++;
-        if (strncmp(token, "ENABLE", 6) == 0) { simArmed = true; simEnabled = false; }
-        else if (strncmp(token, "ACTIVATE", 8) == 0) { if (simArmed) simEnabled = true; }
-        else if (strncmp(token, "DISABLE", 7) == 0) { simEnabled = false; simArmed = false; }
-    }
 
-    void SIMP() {
-        // Implement SIMP command logic
-        // Turn pressure into an altitude
-        if (!simEnabled) return;
-        char* token = strrchr(Command, ',');
-        if (!token) return;
-        token++;
-        float pressure = strtof(token, nullptr) / 100.0f;
-        if (pressure <= 0.0f) return;
-        float altitude = 44330.0f * (1.0f - powf(pressure / 1013.25f, 0.1903f)); //need to change ground pressure with Kyle's value
-        altWindow.push(altitude);
-    }
+    // void SIM() {
+    //     const char* token = std::strchr(Command, ',');
+    //     if (token == nullptr) {
+    //         simEnabled = !simEnabled;
+    //         simArmed = simEnabled;
+    //         SetSharedSimEnabled(simEnabled);
+    //         return;
+    //     }
+
+    //     ++token;
+    //     if (std::strcmp(token, "ENABLE") == 0) {
+    //         simArmed = true;
+    //         simEnabled = false;
+    //     } else if (std::strcmp(token, "ACTIVATE") == 0) {
+    //         if (simArmed) {
+    //             simEnabled = true;
+    //         }
+    //     } else if (std::strcmp(token, "DISABLE") == 0) {
+    //         simEnabled = false;
+    //         simArmed = false;
+    //     }
+
+    //     SetSharedSimEnabled(simEnabled);
+    // }
+
+
 
     void CAL() {
-        // Implement CAL command logic
-        //ground pressure
+        float pressureHpa = 0.0f;
+        if (!TryGetCurrentBarometerPressure(&pressureHpa) || SharedData::gReferencePressureMutex == nullptr) {
+            return;
+        }
+
+        if (xSemaphoreTake(SharedData::gReferencePressureMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+            SharedData::gReferencePressureHpa = pressureHpa;
+            xSemaphoreGive(SharedData::gReferencePressureMutex);
+        }
+
         MaxAltitude = 0.0f;
         altWindow.clear();
         vzWindow.clear();
@@ -72,10 +110,12 @@ namespace MissionManager {
     }
 
     void EGREL() {
+        Hardware::EggInstrumentServo_.SetAngle(15);
         EGRELFlag = !EGRELFlag;
     }
 
     void LDAR() {
+        Hardware::EggInstrumentServo_.SetAngle(20);
         LDARFlag = !LDARFlag;
     }
 
@@ -143,9 +183,8 @@ namespace MissionManager {
         else{
             //idk
 
-            //altWindow.push(SimulationModeValues)
+            return currentState;
         }
-    }
-    
-
-};
+        return currentState;
+    }  
+}// namespace MissionManager

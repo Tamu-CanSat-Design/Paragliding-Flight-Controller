@@ -48,7 +48,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
 
 
-        data.missionTime = millis() / 1000.0f; //
+        data.missionTime = static_cast<float>(millis()) * 0.001f;
         data.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'N' for normal mode
         data.state = localFlightState;
         data.baroAltitude = localSnapshot.barometerData.altitude;

@@ -6,7 +6,7 @@ namespace{
     constexpr UBaseType_t BAROMETERQUEUEDEPTH = 20;
     constexpr UBaseType_t GPSQUEUEDEPTH = 10;
     constexpr UBaseType_t LIDARQUEUEDEPTH = 20;
-    constexpr UBaseType_t IMUQUEUEDEPTH = 200;
+    constexpr UBaseType_t IMUQUEUEDEPTH = 50;
     constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
@@ -14,7 +14,7 @@ namespace{
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
     uint8_t gI2C1LidarQueueStorage[LIDARQUEUEDEPTH * sizeof(Common::LidarData)];
-    uint8_t gI2C2IMUQueueStorage[IMUQUEUEDEPTH * sizeof(Common::IMUData)];
+    uint8_t gI2C2IMUQueueStorage[IMUQUEUEDEPTH * sizeof(Common::IMUBatch)];
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C2VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
@@ -43,6 +43,10 @@ namespace SharedData {
     bool gCXFlag = false;
     SemaphoreHandle_t gCXFlagMutex = nullptr;
     static StaticSemaphore_t gCXFlagMutexBuffer;
+
+    float gReferencePressureHpa = 1013.25f;
+    SemaphoreHandle_t gReferencePressureMutex = nullptr;
+    static StaticSemaphore_t gReferencePressureMutexBuffer;
 
     Common::StateVector gStateVector;
     SemaphoreHandle_t gStateVectorMutex = nullptr;
@@ -79,11 +83,13 @@ namespace SharedData {
         gStateVectorMutex = xSemaphoreCreateMutexStatic(&gStateVectorMutexBuffer);
         gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
+        gReferencePressureMutex = xSemaphoreCreateMutexStatic(&gReferencePressureMutexBuffer);
 
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
         gI2C1LidarQueue = xQueueCreateStatic(LIDARQUEUEDEPTH, sizeof(Common::LidarData), gI2C1LidarQueueStorage, &gI2C1LidarQueueBuffer);
-        gI2C2IMUQueue = xQueueCreateStatic(IMUQUEUEDEPTH, sizeof(Common::IMUData), gI2C2IMUQueueStorage, &gI2C2IMUQueueBuffer);
+        // IMU queue now carries FIFO-drained batches instead of one sample per send.
+        gI2C2IMUQueue = xQueueCreateStatic(IMUQUEUEDEPTH, sizeof(Common::IMUBatch), gI2C2IMUQueueStorage, &gI2C2IMUQueueBuffer);
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
@@ -91,9 +97,10 @@ namespace SharedData {
         gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
         gCXFlag = false;
+        gReferencePressureHpa = 1013.25f;
         memset(gCommand, 0, sizeof(gCommand));
 
-        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex ||
+        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex ||
            !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");

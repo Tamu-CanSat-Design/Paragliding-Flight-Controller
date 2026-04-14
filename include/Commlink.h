@@ -9,7 +9,7 @@ class Commlink{
 public:
     void Initialize();
     void WriteGroundRadio(const char* data);
-    void ReadGroundRadio(char* buffer, int length);
+    void ReadGroundRadio(char* buffer, size_t length);
     bool CheckCommand(const char* command);
 
     inline HardwareSerial& GetXbeeSerial() { return Serial1; }

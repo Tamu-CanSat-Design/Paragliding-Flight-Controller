@@ -1,7 +1,7 @@
 #ifndef HARDWARE_SIMULATED_GPS_H
 #define HARDWARE_SIMULATED_GPS_H
 
-#include "interfaces/GPSInterface.h"
+#include "Hardware/interfaces/GPSInterface.h"
 
 class SimulatedGps : public IGPS {
 public:
@@ -9,10 +9,10 @@ public:
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
-    GPSData ReadData() override;
+    Common::GPSData ReadData() override;
 
 private:
-    GPSData data_{};
+    Common::GPSData data_{};
 };
 
 #endif  // HARDWARE_SIMULATED_GPS_H

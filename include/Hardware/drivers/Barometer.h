@@ -39,7 +39,6 @@ private:
     bool ReadRaw(uint32_t* raw_press, uint32_t* raw_temp);
     float CompensateTemperature(uint32_t raw_temp);
     float CompensatePressure(uint32_t raw_press);
-    static float PressureToAltitude(float pressure_hpa);
 
     Common::BarometerData data_{};
     Calibration calib_{};

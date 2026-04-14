@@ -18,7 +18,7 @@ void Commlink::WriteGroundRadio(const char* data){
     GetXbeeSerial().flush();
    
 }
-void Commlink::ReadGroundRadio(char* buffer, int length){
+void Commlink::ReadGroundRadio(char* buffer, size_t length){
 /* If data exists, parse */
     if (!buffer || length <= 1) {
         return;

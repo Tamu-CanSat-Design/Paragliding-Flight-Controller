@@ -8,16 +8,31 @@
 
 class IMU : public IIMU {
 public:
+    struct FifoDiagnostics {
+        uint32_t overrunCount = 0;
+        uint32_t nearFullCount = 0;
+        uint32_t unexpectedTagCount = 0;
+        uint32_t truncatedPairCount = 0;
+    };
+
     static constexpr const char* kSensorName = "LSM6DSR + LIS2MDL";
+    static constexpr float kSamplePeriodSeconds = 1.0f / 416.0f;
+    static constexpr size_t kFifoWatermarkPairs = 4;
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::IMUData ReadData() override;
+    size_t ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples);
+    Common::MagData ReadMagData();
+    FifoDiagnostics GetFifoDiagnostics() const;
+    void ClearFifoDiagnostics();
     void Calibrate() override;
 
 private:
     // Cache of the most recent IMU sample.
     Common::IMUData data_{};
+    Common::MagData magData_{};
+    FifoDiagnostics fifoDiagnostics_{};
     // Biases are computed in Calibrate() and subtracted on each read.
     Common::Vector3 accelBias_{};
     Common::Vector3 gyroBias_{};

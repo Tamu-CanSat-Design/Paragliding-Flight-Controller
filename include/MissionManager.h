@@ -7,7 +7,7 @@
 namespace MissionManager {
 
 
-  extern char Command[32];
+  extern char Command[Common::COMMAND_BUFFER_LENGTH];
 
   
   
@@ -22,10 +22,7 @@ namespace MissionManager {
   extern bool RecoveryStartedFlag;
   extern float MaxAltitude;
 
-  void CX();
-  void ST();
-  void SIM();
-  void SIMP();
+
   void CAL();
   void EGREL();
   void LDAR();
@@ -43,6 +40,5 @@ namespace MissionManager {
 
 
 #endif // __MISSION_MANAGER_H__
-
 
 

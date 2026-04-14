@@ -21,7 +21,10 @@ AdaptiveEKF::AdaptiveEKF(){
 
 
 
-void AdaptiveEKF::Predict(const Common::IMUData& imuData){
+void AdaptiveEKF::Predict(const Common::IMUData& imuData, float dt){
+    if (dt <= 0.0f) {
+        return;
+    }
     const float ax = imuData.acceleration.x - stateVector(10); // Subtract accel bias estimates from state vector
     const float ay = imuData.acceleration.y - stateVector(11);
     const float az = imuData.acceleration.z - stateVector(12);
@@ -30,9 +33,9 @@ void AdaptiveEKF::Predict(const Common::IMUData& imuData){
     const float wz = imuData.gyroVel.z - stateVector(15);
 
     const float dq0 = 1.0f;
-    const float dq1 = 0.5f * wx; //multiply by dt
-    const float dq2 = 0.5f * wy; //multiply by dt
-    const float dq3 = 0.5f * wz; //multiply by dt
+    const float dq1 = 0.5f * wx * dt;
+    const float dq2 = 0.5f * wy * dt;
+    const float dq3 = 0.5f * wz * dt;
 
     const BLA::Matrix<4,1> qNew = GNC::QuaternionMultiplication(stateVector.Submatrix<4,1>(6,0), {dq0, dq1, dq2, dq3});
 
@@ -44,14 +47,14 @@ void AdaptiveEKF::Predict(const Common::IMUData& imuData){
 
     // Velocity integration
     const BLA::Matrix<3,1> NavAcceleration = GNC::RotationBodyToInertial(stateVector.Submatrix<4,1>(6,0), {ax, ay, az}); // Update velocity states in state vector using current quaternion estimate for rotation and accel measurements from IMU
-    stateVector(3) += NavAcceleration(0);
-    stateVector(4) += NavAcceleration(1);
-    stateVector(5) += (NavAcceleration(2) - GNC::STANDARD_GRAVITY);
+    stateVector(3) += NavAcceleration(0) * dt;
+    stateVector(4) += NavAcceleration(1) * dt;
+    stateVector(5) += (NavAcceleration(2) - GNC::STANDARD_GRAVITY) * dt;
 
     // Position integration
-    stateVector(0) += stateVector(3);
-    stateVector(1) += stateVector(4);
-    stateVector(2) += stateVector(5);
+    stateVector(0) += stateVector(3) * dt;
+    stateVector(1) += stateVector(4) * dt;
+    stateVector(2) += stateVector(5) * dt;
 
 
     const BLA::Matrix<3,3> accelSkew = -GNC::SkewSymmetric(GNC::RotationBodyToInertial(stateVector.Submatrix<4,1>(6,0), {ax, ay, az}));
@@ -102,8 +105,8 @@ void AdaptiveEKF::Predict(const Common::IMUData& imuData){
             return;
     }
 
-    const BLA::Matrix<15,15> Phi = GNC::kIdentity + hprProcessJacobian; // multiply by dt // State transition matrix for discrete-time EKF, approximated using first-order Taylor expansion
-    const BLA::Matrix<15,15>& Qd = processNoiseCovariance; // multiply by dt// Discrete process noise covariance, can be approximated as continuous process noise covariance multiplied by dt for small dt
+    const BLA::Matrix<15,15> Phi = GNC::kIdentity + hprProcessJacobian * dt; // State transition matrix for discrete-time EKF
+    const BLA::Matrix<15,15> Qd = processNoiseCovariance * dt; // Discrete process noise covariance
     errorStateCovariance = Phi * errorStateCovariance * BLA::MatrixTranspose(Phi) + Qd;
 
 
@@ -261,6 +264,5 @@ void AdaptiveEKF::SetFlightState(Common::FlightState flightState) {
         SetProcessNoiseCovariance();
         SetMeasurementNoiseCovariance();
 }
-
 
 

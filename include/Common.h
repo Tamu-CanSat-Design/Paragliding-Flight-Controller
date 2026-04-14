@@ -120,6 +120,25 @@ namespace Common {
         Vector3 eulerAngles;
     };
 
+    // One queue message can carry one FIFO drain from the IMU task.
+    inline constexpr size_t IMU_BATCH_MAX_SAMPLES = 4;
+
+    struct TimestampedIMUSample {
+        // Sensor sample reconstructed from one accel+gyro FIFO pair.
+        IMUData sample;
+        // Approximate sample time in MCU microseconds, reconstructed at FIFO drain.
+        uint32_t timestampMicros;
+    };
+
+    struct IMUBatch {
+        // Number of valid entries populated in samples[].
+        uint8_t count;
+        // Nominal IMU cadence used to reconstruct per-sample timestamps.
+        uint32_t nominalSamplePeriodMicros;
+        // Ordered oldest-to-newest samples from a single FIFO drain.
+        TimestampedIMUSample samples[IMU_BATCH_MAX_SAMPLES];
+    };
+
     struct VoltageData {
         float voltage;
         float current;

@@ -14,6 +14,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
     Common::FlightState currentState = Common::FlightState::STANDBY;
     MissionManager::AscentStartedFlag = false;
     MissionManager::DescentStartedFlag = false;
+    
     Common::StateVector LocalStateVector = {};
     Common::SensorSnapshot LocalSensorSnapshot = {};
     
@@ -43,9 +44,10 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 }   
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T' && MissionManager::Command[2] == '\0') {
-                MissionManager::ST();
+                // Set time logic
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == '\0') {
+
                 if(!simEnabled){
                     simEnabled = true;
                     xTaskNotifyGive(Tasks::NavigationTaskHandle);
@@ -93,7 +95,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
         
         currentState = MissionManager::CheckStateChange(currentState, LocalStateVector, LocalSensorSnapshot);
 
-        if(xSemaphoreTake(SharedData::gFlightStateMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        if (xSemaphoreTake(SharedData::gFlightStateMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             SharedData::gFlightState = currentState;
             xSemaphoreGive(SharedData::gFlightStateMutex);
         }
@@ -104,37 +106,25 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 
                 break;
             case Common::FlightState::ASCENT:
-                if(!MissionManager::AscentStartedFlag) {
-                    //write to eeprom
+                if (!MissionManager::AscentStartedFlag) {
                     MissionManager::AscentStartedFlag = true;
                 }
-                
                 break;
             case Common::FlightState::DESCENT:
-                if(!MissionManager::DescentStartedFlag) {
-                    //write to eeprom
+                if (!MissionManager::DescentStartedFlag) {
                     MissionManager::DescentStartedFlag = true;
                 }
                 break;
             case Common::FlightState::PAYLOAD_RELEASE:
-                if(!MissionManager::PayloadReleaseStartedFlag) {
-                    //write to eeprom
+                if (!MissionManager::PayloadReleaseStartedFlag) {
                     MissionManager::PayloadReleaseStartedFlag = true;
                 }
-                // Egg drop logic
                 break;
             case Common::FlightState::RECOVERY:
-                if(!MissionManager::RecoveryStartedFlag) {
-                    //write to eeprom
-                    //start audio beacon
+                if (!MissionManager::RecoveryStartedFlag) {
                     MissionManager::RecoveryStartedFlag = true;
                 }
-
                 break;
-            default:
-                //Error: Unknown State
-                break;
-
         }
 
 
