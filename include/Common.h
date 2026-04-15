@@ -105,11 +105,6 @@ namespace Common {
         float gyroBias;
     };
 
-    struct WindVector{
-        float vx;
-        float vy;
-        float vz;
-    };
 
     struct Vector3{
         float x;

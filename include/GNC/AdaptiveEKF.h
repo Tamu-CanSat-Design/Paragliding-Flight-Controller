@@ -29,6 +29,8 @@ public:
 
     void SetMeasurementNoiseCovariance(Common::FlightState flightState);
 
+    void EstimateWind(Common::Vector3 &WindVector, Common::StateVector StateVector);
+
 
 private:
     BLA::Matrix<16, 1> stateVector; // [x, y, z, vx, vy, vz, q0, q1, q2, q3, accelBiasx, accelBiasy, accelBiasz, gyroBiasx, gyroBiasy, gyroBiasz]

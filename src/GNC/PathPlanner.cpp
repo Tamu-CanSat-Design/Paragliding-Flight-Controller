@@ -2,13 +2,14 @@
 #include "GNC/PathPlanner.h"
 #include "GNC/MatrixUtils.h"
 
+#include <arduino.h>
 #include <BasicLinearAlgebra.h>
 
 PathPlanner::PathPlanner(const Common::StateVector state, const Common::DropZone& drop)
     : Phase(EnergyBleed), Energy{} {
     float dx = drop.x - state.x;
     float dy = drop.y - state.y;
-    Energy.DistStraight = sqrtf(dx * dx + dy * dy);
+    Energy.DistStraight = sqrt(dx * dx + dy * dy);
     Energy.DistReq      = state.z * AverageGlideRatio;
     Energy.EnergySurplus = Energy.DistReq - Energy.DistStraight;
 

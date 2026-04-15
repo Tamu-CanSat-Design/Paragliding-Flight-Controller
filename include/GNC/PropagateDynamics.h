@@ -6,7 +6,7 @@
 
 namespace PropagateDynamics{
     void PropagateLinear(Common::StateVector& NextState, const Common::StateVector CurrentState, const Common::IMUData IMUData);
-    void PropagateQuaternion(Common::StateVector& NextState, const Common::StateVector CurrentState);
+    void PropagateQuaternion(Common::StateVector& NextState, const Common::StateVector CurrentState, float dt);
 
     class RocketDynamics{
 
