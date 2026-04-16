@@ -87,6 +87,7 @@ namespace Common {
         float FinalHeading;
     };
 
+
     struct StateVector{
         float x;
         float y;
@@ -203,8 +204,8 @@ namespace Common {
             if(count < N) count++;
         }
 
-        std::optional<float> average() const {
-            if(count == 0) return std::nullopt;
+        float average() const {
+            if(count == 0) return 0.0f;
             float sum = 0;
             for(int i = 0; i < count; i++){
                 sum += _buffer[i];

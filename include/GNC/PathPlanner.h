@@ -2,11 +2,7 @@
 #define PATHPLANNER_H
 
 #include "Common.h"
-#include "GNC/MatrixUtils.h"
-#include <BasicLinearAlgebra.h>
-
-#define MAX_R 10f
-#define GLIDE_RATIO 5f
+#include "GNC/GNC.h"
 
 //Constraints positions, headings, curvature
 
@@ -25,36 +21,26 @@ class PathPlanner{
             float DistReq{0.0f};
             float DistStraight{0.0f};
             float EnergySurplus{0.0f};
+            float EnergyAval{0.0f};
 
             EnergyValues() = default;
             EnergyValues(float req, float straight, float surplus):
                 DistReq(req), DistStraight(straight), EnergySurplus(surplus) {}
         };        
 
-        BLA::Matrix<13> StateMatrix;
         EnergyValues Energy;
         GliderPhase Phase;
-
-        float AverageGlideRatio;
-
 
 
     public:
 
-        PathPlanner(): Phase(EnergyBleed),Energy{}, AverageGlideRatio(0){
-            StateMatrix.Fill(0);
-        }
+        PathPlanner() : Phase(EnergyBleed), Energy{} {}
 
         PathPlanner(const Common::StateVector state, const Common::DropZone& drop);
 
-        void UpdateState(const Common::StateVector state);
-        void DetermineState();
-        void UpdateGlideRatio();
+        void UpdateState(const Common::StateVector state, const Common::DropZone& drop);
 
-
-        void GenerateWaypoint();
-        void GetWaypoint();
-
+        Common::Vector3 CalculateWaypoint();
 };
 
 #endif // PATHPLANNER_H

@@ -18,6 +18,10 @@ namespace GNC{
     inline constexpr float STANDARD_GRAVITY = 9.80665f; // Standard gravity for NED conversion
     extern BLA::Matrix<3,1> GPSREFERENCE; 
 
+    extern BLA::Matrix<3,1> WindVelocity;
+
+    extern Common::Window<10> GlideRatio;
+
     extern float barometerRef;
 
     BLA::Matrix<3,1> RotationBodyToInertial(const BLA::Matrix<4,1>& q, const BLA::Matrix<3,1>& v_body);
@@ -29,6 +33,9 @@ namespace GNC{
     BLA::Matrix<4,1> QuaternionMultiplication(const BLA::Matrix<4,1>& q1, const BLA::Matrix<4,1>& q2);
 
     BLA::Matrix<3,3> SkewSymmetric(const BLA::Matrix<3,1>& v);
+
+    float wrap_pi(float angle);
+
 }
 
 #endif // __GNC_H__

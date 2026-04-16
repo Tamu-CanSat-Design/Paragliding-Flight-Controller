@@ -3,13 +3,12 @@
 
 
 namespace GNC{
-
+    Common::Window<10> GlideRatio;
     BLA::Matrix<3,1> GPSREFERENCE = {0.0, 0.0, 0.0}; // Placeholder value for GPS reference point (could be set to launch site coordinates)
     float barometerRef = 101325.0; // Placeholder value for barometer reference pressure (could be set to sea level pressure or launch site pressure)
 
+    BLA::Matrix<3,1> WindVelocity = {0.0,0.0,0.0};
 
-
-    
     BLA::Matrix<3,1> RotationBodyToInertial(const BLA::Matrix<4,1>& q, const BLA::Matrix<3,1>& v_body){
 
         float q0 = q(0);
@@ -98,5 +97,17 @@ namespace GNC{
         result(2,0) = -v(1);   result(2,1) = v(0);    result(2,2) = 0;
         return result * 1.0f;
     }
-}
 
+    void StateToMatrix(Common::StateVector StateStruct, BLA::Matrix<14>& StateMatrix){
+
+    };
+
+    float wrap_pi(float angle){
+        angle = fmodf(angle + PI, 2.0f * PI);
+
+        if (angle <= 0.0f)
+        angle += 2.0f * PI;
+
+        return angle - PI;
+    };
+}

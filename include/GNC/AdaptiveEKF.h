@@ -3,8 +3,7 @@
 
 #include "BasicLinearAlgebra.h"
 #include "Common.h"
-
-#include "GNC/MatrixUtils.h"
+#include "GNC/GNC.h"
 
 class AdaptiveEKF {
 public:
@@ -24,10 +23,10 @@ public:
 
     void SetFlightState(Common::FlightState flightState);
 
-    void SetProcessNoiseCovariance(Common::FlightState flightState);
+    void SetProcessNoiseCovariance();
 
 
-    void SetMeasurementNoiseCovariance(Common::FlightState flightState);
+    void SetMeasurementNoiseCovariance();
 
     void EstimateWind(Common::Vector3 &WindVector, Common::StateVector StateVector);
 
