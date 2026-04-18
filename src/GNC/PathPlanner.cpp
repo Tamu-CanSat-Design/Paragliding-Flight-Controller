@@ -1,9 +1,9 @@
 #include "GNC/PathPlanner.h"
 
-PathPlanner::PathPlanner(const Common::StateVector state, const Common::DropZone& drop)
+PathPlanner::PathPlanner(const Common::StateVector state, const Common::Vector3 waypoint)
     : Energy{}, Phase(EnergyBleed) {
-    float dx = drop.x - state.x;
-    float dy = drop.y - state.y;
+    float dx = waypoiny.x - state.x;
+    float dy = waypoint.y - state.y;
     float vx = state.vx, vy = state.vy, vz = state.vz;
     float v_i = sqrt(vx*vx+vy*vy+vz*vz);
     float v_f = 3; //need to define desired final velocity (if any)
@@ -24,9 +24,9 @@ PathPlanner::PathPlanner(const Common::StateVector state, const Common::DropZone
     }
 };
 
-void PathPlanner::UpdateState(const Common::StateVector state, const Common::DropZone& drop){
-    float dx = drop.x - state.x;
-    float dy = drop.y - state.y;
+void PathPlanner::UpdateState(const Common::StateVector state, const Common::Vector3 waypoint){
+    float dx = waypoint.x - state.x;
+    float dy = waypoint.y - state.y;
     float vx = state.vx, vy = state.vy, vz = state.vz;
     float v_i = sqrt(vx*vx+vy*vy+vz*vz);
     float v_f = 3; //need to define desired final velocity (if any)
@@ -45,4 +45,10 @@ void PathPlanner::UpdateState(const Common::StateVector state, const Common::Dro
     } else {
         Phase = Approach;
     }
+};
+
+
+Common::Vector3 PathPlanner::CalculateWaypoint(const Common::DropZone drop){
+    Common::Vector3 waypoint = {drop.x, drop.y,0.0f};
+    return waypoint;
 };

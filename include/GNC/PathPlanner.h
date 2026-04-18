@@ -4,10 +4,6 @@
 #include "Common.h"
 #include "GNC/GNC.h"
 
-//Constraints positions, headings, curvature
-
-
-
 class PathPlanner{
     private:
 
@@ -36,11 +32,11 @@ class PathPlanner{
 
         PathPlanner() : Phase(EnergyBleed), Energy{} {}
 
-        PathPlanner(const Common::StateVector state, const Common::DropZone& drop);
+        PathPlanner(const Common::StateVector state, const Common::Vector3 waypoint);
 
-        void UpdateState(const Common::StateVector state, const Common::DropZone& drop);
+        void UpdateState(const Common::StateVector state, const Common::Vector3 waypoint);
 
-        Common::Vector3 CalculateWaypoint();
+        Common::Vector3 CalculateWaypoint(const Common::DropZone drop);
 };
 
 #endif // PATHPLANNER_H

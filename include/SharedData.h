@@ -46,6 +46,10 @@ namespace SharedData {
     //Command queue
     extern QueueHandle_t gCommandQueue;
 
+    // Depth-1 queue for the latest roll angle setpoint from GuidanceTask.
+    // Write with xQueueOverwrite; read with xQueuePeek (non-blocking).
+    extern QueueHandle_t gRollAngleQueue;
+
     extern Commlink commlink;
 
     void InitializeThreadSafeData();

@@ -1,6 +1,11 @@
 #include "TaskHandler.h"
-// #include "GNC/ControllerMixer.h"
+#include "GNC/Controller.h"
+#include "GNC/ControllerMixer.h"
 
+namespace{
+    float rollAngleSetpoint = 0.0f;
+    
+}
 
 
 void Tasks::ControlTask(void* pvParameters) {
@@ -17,6 +22,8 @@ void Tasks::ControlTask(void* pvParameters) {
             // For example:
             // ControllerMixer::Update(snapshot);
         }
+
+
 
         // Delay to control task frequency (e.g., 50 Hz).
         vTaskDelay(pdMS_TO_TICKS(20));

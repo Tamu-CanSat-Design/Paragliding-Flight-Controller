@@ -10,6 +10,7 @@ namespace{
     constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
+    constexpr UBaseType_t ROLLANGLEQUEUEDEPTH = 1;
 
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
@@ -18,6 +19,7 @@ namespace{
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C2VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
+    uint8_t gRollAngleQueueStorage[ROLLANGLEQUEUEDEPTH * sizeof(float)];
 }
 
 
@@ -73,6 +75,9 @@ namespace SharedData {
 
     static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
+
+    static StaticQueue_t gRollAngleQueueBuffer;
+    QueueHandle_t gRollAngleQueue = nullptr;
     
 
 
@@ -93,6 +98,7 @@ namespace SharedData {
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
+        gRollAngleQueue = xQueueCreateStatic(ROLLANGLEQUEUEDEPTH, sizeof(float), gRollAngleQueueStorage, &gRollAngleQueueBuffer);
 
         gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
@@ -101,7 +107,7 @@ namespace SharedData {
         memset(gCommand, 0, sizeof(gCommand));
 
         if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex ||
-           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
+           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue || !gRollAngleQueue) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");
             while (true) {} // Halt execution

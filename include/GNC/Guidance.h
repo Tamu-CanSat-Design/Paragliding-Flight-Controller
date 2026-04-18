@@ -2,7 +2,6 @@
 #define GUIDANCE_H
 
 #include "Common.h"
-#include "Common.h"
 #include "GNC/GNC.h"
 
 class Guidance{
