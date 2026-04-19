@@ -1,14 +1,15 @@
 #include "TaskHandler.h"
 #include "GNC/Controller.h"
-
+#include "hardware/Hardware.h"
 namespace{
     float rollAngleSetpoint = 0.0f;
     float leftAngleCmd = 0.0f;
     float rightAngleCmd = 0.0f;
     float gyroRollRate = 0.0f;
+    float dt = 0.0f;
     ControllerMixer controller;
     Common::StateVector latestStateVector;
-    float dt = 20.0f;
+    
 }
 
 
@@ -40,6 +41,9 @@ void Tasks::ControlTask(void* pvParameters) {
         }
         else{}
 
+        //TODO: Fix this dt later
+        dt = 20.0f; // Placeholder for time delta in seconds between control updates, adjust as needed
+
         // Update controller gains based on current state
         controller.UpdateGains(latestStateVector);
         controller.CalculateCommands(latestStateVector, rollAngleSetpoint, dt/1000.0f, gyroRollRate); // Convert ms to seconds
@@ -48,8 +52,9 @@ void Tasks::ControlTask(void* pvParameters) {
         rightAngleCmd = controller.GetRightOutput();
 
         //Send commands to servos
+        Hardware::LeftServo_.SetAngle(leftAngleCmd);
+        Hardware::RightServo_.SetAngle(rightAngleCmd);
 
-        // Delay to control task frequency (e.g., 50 Hz).
-        vTaskDelay(pdMS_TO_TICKS(dt));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }

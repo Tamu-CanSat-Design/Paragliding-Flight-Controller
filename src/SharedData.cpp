@@ -1,5 +1,4 @@
 #include <cstring>
-
 #include "SharedData.h"
 
 namespace{

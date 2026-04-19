@@ -6,7 +6,7 @@ namespace{
     Guidance guidance;
     PathPlanner pathPlanner;
     Common::StateVector latestStateVector;
-    Common::DropZone latestDropZone;
+    Common::DropZone latestDropZone = {0.0f, 0.0f, 0.0f}; 
     Common::Vector3 latestWaypoint = {0.0f, 0.0f, 0.0f};
     float rollAngle = 0.0f;
 }
@@ -24,8 +24,7 @@ void Tasks::GuidanceTask(void* pvParameters){
         }
         else{}
 
-        latestDropZone = {0.0f, 0.0f, 0.0f}; 
-
+        
         //Read current drop zone from shared memory (with mutex)
         //Assuming we have a shared variable for the drop zone, which may need to be         
         
@@ -36,7 +35,7 @@ void Tasks::GuidanceTask(void* pvParameters){
         //Run L1 guidance to get desired roll angle based on current state and desired waypoint
         //Ansh can you check this
         rollAngle = guidance.CalculateRoll(latestStateVector, latestWaypoint);
-        if(xSemaphoreTake(SharedData::gRollAngleSetpointMutex, 0) == pdTRUE) {
+        if(xSemaphoreTake(SharedData::gRollAngleSetpointMutex, 0) == pdTRUE) { 
             SharedData::gRollAngleSetpoint = rollAngle;
             xSemaphoreGive(SharedData::gRollAngleSetpointMutex);
         }
@@ -44,6 +43,6 @@ void Tasks::GuidanceTask(void* pvParameters){
 
         //Run guidance algorithms to compute desired trajectory and attitude setpoints
         //Write desired setpoints back to shared memory (with mutex)
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Adjust delay as needed for guidance update rate
+        vTaskDelay(pdMS_TO_TICKS(200)); // Adjust delay as needed for guidance update rate
     }
 }
