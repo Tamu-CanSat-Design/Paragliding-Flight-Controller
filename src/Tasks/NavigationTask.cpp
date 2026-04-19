@@ -10,6 +10,11 @@ namespace {
     // timestamps at the 416 Hz sensor cadence. The MEKF must therefore step
     // through each sample in the batch sequentially rather than treating the
     // whole batch as one combined update.
+    //
+    //EKF Update when each queue notification is received
+    //Write output to the shared state vector with a timestamp
+    //vTaskDelay for a short period to yield to other tasks (e.g.,
+    //control task might want to run at a different frequency)
 
     AdaptiveEKF ekf; // EKF instance
     constexpr float kImuPredictDtSec = IMU::kSamplePeriodSeconds;
@@ -57,6 +62,7 @@ void Tasks::NavigationTask(void* pvParameters) {
         while(xQueueReceive(SharedData::gI2C2IMUQueue, &latestImuBatch, 0) == pdTRUE) {
             // FIFO transport is batched, but the MEKF still consumes one IMU
             // predict step per sensor sample in time order.
+
             for (uint8_t i = 0; i < latestImuBatch.count; ++i) {
                 float dt = kImuPredictDtSec;
                 if (i > 0) {
@@ -92,14 +98,11 @@ void Tasks::NavigationTask(void* pvParameters) {
 
 
         if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            // SharedData::gStateVector = ekf.GetStateVector();
+            SharedData::gStateVector = ekf.GetStateVector(); //TODO: add timestamp potentially?
             xSemaphoreGive(SharedData::gStateVectorMutex);
         }
     
-    //EKF Update when each queue notification is received
-    //Write output to the shared state vector with a timestamp
-    //vTaskDelay for a short period to yield to other tasks (e.g.,
-    //control task might want to run at a different frequency)
+    
         vTaskDelay(pdMS_TO_TICKS(2)); // Adjust delay as needed for desired update rate
     }
 }

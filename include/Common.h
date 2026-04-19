@@ -117,7 +117,6 @@ namespace Common {
     struct IMUData {
         Vector3 gyroVel;
         Vector3 acceleration;
-        Vector3 eulerAngles;
     };
 
     // One queue message can carry one FIFO drain from the IMU task.
@@ -191,8 +190,8 @@ namespace Common {
             if(count < N) count++;
         }
 
-        std::optional<float> average() const {
-            if(count == 0) return std::nullopt;
+        float average() const {
+            if(count == 0) return 0.0f;
             float sum = 0;
             for(int i = 0; i < count; i++){
                 sum += _buffer[i];

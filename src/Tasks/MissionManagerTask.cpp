@@ -103,7 +103,14 @@ void Tasks::MissionManagerTask(void* pvParameters){
 
         switch(currentState){
             case Common::FlightState::STANDBY:
-                
+                if(!MissionManager::StandbyStartedFlag) {
+                    MissionManager::StandbyStartedFlag = true;
+                    Hardware::audioBeacon_.BuzzerOff(); // Ensure buzzer is off at startup
+                    vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to ensure buzzer state is registered
+                }
+                Hardware::audioBeacon_.BuzzerOn(); // Start beeping in standby for power indication
+
+
                 break;
             case Common::FlightState::ASCENT:
                 if (!MissionManager::AscentStartedFlag) {

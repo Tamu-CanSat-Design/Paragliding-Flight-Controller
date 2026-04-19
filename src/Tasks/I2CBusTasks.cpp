@@ -11,7 +11,7 @@ namespace {
 //   IIS2MDC     -> 50 Hz internal
 //   TESEO LIV3R -> 5 Hz internal
 //   INA260      -> 7 Hz effective
-//   LIDAR-Lite  -> 20 Hz internal
+//   LIDAR-Lite  -> 100 Hz internal
 //
 // These two bus tasks are the only code that touches the physical I2C buses.
 // Each task wakes once per RTOS tick, checks which sensors are due, reads only
@@ -36,7 +36,7 @@ constexpr float kDefaultReferencePressureHpa = 1013.25f;
 constexpr TickType_t kBusTaskLoopPeriod = 1;
 constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
 constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(200);        // 5 Hz
-constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(50);       // 20 Hz
+constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(10);       // 100 Hz
 constexpr TickType_t kMagPeriodTicks = pdMS_TO_TICKS(20);         // 50 Hz
 constexpr TickType_t kVoltagePeriodTicks = pdMS_TO_TICKS(143);    // nearest tick period to ~7 Hz
 constexpr TickType_t kImuPollPeriodTicks = pdMS_TO_TICKS(10);     // poll FIFO every 10 ms for 4-sample bursts

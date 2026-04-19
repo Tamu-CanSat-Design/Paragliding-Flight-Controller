@@ -16,6 +16,7 @@ namespace MissionManager {
   extern bool EGRELFlag;
   extern bool AUDFlag; 
 
+  extern bool StandbyStartedFlag;
   extern bool AscentStartedFlag;
   extern bool DescentStartedFlag;
   extern bool PayloadReleaseStartedFlag;
@@ -24,8 +25,8 @@ namespace MissionManager {
 
 
   void CAL();
-  void EGREL();
-  void LDAR();
+  
+
 
 
   Common::FlightState CheckStateChange(Common::FlightState currentState, Common::StateVector ekfState, Common::SensorSnapshot sensorSnapshot);

@@ -51,6 +51,7 @@ namespace MissionManager {
     bool EGRELFlag = false;
     bool AUDFlag = false;
 
+    bool StandbyStartedFlag = false;
     bool AscentStartedFlag = false;
     bool DescentStartedFlag = false;
     bool PayloadReleaseStartedFlag = false;
@@ -108,23 +109,6 @@ namespace MissionManager {
         accelWindow.clear();
         gyroWindow.clear();
     }
-
-    void EGREL() {
-        Hardware::EggInstrumentServo_.SetAngle(15);
-        EGRELFlag = !EGRELFlag;
-    }
-
-    void LDAR() {
-        Hardware::EggInstrumentServo_.SetAngle(20);
-        LDARFlag = !LDARFlag;
-    }
-
-    
-
-  
-
-
-
 
 
     

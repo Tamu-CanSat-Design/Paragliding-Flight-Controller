@@ -188,32 +188,14 @@ Common::Vector3 ConvertMag(const RawMagSample& sample) {
 }
 
 Common::IMUData BuildImuData(const RawImuSample& imuRaw,
-                             const Common::Vector3& accelBias,
-                             const Common::Vector3& gyroBias,
                              const Common::MagData& magData) {
     Common::Vector3 accel = ConvertAccel(imuRaw);
     Common::Vector3 gyro = ConvertGyro(imuRaw);
 
-    accel.x -= accelBias.x;
-    accel.y -= accelBias.y;
-    accel.z -= accelBias.z;
-
-    gyro.x -= gyroBias.x;
-    gyro.y -= gyroBias.y;
-    gyro.z -= gyroBias.z;
-
+ 
     Common::IMUData data{};
     data.acceleration = accel;
     data.gyroVel = gyro;
-
-    const float roll = std::atan2(accel.y, accel.z);
-    const float pitch = std::atan2(-accel.x, std::sqrt(accel.y * accel.y + accel.z * accel.z));
-    const float magX = magData.magX * std::cos(pitch) + magData.magZ * std::sin(pitch);
-    const float magY = magData.magX * std::sin(roll) * std::sin(pitch)
-        + magData.magY * std::cos(roll)
-        - magData.magZ * std::sin(roll) * std::cos(pitch);
-    const float yaw = std::atan2(-magY, magX);
-    data.eulerAngles = Common::Vector3{roll, pitch, yaw};
 
     return data;
 }
@@ -331,7 +313,7 @@ Common::IMUData IMU::ReadData() {
         return data_;
     }
 
-    data_ = BuildImuData(imuRaw, accelBias_, gyroBias_, magData_);
+    data_ = BuildImuData(imuRaw, magData_);
     return data_;
 }
 
@@ -386,7 +368,7 @@ size_t IMU::ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples) {
         }
 
         if (haveGyro && haveAccel) {
-            outSamples[samplesRead] = BuildImuData(pending, accelBias_, gyroBias_, magData_);
+            outSamples[samplesRead] = BuildImuData(pending, magData_);
             data_ = outSamples[samplesRead];
             ++samplesRead;
             haveGyro = false;
@@ -415,9 +397,6 @@ Common::MagData IMU::ReadMagData() {
     }
 
     Common::Vector3 mag = ConvertMag(magRaw);
-    mag.x -= magBias_.x;
-    mag.y -= magBias_.y;
-    mag.z -= magBias_.z;
     magData_ = Common::MagData{mag.x, mag.y, mag.z};
     return magData_;
 }
