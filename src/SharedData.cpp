@@ -19,7 +19,6 @@ namespace{
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C2VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
-    uint8_t gRollAngleQueueStorage[ROLLANGLEQUEUEDEPTH * sizeof(float)];
 }
 
 
@@ -54,6 +53,10 @@ namespace SharedData {
     SemaphoreHandle_t gStateVectorMutex = nullptr;
     static StaticSemaphore_t gStateVectorMutexBuffer;
 
+    float gRollAngleSetpoint = 0.0f;
+    SemaphoreHandle_t gRollAngleSetpointMutex = nullptr;
+    static StaticSemaphore_t gRollAngleSetpointMutexBuffer;
+
     char gCommand[Common::COMMAND_BUFFER_LENGTH] = {};
     SemaphoreHandle_t gCommandMutex = nullptr;
     static StaticSemaphore_t gCommandMutexBuffer;
@@ -76,8 +79,7 @@ namespace SharedData {
     static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
 
-    static StaticQueue_t gRollAngleQueueBuffer;
-    QueueHandle_t gRollAngleQueue = nullptr;
+
     
 
 
@@ -89,6 +91,7 @@ namespace SharedData {
         gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
         gReferencePressureMutex = xSemaphoreCreateMutexStatic(&gReferencePressureMutexBuffer);
+        gRollAngleSetpointMutex = xSemaphoreCreateMutexStatic(&gRollAngleSetpointMutexBuffer);
 
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
@@ -98,7 +101,6 @@ namespace SharedData {
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
-        gRollAngleQueue = xQueueCreateStatic(ROLLANGLEQUEUEDEPTH, sizeof(float), gRollAngleQueueStorage, &gRollAngleQueueBuffer);
 
         gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
@@ -106,8 +108,8 @@ namespace SharedData {
         gReferencePressureHpa = 1013.25f;
         memset(gCommand, 0, sizeof(gCommand));
 
-        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex ||
-           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue || !gRollAngleQueue) {
+        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex || !gRollAngleSetpointMutex ||
+           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");
             while (true) {} // Halt execution

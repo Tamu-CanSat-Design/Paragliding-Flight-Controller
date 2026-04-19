@@ -2,7 +2,7 @@
 
 PathPlanner::PathPlanner(const Common::StateVector state, const Common::Vector3 waypoint)
     : Energy{}, Phase(EnergyBleed) {
-    float dx = waypoiny.x - state.x;
+    float dx = waypoint.x - state.x;
     float dy = waypoint.y - state.y;
     float vx = state.vx, vy = state.vy, vz = state.vz;
     float v_i = sqrt(vx*vx+vy*vy+vz*vz);

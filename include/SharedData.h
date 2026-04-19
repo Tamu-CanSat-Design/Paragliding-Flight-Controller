@@ -30,6 +30,9 @@ namespace SharedData {
     extern Common::StateVector gStateVector;
     extern SemaphoreHandle_t gStateVectorMutex;
 
+    extern float gRollAngleSetpoint;
+    extern SemaphoreHandle_t gRollAngleSetpointMutex;
+
     extern char gCommand[Common::COMMAND_BUFFER_LENGTH];
     extern SemaphoreHandle_t gCommandMutex;
 

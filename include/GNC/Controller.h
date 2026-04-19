@@ -9,16 +9,25 @@ struct MixerOutput{
     float right;
 };
 
+struct Gains{
+    float KP;
+    float KD;
+    float KI;
+};
+
+enum state{off, slow, med, fast};
+
 class RollController{
     private:
-        float Roll_KP = 1.5f;
-        float Roll_KI = 0.2f;
-        float Roll_KD = 0.1f;
-        const float max = 10;
-        const float min = -10;
+        state CurrentState = off;
+        Gains RollGains[4]; 
+        float error = 0;
+        const float max = 60;
+        const float min = -60;
         float integral = 0;
-        float prevError = 0;
-        void SetLimits(float& PID){
+        float derivative = 0;
+        
+        inline void SetLimits(float& PID){
             if (PID > max){
                 PID = max;
             }
@@ -28,22 +37,34 @@ class RollController{
             return;
         };
     public:
+        RollController(state GainState);
+        inline void Reset(){
+            integral = 0;
+            derivative = 0;
+        };
+
+        inline void UpdateGains(state GainState){
+            CurrentState = GainState; 
+        };
+
+        void ComputeError(Common::StateVector state, float desiredRoll,float dt);
+        float ComputePID(Common::StateVector state, float desiredRoll, float dt);
 
 
 };
 
 class DescentController{
     private:
-        float Roll_KP = 1.5f;
-        float Roll_KI = 0.2f;
-        float Roll_KD = 0.1f;
-
-        const float min = -100;
-        const float max = 100;
+        state CurrentState = off;
+        Gains DescentGains[4];
+        const float min = -40;
+        const float max = 40;
         float integral = 0;
+        float error = 0;
         float prevError = 0;
+        float derivative = 0;
 
-        void SetLimits(float& PID)
+        inline void SetLimits(float& PID)
         {
             if(PID > max){
                 PID = max;
@@ -53,27 +74,63 @@ class DescentController{
             }
         };
 
-    public:
+        void DeadBand();
 
-        void Reset();
-        float ComputePID(float Vel, float dt);
+    public:
+        DescentController(state GainState);
+        
+        inline void Reset(){
+            integral = 0;
+            prevError = 0;
+        };
+
+        inline void UpdateGains(state GainState){
+            CurrentState = GainState;
+        };
+
+        void ComputeError(Common::StateVector state, float dt);
+        float ComputePID(Common::StateVector state, float dt);
 
 };
 
 class ControllerMixer{
     private:
-        MixerOutput ControllerOutput;
-        static float Clamp(float v, float lo, float hi) {
-            if (v < lo) return lo;
-            if (v > hi) return hi;
-            return v;
-        }
+        state GainState;
+
+        DescentController DescentPID;
+        RollController RollPID;
+
+        const float max = 90.0f;
+        const float min = -90.0f;
+        MixerOutput ControllerOutput = {0,0};
+
+        float SetLimits(float& PID)
+        {
+            if(PID > max){
+                PID = max;
+            }
+            else if (PID < min){
+                PID = min;
+            }
+            return PID;
+        };
 
     public:
 
-        MixerOutput Mix(float pitchCmd, float rollCmd);
-             
-        MixerOutput Compute(float descentPID, float rollPID);
+        ControllerMixer():GainState(off), DescentPID(GainState), RollPID(GainState){};
+
+        void DetermineState(Common::StateVector stateVector);
+        void UpdateGains(Common::StateVector stateVector);
+
+        void Mix(float pitchCmd, float rollCmd);
+        void CalculateCommands(Common::StateVector stateVector, float desiredRoll, float dt);
+        
+        inline float GetLeftOutput(){
+            return ControllerOutput.left;
+        };
+        inline float GetRightOutput(){
+            return ControllerOutput.right;
+        };
 };
 
 #endif // CONTROLLER_H

@@ -34,9 +34,13 @@ void Tasks::GuidanceTask(void* pvParameters){
         latestWaypoint = pathPlanner.CalculateWaypoint(latestDropZone);
 
         //Run L1 guidance to get desired roll angle based on current state and desired waypoint
+        //Ansh can you check this
         rollAngle = guidance.CalculateRoll(latestStateVector, latestWaypoint);
-        xQueueOverwrite(SharedData::gRollAngleQueue, &rollAngle);
-
+        if(xSemaphoreTake(SharedData::gRollAngleSetpointMutex, 0) == pdTRUE) {
+            SharedData::gRollAngleSetpoint = rollAngle;
+            xSemaphoreGive(SharedData::gRollAngleSetpointMutex);
+        }
+        
 
         //Run guidance algorithms to compute desired trajectory and attitude setpoints
         //Write desired setpoints back to shared memory (with mutex)
