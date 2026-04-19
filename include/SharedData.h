@@ -30,6 +30,9 @@ namespace SharedData {
     extern Common::StateVector gStateVector;
     extern SemaphoreHandle_t gStateVectorMutex;
 
+    extern float gRollAngleSetpoint;
+    extern SemaphoreHandle_t gRollAngleSetpointMutex;
+
     extern char gCommand[Common::COMMAND_BUFFER_LENGTH];
     extern SemaphoreHandle_t gCommandMutex;
 
@@ -45,6 +48,10 @@ namespace SharedData {
 
     //Command queue
     extern QueueHandle_t gCommandQueue;
+
+    // Depth-1 queue for the latest roll angle setpoint from GuidanceTask.
+    // Write with xQueueOverwrite; read with xQueuePeek (non-blocking).
+    extern QueueHandle_t gRollAngleQueue;
 
     extern Commlink commlink;
 

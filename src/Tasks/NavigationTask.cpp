@@ -42,8 +42,6 @@ void Tasks::NavigationTask(void* pvParameters) {
     //Predict
 
     
-
-
     //Pseudocode for navigation task:
     while (true) {
 
@@ -95,8 +93,6 @@ void Tasks::NavigationTask(void* pvParameters) {
     //EKF Predict
     //unlock flight state mutex and read current flight state for adaptive noise tuning
         
-
-
         if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
             SharedData::gStateVector = ekf.GetStateVector(); //TODO: add timestamp potentially?
             xSemaphoreGive(SharedData::gStateVectorMutex);

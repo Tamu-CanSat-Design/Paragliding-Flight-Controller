@@ -4,6 +4,7 @@
 #include "BasicLinearAlgebra.h"
 #include "Common.h"
 #include "GNC/GNC.h"
+
 class AdaptiveEKF {
 public:
 
@@ -27,20 +28,8 @@ public:
 
     void SetMeasurementNoiseCovariance();
 
-    Common::StateVector GetStateVector() {
-        Common::StateVector CommonState;
-        CommonState.x = stateVector(0);
-        CommonState.y = stateVector(1);
-        CommonState.z = stateVector(2);
-        CommonState.vx = stateVector(3);
-        CommonState.vy = stateVector(4);
-        CommonState.vz = stateVector(5);
-        CommonState.q0 = stateVector(6);
-        CommonState.q1 = stateVector(7);
-        CommonState.q2 = stateVector(8);
-        CommonState.q3 = stateVector(9);
-        return CommonState;
-    }
+    void EstimateWind(Common::Vector3 &WindVector, Common::StateVector StateVector);
+
 
 private:
     BLA::Matrix<16, 1> stateVector; // [x, y, z, vx, vy, vz, q0, q1, q2, q3, accelBiasx, accelBiasy, accelBiasz, gyroBiasx, gyroBiasy, gyroBiasz]
