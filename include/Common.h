@@ -99,11 +99,6 @@ namespace Common {
         float q1;
         float q2;
         float q3;
-        float wx;
-        float wy;
-        float wz;
-        float accelBias;
-        float gyroBias;
     };
 
 

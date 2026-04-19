@@ -7,3 +7,4 @@ docs/
 .vscode/ipch
 .vscode/settings.json
 .vscode/extensions.json
+.gitattributes

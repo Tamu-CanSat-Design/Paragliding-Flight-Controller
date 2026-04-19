@@ -65,9 +65,6 @@ namespace GNC{
     }
 
 
-
-
-
     BLA::Matrix<4,1> QuaternionMultiplication(const BLA::Matrix<4,1>& q, const BLA::Matrix<4,1>& r){
         float q0 = q(0);
         float q1 = q(1);
@@ -97,10 +94,6 @@ namespace GNC{
         result(2,0) = -v(1);   result(2,1) = v(0);    result(2,2) = 0;
         return result * 1.0f;
     }
-
-    void StateToMatrix(Common::StateVector StateStruct, BLA::Matrix<14>& StateMatrix){
-
-    };
 
     float wrap_pi(float angle){
         angle = fmodf(angle + PI, 2.0f * PI);

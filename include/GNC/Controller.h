@@ -15,11 +15,16 @@ struct Gains{
     float KI;
 };
 
-enum state{off, slow, med, fast};
+enum state{
+    OFF = 0,
+    SLOW = 1,
+    MEDIUM = 2,
+    FAST = 3
+};
 
 class RollController{
     private:
-        state CurrentState = off;
+        state CurrentState = OFF;
         Gains RollGains[4]; 
         float error = 0;
         const float max = 60;
@@ -47,15 +52,15 @@ class RollController{
             CurrentState = GainState; 
         };
 
-        void ComputeError(Common::StateVector state, float desiredRoll,float dt);
-        float ComputePID(Common::StateVector state, float desiredRoll, float dt);
+        void ComputeError(Common::StateVector state, float desiredRoll,float dt, float gyroRollRate);
+        float ComputePID(Common::StateVector state, float desiredRoll, float dt, float gyroRollRate);
 
 
 };
 
 class DescentController{
     private:
-        state CurrentState = off;
+        state CurrentState = OFF;
         Gains DescentGains[4];
         const float min = -40;
         const float max = 40;
@@ -100,36 +105,38 @@ class ControllerMixer{
         DescentController DescentPID;
         RollController RollPID;
 
-        const float max = 90.0f;
-        const float min = -90.0f;
-        MixerOutput ControllerOutput = {0,0};
+        const float maxAngle = 90.0f;
+        const float minAngle = -90.0f;
+
+        float leftServoOutput;
+        float rightServoOutput;
 
         float SetLimits(float& PID)
         {
-            if(PID > max){
-                PID = max;
+            if(PID > maxAngle){
+                PID = maxAngle;
             }
-            else if (PID < min){
-                PID = min;
+            else if (PID < minAngle){
+                PID = minAngle;
             }
             return PID;
         };
 
     public:
 
-        ControllerMixer():GainState(off), DescentPID(GainState), RollPID(GainState){};
+        ControllerMixer():GainState(OFF), DescentPID(GainState), RollPID(GainState){};
 
         void DetermineState(Common::StateVector stateVector);
         void UpdateGains(Common::StateVector stateVector);
 
         void Mix(float pitchCmd, float rollCmd);
-        void CalculateCommands(Common::StateVector stateVector, float desiredRoll, float dt);
+        void CalculateCommands(Common::StateVector stateVector, float desiredRoll, float dt, float gyroRollRate);
         
         inline float GetLeftOutput(){
-            return ControllerOutput.left;
+            return leftServoOutput;
         };
         inline float GetRightOutput(){
-            return ControllerOutput.right;
+            return rightServoOutput;
         };
 };
 

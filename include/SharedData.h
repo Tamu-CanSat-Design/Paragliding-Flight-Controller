@@ -33,6 +33,9 @@ namespace SharedData {
     extern float gRollAngleSetpoint;
     extern SemaphoreHandle_t gRollAngleSetpointMutex;
 
+    extern float gRollAngularVelocity;
+    extern SemaphoreHandle_t gRollAngularVelocityMutex;
+
     extern char gCommand[Common::COMMAND_BUFFER_LENGTH];
     extern SemaphoreHandle_t gCommandMutex;
 

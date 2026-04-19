@@ -10,7 +10,6 @@ namespace{
     constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
-    constexpr UBaseType_t ROLLANGLEQUEUEDEPTH = 1;
 
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
@@ -57,6 +56,10 @@ namespace SharedData {
     SemaphoreHandle_t gRollAngleSetpointMutex = nullptr;
     static StaticSemaphore_t gRollAngleSetpointMutexBuffer;
 
+    float gRollAngularVelocity = 0.0f;
+    SemaphoreHandle_t gRollAngularVelocityMutex = nullptr;
+    static StaticSemaphore_t gRollAngularVelocityMutexBuffer;
+
     char gCommand[Common::COMMAND_BUFFER_LENGTH] = {};
     SemaphoreHandle_t gCommandMutex = nullptr;
     static StaticSemaphore_t gCommandMutexBuffer;
@@ -78,8 +81,6 @@ namespace SharedData {
 
     static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
-
-
     
 
 
@@ -92,7 +93,7 @@ namespace SharedData {
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
         gReferencePressureMutex = xSemaphoreCreateMutexStatic(&gReferencePressureMutexBuffer);
         gRollAngleSetpointMutex = xSemaphoreCreateMutexStatic(&gRollAngleSetpointMutexBuffer);
-
+        gRollAngularVelocityMutex = xSemaphoreCreateMutexStatic(&gRollAngularVelocityMutexBuffer);
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
         gI2C1LidarQueue = xQueueCreateStatic(LIDARQUEUEDEPTH, sizeof(Common::LidarData), gI2C1LidarQueueStorage, &gI2C1LidarQueueBuffer);
@@ -108,7 +109,7 @@ namespace SharedData {
         gReferencePressureHpa = 1013.25f;
         memset(gCommand, 0, sizeof(gCommand));
 
-        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex || !gRollAngleSetpointMutex ||
+        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex || !gRollAngleSetpointMutex || !gRollAngularVelocityMutex ||
            !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");

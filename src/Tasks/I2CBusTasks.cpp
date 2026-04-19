@@ -204,12 +204,18 @@ void Tasks::I2C2BusTask(void* pvParameters) {
                 }
 
                 xQueueSend(SharedData::gI2C2IMUQueue, &imuBatch, portMAX_DELAY); //TODO: Don't make this a blocking send
+                if(xSemaphoreTake(SharedData::gRollAngularVelocityMutex, 0) == pdTRUE){
+                    SharedData::gRollAngularVelocity = latestImu.gyroVel.x;
+                    xSemaphoreGive(SharedData::gRollAngularVelocityMutex);
+                }
+            
+                }
                 // Snapshot keeps only the freshest IMU sample; the full ordered
                 // history for MEKF propagation lives in the batch queue.
                 UpdateSnapshot(&Common::SensorSnapshot::imuData, imuBatch.samples[sampleCount - 1].sample);
             }
             AdvanceDeadline(&nextImuPollTick, kImuPollPeriodTicks, now);
-        }
+        
 
         // The magnetometer remains a separate 50 Hz read on the companion die.
         if (IsTimeDue(now, nextMagTick)) {
@@ -231,3 +237,4 @@ void Tasks::I2C2BusTask(void* pvParameters) {
         vTaskDelayUntil(&lastWakeTime, kBusTaskLoopPeriod);
     }
 }
+

@@ -5,6 +5,7 @@ namespace{
     float rollAngleSetpoint = 0.0f;
     float leftAngleCmd = 0.0f;
     float rightAngleCmd = 0.0f;
+    float gyroRollRate = 0.0f;
     ControllerMixer controller;
     Common::StateVector latestStateVector;
     float dt = 20.0f;
@@ -33,9 +34,15 @@ void Tasks::ControlTask(void* pvParameters) {
         }
         else{}
 
+        if(xSemaphoreTake(SharedData::gRollAngularVelocityMutex, 0) == pdTRUE) {
+            gyroRollRate = SharedData::gRollAngularVelocity;
+            xSemaphoreGive(SharedData::gRollAngularVelocityMutex);
+        }
+        else{}
+
         // Update controller gains based on current state
         controller.UpdateGains(latestStateVector);
-        controller.CalculateCommands(latestStateVector, rollAngleSetpoint, dt/1000.0f); // Convert ms to seconds
+        controller.CalculateCommands(latestStateVector, rollAngleSetpoint, dt/1000.0f, gyroRollRate); // Convert ms to seconds
 
         leftAngleCmd = controller.GetLeftOutput();
         rightAngleCmd = controller.GetRightOutput();
