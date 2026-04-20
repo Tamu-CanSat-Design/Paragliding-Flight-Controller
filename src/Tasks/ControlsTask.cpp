@@ -1,6 +1,6 @@
 #include "TaskHandler.h"
 #include "GNC/Controller.h"
-#include "hardware/Hardware.h"
+#include "Hardware/Hardware.h"
 namespace{
     float rollAngleSetpoint = 0.0f;
     float leftAngleCmd = 0.0f;
