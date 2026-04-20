@@ -6,10 +6,9 @@
 #include <cmath>
 
 namespace {
-// Local register map + scaling constants live here to keep the driver readable.
+// ISM330DHCX register map + scaling constants live here to keep the driver readable.
 constexpr uint8_t kImuAddressLow = 0x6A;
 constexpr uint8_t kImuAddressHigh = 0x6B;
-constexpr uint8_t kMagAddress = 0x1E;
 
 constexpr uint8_t kImuWhoAmIReg = 0x0F;
 constexpr uint8_t kImuWhoAmIValue = 0x6B;
@@ -24,13 +23,6 @@ constexpr uint8_t kFifoStatus1Reg = 0x3A;
 constexpr uint8_t kFifoStatus2Reg = 0x3B;
 constexpr uint8_t kFifoDataOutTagReg = 0x78;
 constexpr uint8_t kImuOutXLGReg = 0x22;
-
-constexpr uint8_t kMagWhoAmIReg = 0x4F;
-constexpr uint8_t kMagWhoAmIValue = 0x40;
-constexpr uint8_t kMagCfgAReg = 0x60;
-constexpr uint8_t kMagCfgBReg = 0x61;
-constexpr uint8_t kMagCfgCReg = 0x62;
-constexpr uint8_t kMagOutXLReg = 0x68;
 
 constexpr uint8_t kImuCtrl3CSwReset = 0x01;
 constexpr uint8_t kImuCtrl3CIfInc = 0x04;
@@ -53,14 +45,8 @@ constexpr uint8_t kFifoTagAccel = 0x02;
 constexpr uint8_t kFifoOverrunStatusBit = 1u << 6;
 constexpr uint8_t kFifoFullStatusBit = 1u << 5;
 
-constexpr uint8_t kMagCfgAReset = 0x20;
-constexpr uint8_t kMagCfgA = 0x88;  // Temp comp + 50 Hz + continuous mode.
-constexpr uint8_t kMagCfgB = 0x00;
-constexpr uint8_t kMagCfgC = 0x20;  // BDU enabled.
-
 constexpr float kGravityMps2 = 9.80665f;
 constexpr float kDegToRad = 0.017453292519943295f;
-constexpr float kMagMicroTeslaPerLsb = 0.15f;  // 1.5 mG/LSB.
 
 struct RawImuSample {
     int16_t gx;
@@ -71,17 +57,11 @@ struct RawImuSample {
     int16_t az;
 };
 
-struct RawMagSample {
-    int16_t mx;
-    int16_t my;
-    int16_t mz;
-};
-
 // Separate raw read helpers keep register layout isolated from math conversions.
 bool ReadImuRaw(const I2CDevice& device, RawImuSample* sample) {
-    // Read gyro + accel in a single burst for coherent data.
+    // ISM330DHCX OUTX_L_G starts a contiguous gyro+accel burst when address
+    // auto-increment is enabled, so one 12-byte read keeps the sample coherent.
     uint8_t raw[12] = {};
-    // TODO: Double check w/ datasheet.
     if (!device.ReadRegisters(kImuOutXLGReg, raw, sizeof(raw), false)) {
         // If the I2C read fails, keep previous values upstream.
         return false;
@@ -94,20 +74,6 @@ bool ReadImuRaw(const I2CDevice& device, RawImuSample* sample) {
     sample->ax = static_cast<int16_t>((raw[7] << 8) | raw[6]);
     sample->ay = static_cast<int16_t>((raw[9] << 8) | raw[8]);
     sample->az = static_cast<int16_t>((raw[11] << 8) | raw[10]);
-    return true;
-}
-
-bool ReadMagRaw(const I2CDevice& device, RawMagSample* sample) {
-    // Read magnetometer XYZ in one burst with auto-increment.
-    uint8_t raw[6] = {};
-    if (!device.ReadRegisters(kMagOutXLReg, raw, sizeof(raw), false)) {
-        return false;
-    }
-
-    // Combine low/high bytes into signed 16-bit values (sensor is little-endian).
-    sample->mx = static_cast<int16_t>((raw[1] << 8) | raw[0]);
-    sample->my = static_cast<int16_t>((raw[3] << 8) | raw[2]);
-    sample->mz = static_cast<int16_t>((raw[5] << 8) | raw[4]);
     return true;
 }
 
@@ -178,21 +144,9 @@ Common::Vector3 ConvertGyro(const RawImuSample& sample) {
     };
 }
 
-Common::Vector3 ConvertMag(const RawMagSample& sample) {
-    // Sensor is factory calibrated to 1.5 mG/LSB.
-    return Common::Vector3{
-        sample.mx * kMagMicroTeslaPerLsb,
-        sample.my * kMagMicroTeslaPerLsb,
-        sample.mz * kMagMicroTeslaPerLsb,
-    };
-}
-
-Common::IMUData BuildImuData(const RawImuSample& imuRaw,
-                             const Common::MagData& magData) {
+Common::IMUData BuildImuData(const RawImuSample& imuRaw) {
     Common::Vector3 accel = ConvertAccel(imuRaw);
     Common::Vector3 gyro = ConvertGyro(imuRaw);
-
- 
     Common::IMUData data{};
     data.acceleration = accel;
     data.gyroVel = gyro;
@@ -205,11 +159,9 @@ Common::IMUData BuildImuData(const RawImuSample& imuRaw,
 bool IMU::Initialize() {
     // Reset cached data and state before touching hardware.
     data_ = {};
-    magData_ = {};
     fifoDiagnostics_ = {};
     accelBias_ = {};
     gyroBias_ = {};
-    magBias_ = {};
     initialized_ = false;
 
     // IMU uses I2C for both chips; keep setup centralized here for now.
@@ -271,32 +223,6 @@ bool IMU::Initialize() {
         return false;
     }
 
-    // Magnetometer is a separate die on the same bus.
-    // Magnetometer has a fixed I2C address on this board.
-    magDevice_.setAddress(kMagAddress);
-    // Confirm the magnetometer is present before configuring it.
-    if (!magDevice_.ReadRegister(kMagWhoAmIReg, &whoami) || whoami != kMagWhoAmIValue) {
-        return false;
-    }
-
-    // Reset the magnetometer before applying settings.
-    if (!magDevice_.WriteRegister(kMagCfgAReg, kMagCfgAReset)) {
-        return false;
-    }
-    delay(10);
-    // Configure ODR, continuous mode, and temperature compensation.
-    if (!magDevice_.WriteRegister(kMagCfgAReg, kMagCfgA)) {
-        return false;
-    }
-    // Optional filter/offset settings remain at defaults for now.
-    if (!magDevice_.WriteRegister(kMagCfgBReg, kMagCfgB)) {
-        return false;
-    }
-    // Enable block data update to avoid mixed high/low reads.
-    if (!magDevice_.WriteRegister(kMagCfgCReg, kMagCfgC)) {
-        return false;
-    }
-
     // Mark initialization complete so reads can proceed.
     initialized_ = true;
     return true;
@@ -313,7 +239,7 @@ Common::IMUData IMU::ReadData() {
         return data_;
     }
 
-    data_ = BuildImuData(imuRaw, magData_);
+    data_ = BuildImuData(imuRaw);
     return data_;
 }
 
@@ -368,7 +294,7 @@ size_t IMU::ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples) {
         }
 
         if (haveGyro && haveAccel) {
-            outSamples[samplesRead] = BuildImuData(pending, magData_);
+            outSamples[samplesRead] = BuildImuData(pending);
             data_ = outSamples[samplesRead];
             ++samplesRead;
             haveGyro = false;
@@ -384,21 +310,6 @@ size_t IMU::ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples) {
     }
 
     return samplesRead;
-}
-
-Common::MagData IMU::ReadMagData() {
-    if (!initialized_) {
-        return magData_;
-    }
-
-    RawMagSample magRaw{};
-    if (!ReadMagRaw(magDevice_, &magRaw)) {
-        return magData_;
-    }
-
-    Common::Vector3 mag = ConvertMag(magRaw);
-    magData_ = Common::MagData{mag.x, mag.y, mag.z};
-    return magData_;
 }
 
 IMU::FifoDiagnostics IMU::GetFifoDiagnostics() const {

@@ -12,15 +12,10 @@
 
 namespace {
 constexpr uint8_t kTestImuAddress = 0x6A;
-constexpr uint8_t kTestMagAddress = 0x1E;
 constexpr uint8_t kTestWhoAmIReg = 0x0F;
 constexpr uint8_t kTestWhoAmIValue = 0x6B;
-constexpr uint8_t kTestMagWhoAmIReg = 0x4F;
-constexpr uint8_t kTestMagWhoAmIValue = 0x40;
-constexpr uint8_t kTestMagOutXLReg = 0x68;
 constexpr float kTestAccelScale = 0.488f * 0.001f * 9.80665f;
 constexpr float kTestGyroScale = 70.0f * 0.001f * 0.017453292519943295f;
-constexpr float kTestMagScale = 0.15f;
 
 std::array<uint8_t, 7> MakeFifoWord(uint8_t tag, int16_t x, int16_t y, int16_t z) {
     return {
@@ -46,7 +41,6 @@ bool SawWrite(uint8_t address, uint8_t reg, uint8_t value) {
 
 void SeedDeviceIds() {
     Wire.setRegister(kTestImuAddress, kTestWhoAmIReg, kTestWhoAmIValue);
-    Wire.setRegister(kTestMagAddress, kTestMagWhoAmIReg, kTestMagWhoAmIValue);
 }
 }  // namespace
 
@@ -73,20 +67,18 @@ void AssertEqual(size_t expected, size_t actual, const char* message) {
     }
 }
 
-void AssertFloatNear(float expected, float actual, float tol, const char* message) {
-    if (std::fabs(expected - actual) > tol) {
+void AssertEqualU32(uint32_t expected, uint32_t actual, const char* message) {
+    if (expected != actual) {
         std::cerr << "FAIL: " << message << " expected=" << expected << " actual=" << actual << '\n';
         std::exit(1);
     }
 }
 
-void SetMagRaw(int16_t x, int16_t y, int16_t z) {
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 0, static_cast<uint8_t>(x & 0xFF));
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 1, static_cast<uint8_t>((x >> 8) & 0xFF));
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 2, static_cast<uint8_t>(y & 0xFF));
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 3, static_cast<uint8_t>((y >> 8) & 0xFF));
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 4, static_cast<uint8_t>(z & 0xFF));
-    Wire.setRegister(kTestMagAddress, kTestMagOutXLReg + 5, static_cast<uint8_t>((z >> 8) & 0xFF));
+void AssertFloatNear(float expected, float actual, float tol, const char* message) {
+    if (std::fabs(expected - actual) > tol) {
+        std::cerr << "FAIL: " << message << " expected=" << expected << " actual=" << actual << '\n';
+        std::exit(1);
+    }
 }
 
 void test_imu_initialize_programs_fifo_for_416hz_batches() {
@@ -124,8 +116,10 @@ void test_fifo_service_reconstructs_four_ordered_imu_samples() {
     AssertEqual(IMU::kFifoWatermarkPairs, count, "FIFO sample count mismatch");
     AssertFloatNear(100.0f * kTestGyroScale, samples[0].gyroVel.x, 1e-5f, "First gyro sample mismatch");
     AssertFloatNear(400.0f * kTestAccelScale, samples[0].acceleration.x, 1e-5f, "First accel sample mismatch");
+    AssertEqualU32(0, samples[0].timestampMicros, "Driver FIFO sample should leave timestamp unset for task reconstruction");
     AssertFloatNear(130.0f * kTestGyroScale, samples[3].gyroVel.x, 1e-5f, "Last gyro sample mismatch");
     AssertFloatNear(430.0f * kTestAccelScale, samples[3].acceleration.x, 1e-5f, "Last accel sample mismatch");
+    AssertEqualU32(0, samples[3].timestampMicros, "Driver FIFO sample timestamp should remain zero");
 }
 
 void test_fifo_service_skips_non_imu_tags_without_emitting_partial_samples() {
@@ -144,6 +138,7 @@ void test_fifo_service_skips_non_imu_tags_without_emitting_partial_samples() {
     AssertEqual(1, count, "Non-IMU tags should not emit partial samples");
     AssertFloatNear(100.0f * kTestGyroScale, samples[0].gyroVel.x, 1e-5f, "Filtered gyro sample mismatch");
     AssertFloatNear(400.0f * kTestAccelScale, samples[0].acceleration.x, 1e-5f, "Filtered accel sample mismatch");
+    AssertEqualU32(0, samples[0].timestampMicros, "Filtered FIFO sample timestamp should remain zero");
 }
 
 void test_fifo_service_returns_zero_for_uninitialized_or_invalid_requests() {
@@ -175,6 +170,8 @@ void test_fifo_service_caps_burst_and_leaves_remaining_words_in_fifo() {
     AssertEqual(8, Wire.fifoWordCount(kTestImuAddress), "Remaining FIFO words should stay queued");
     AssertFloatNear(100.0f * kTestGyroScale, samples[0].gyroVel.x, 1e-5f, "Capped burst first sample mismatch");
     AssertFloatNear(401.0f * kTestAccelScale, samples[1].acceleration.x, 1e-5f, "Capped burst second sample mismatch");
+    AssertEqualU32(0, samples[0].timestampMicros, "Capped burst first sample timestamp should remain zero");
+    AssertEqualU32(0, samples[1].timestampMicros, "Capped burst second sample timestamp should remain zero");
 }
 
 void test_fifo_service_drops_incomplete_pair_and_consumes_words() {
@@ -230,16 +227,10 @@ void test_fifo_diagnostics_can_be_cleared() {
     AssertEqual(0, diagnostics.truncatedPairCount, "Truncated pair count should clear");
 }
 
-void test_direct_read_uses_live_registers_and_last_mag_data() {
+void test_direct_read_uses_live_registers() {
     setUp();
     IMU imu;
     AssertTrue(imu.Initialize(), "IMU initialize failed");
-
-    SetMagRaw(10, 20, 30);
-    const Common::MagData magData = imu.ReadMagData();
-    AssertFloatNear(10.0f * kTestMagScale, magData.magX, 1e-5f, "Mag X conversion mismatch");
-    AssertFloatNear(20.0f * kTestMagScale, magData.magY, 1e-5f, "Mag Y conversion mismatch");
-    AssertFloatNear(30.0f * kTestMagScale, magData.magZ, 1e-5f, "Mag Z conversion mismatch");
 
     Wire.setRegister(kTestImuAddress, 0x22, 100 & 0xFF);
     Wire.setRegister(kTestImuAddress, 0x23, (100 >> 8) & 0xFF);
@@ -257,14 +248,7 @@ void test_direct_read_uses_live_registers_and_last_mag_data() {
     const Common::IMUData direct = imu.ReadData();
     AssertFloatNear(100.0f * kTestGyroScale, direct.gyroVel.x, 1e-5f, "Direct gyro conversion mismatch");
     AssertFloatNear(50.0f * kTestAccelScale, direct.acceleration.x, 1e-5f, "Direct accel conversion mismatch");
-}
-
-void test_initialize_fails_when_magnetometer_probe_fails() {
-    setUp();
-    Wire.setRegister(kTestMagAddress, kTestMagWhoAmIReg, 0x00);
-
-    IMU imu;
-    AssertTrue(!imu.Initialize(), "Initialize should fail when magnetometer WHO_AM_I is wrong");
+    AssertEqualU32(0, direct.timestampMicros, "Direct driver read should leave timestamp unset for task reconstruction");
 }
 
 int main(int, char**) {
@@ -276,8 +260,7 @@ int main(int, char**) {
     test_fifo_service_drops_incomplete_pair_and_consumes_words();
     test_fifo_diagnostics_track_status_bits_and_decode_anomalies();
     test_fifo_diagnostics_can_be_cleared();
-    test_direct_read_uses_live_registers_and_last_mag_data();
-    test_initialize_fails_when_magnetometer_probe_fails();
+    test_direct_read_uses_live_registers();
     std::cout << "PASS: IMU FIFO service testbench\n";
     return 0;
 }

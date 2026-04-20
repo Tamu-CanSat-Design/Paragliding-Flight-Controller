@@ -7,6 +7,7 @@ namespace Hardware {
     
     Barometer barometer_;
     IMU imu_;
+    Magnetometer magnetometer_;
     TeseoGPS gps_;
     Lidar lidar_;
     VoltageSensor voltageSensor_;
@@ -28,6 +29,7 @@ namespace Hardware {
         bool ok = true;
         ok = barometer_.Initialize() && ok;
         ok = imu_.Initialize() && ok;
+        ok = magnetometer_.Initialize() && ok;
         ok = gps_.Initialize() && ok;
         ok = lidar_.Initialize() && ok;
         ok = voltageSensor_.Initialize() && ok;
@@ -43,5 +45,4 @@ namespace Hardware {
         return ok;
     }
 }
-
 

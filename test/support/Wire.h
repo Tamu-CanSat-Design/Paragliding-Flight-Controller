@@ -54,6 +54,9 @@ public:
         rxIndex_ = 0;
 
         const uint8_t reg = registerPointer_[address];
+        if (failReads_[MakeKey(address, reg)]) {
+            return 0;
+        }
         if (reg == 0x78 && quantity == 7 && !fifoWords_[address].empty()) {
             const std::array<uint8_t, 7> word = fifoWords_[address].front();
             fifoWords_[address].pop_front();
@@ -90,6 +93,7 @@ public:
         registerPointer_.clear();
         fifoWords_.clear();
         fifoStatus2Bits_.clear();
+        failReads_.clear();
         writeLog_.clear();
         txBuffer_.clear();
         rxBuffer_.clear();
@@ -107,6 +111,10 @@ public:
 
     void setFifoStatus2Bits(uint8_t address, uint8_t bits) {
         fifoStatus2Bits_[address] = bits;
+    }
+
+    void setReadFailure(uint8_t address, uint8_t reg, bool enabled) {
+        failReads_[MakeKey(address, reg)] = enabled;
     }
 
     size_t fifoWordCount(uint8_t address) const {
@@ -134,6 +142,7 @@ private:
     std::unordered_map<uint8_t, uint8_t> registerPointer_{};
     std::unordered_map<uint8_t, std::deque<std::array<uint8_t, 7>>> fifoWords_{};
     std::unordered_map<uint8_t, uint8_t> fifoStatus2Bits_{};
+    std::unordered_map<uint16_t, bool> failReads_{};
     std::vector<WriteEntry> writeLog_{};
 };
 

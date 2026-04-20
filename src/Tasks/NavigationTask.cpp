@@ -73,7 +73,7 @@ void Tasks::NavigationTask(void* pvParameters) {
                                                latestImuBatch.samples[i].timestampMicros);
                 }
 
-                ekf.Predict(latestImuBatch.samples[i].sample, dt);
+                ekf.Predict(latestImuBatch.samples[i], dt);
                 lastImuTimestampMicros = latestImuBatch.samples[i].timestampMicros;
                 haveLastImuTimestamp = true;
             }

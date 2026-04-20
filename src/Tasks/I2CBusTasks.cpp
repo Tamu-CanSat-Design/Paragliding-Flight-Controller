@@ -144,8 +144,16 @@ void Tasks::I2C1BusTask(void* pvParameters) {
         // Lidar is bus-owned here as well. Just like the other sensors, the read
         // result is published to both the queue path and the snapshot path.
         if (IsTimeDue(now, nextLidarTick)) {
-            latestLidar = Hardware::lidar_.ReadData();
-            xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, portMAX_DELAY); //TODO: Don't make this a blocking send
+            const Common::LidarData lidarRead = Hardware::lidar_.ReadData();
+            // Navigation should only fuse confirmed-valid range measurements, but
+            // snapshot consumers still benefit from seeing the latest LiDAR
+            // health metadata even when the read failed.
+            if (lidarRead.valid) {
+                latestLidar = lidarRead;
+                xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, portMAX_DELAY); //TODO: Don't make this a blocking send
+            } else {
+                latestLidar = lidarRead;
+            }
             UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
             AdvanceDeadline(&nextLidarTick, kLidarPeriodTicks, now);
         }
@@ -187,7 +195,6 @@ void Tasks::I2C2BusTask(void* pvParameters) {
             if (sampleCount > 0) {
                 imuBatch = {};
                 imuBatch.count = static_cast<uint8_t>(sampleCount);
-                imuBatch.nominalSamplePeriodMicros = kImuSamplePeriodMicros;
 
                 const uint32_t drainTimestampMicros = micros();
                 // FIFO does not hand us hardware timestamps here, so reconstruct
@@ -198,9 +205,9 @@ void Tasks::I2C2BusTask(void* pvParameters) {
 
                 for (size_t i = 0; i < sampleCount; ++i) {
                     latestImu = imuBurst[i];
-                    imuBatch.samples[i].sample = latestImu;
-                    imuBatch.samples[i].timestampMicros =
+                    latestImu.timestampMicros =
                         oldestSampleTimestampMicros + static_cast<uint32_t>(i * kImuSamplePeriodMicros);
+                    imuBatch.samples[i] = latestImu;
                 }
 
                 xQueueSend(SharedData::gI2C2IMUQueue, &imuBatch, portMAX_DELAY); //TODO: Don't make this a blocking send
@@ -212,14 +219,14 @@ void Tasks::I2C2BusTask(void* pvParameters) {
                 }
                 // Snapshot keeps only the freshest IMU sample; the full ordered
                 // history for MEKF propagation lives in the batch queue.
-                UpdateSnapshot(&Common::SensorSnapshot::imuData, imuBatch.samples[sampleCount - 1].sample);
+                UpdateSnapshot(&Common::SensorSnapshot::imuData, imuBatch.samples[sampleCount - 1]);
             }
             AdvanceDeadline(&nextImuPollTick, kImuPollPeriodTicks, now);
         
 
         // The magnetometer remains a separate 50 Hz read on the companion die.
         if (IsTimeDue(now, nextMagTick)) {
-            latestMag = Hardware::imu_.ReadMagData();
+            latestMag = Hardware::magnetometer_.ReadData();
             xQueueSend(SharedData::gI2C2MagQueue, &latestMag, portMAX_DELAY); // TODO: Don't make this a blocking send
             UpdateSnapshot(&Common::SensorSnapshot::magData, latestMag);
             AdvanceDeadline(&nextMagTick, kMagPeriodTicks, now);
@@ -237,4 +244,3 @@ void Tasks::I2C2BusTask(void* pvParameters) {
         vTaskDelayUntil(&lastWakeTime, kBusTaskLoopPeriod);
     }
 }
-
