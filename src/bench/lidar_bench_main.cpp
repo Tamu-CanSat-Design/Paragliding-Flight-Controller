@@ -41,6 +41,7 @@ void loop() {
     lastPrintMs = nowMs;
 
     const Common::LidarData data = gLidar.ReadData();
+    const Lidar::Diagnostics diag = gLidar.GetDiagnostics();
     Serial.print("lidar_bench: distance_m=");
     Serial.print(data.distanceMeters, 3);
     Serial.print(" valid=");
@@ -48,5 +49,10 @@ void loop() {
     Serial.print(" status=");
     Serial.print(LidarStatusName(data.status));
     Serial.print(" failures=");
-    Serial.println(data.failureCount);
+    Serial.print(data.failureCount);
+    Serial.print(" diag={initFail=");
+    Serial.print(diag.initFailureCount);
+    Serial.print(",readFail=");
+    Serial.print(diag.readFailureCount);
+    Serial.println("}");
 }

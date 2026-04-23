@@ -13,10 +13,8 @@ namespace Common {
     inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
     inline constexpr size_t COMMAND_BUFFER_LENGTH = 32;
 
-    // TODO(schematic): confirm pin from hardware schematic before driver implementation.
-    inline constexpr uint8_t BUZZER_PIN = 0xFF;
-    // TODO(schematic): confirm pin from hardware schematic before driver implementation.
-    inline constexpr uint8_t CAMERA_PIN = 0xFF;
+    inline constexpr uint8_t BUZZER_PIN = 20;
+    inline constexpr uint8_t CAMERA_PIN = 41;
     inline constexpr uint8_t SD_PIN = 46;
 
     

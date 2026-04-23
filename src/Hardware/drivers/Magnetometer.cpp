@@ -32,16 +32,15 @@ bool Magnetometer::Initialize() {
     device_.setAddress(kMagAddress);
 
     uint8_t whoami = 0;
+    
     if (!device_.ReadRegister(kMagWhoAmIReg, &whoami) || whoami != kMagWhoAmIValue) {
         ++diagnostics_.initFailureCount;
         return false;
     }
-
     if (!device_.WriteRegister(kMagCfgAReg, kMagCfgAReset)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
-    delay(10);
     if (!device_.WriteRegister(kMagCfgAReg, kMagCfgA)) {
         ++diagnostics_.initFailureCount;
         return false;

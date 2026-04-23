@@ -18,6 +18,7 @@ bool ProbeLidar() {
 
 bool Lidar::Initialize() {
     data_ = {};
+    diagnostics_ = {};
     initialized_ = false;
     consecutiveFailures_ = 0;
     data_.status = Common::LidarStatus::Uninitialized;
@@ -33,6 +34,7 @@ bool Lidar::Initialize() {
         ++consecutiveFailures_;
         data_.failureCount = consecutiveFailures_;
         data_.status = Common::LidarStatus::NoAck;
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
@@ -43,6 +45,7 @@ bool Lidar::Initialize() {
         ++consecutiveFailures_;
         data_.failureCount = consecutiveFailures_;
         data_.status = Common::LidarStatus::NoAck;
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
@@ -64,6 +67,7 @@ Common::LidarData Lidar::ReadData() {
         data_.failureCount = consecutiveFailures_;
         data_.valid = false;
         data_.status = Common::LidarStatus::NoAck;
+        ++diagnostics_.readFailureCount;
         return data_;
     }
 
@@ -74,6 +78,7 @@ Common::LidarData Lidar::ReadData() {
         data_.failureCount = consecutiveFailures_;
         data_.valid = false;
         data_.status = Common::LidarStatus::InvalidRange;
+        ++diagnostics_.readFailureCount;
         return data_;
     }
 
@@ -83,4 +88,12 @@ Common::LidarData Lidar::ReadData() {
     data_.status = Common::LidarStatus::Ok;
     data_.valid = true;
     return data_;
+}
+
+Lidar::Diagnostics Lidar::GetDiagnostics() const {
+    return diagnostics_;
+}
+
+void Lidar::ClearDiagnostics() {
+    diagnostics_ = {};
 }

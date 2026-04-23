@@ -86,6 +86,7 @@ bool Barometer::Initialize() {
     data_ = {};
     // Clear calibration cache so old trims are not reused.
     calib_ = {};
+    diagnostics_ = {};
 
     // Start I2C bus so the device is addressable.
     Wire.begin();
@@ -99,22 +100,26 @@ bool Barometer::Initialize() {
     if (!device_.ReadRegister(kRegChipId, &chip_id) || chip_id != kChipId) {
         device_.setAddress(kI2cAddressHigh);
         if (!device_.ReadRegister(kRegChipId, &chip_id) || chip_id != kChipId) {
+            ++diagnostics_.initFailureCount;
             return false;
         }
     }
 
     // Soft reset to known default state so configuration writes behave predictably.
     if (!SoftReset()) {
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
     // Read calibration coefficients from NVM because compensation depends on them.
     if (!ReadCalibration()) {
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
     // Configure oversampling, ODR, filter, and mode to balance noise and latency.
     if (!Configure()) {
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
@@ -127,6 +132,7 @@ bool Barometer::Initialize() {
 Common::BarometerData Barometer::ReadData() {
     // If not initialized, return last cached data to avoid bogus zeros.
     if (!initialized_) {
+        ++diagnostics_.staleReturnCount;
         return data_;
     }
 
@@ -134,6 +140,8 @@ Common::BarometerData Barometer::ReadData() {
     uint32_t raw_press = 0;
     uint32_t raw_temp = 0;
     if (!ReadRaw(&raw_press, &raw_temp)) {
+        ++diagnostics_.readFailureCount;
+        ++diagnostics_.staleReturnCount;
         return data_;
     }
 
@@ -322,4 +330,12 @@ float Barometer::CompensatePressure(uint32_t raw_press) {
 
     // Sum all branches to get compensated pressure in Pa.
     return partial_out1 + partial_out2 + partial_data4;
+}
+
+Barometer::Diagnostics Barometer::GetDiagnostics() const {
+    return diagnostics_;
+}
+
+void Barometer::ClearDiagnostics() {
+    diagnostics_ = {};
 }

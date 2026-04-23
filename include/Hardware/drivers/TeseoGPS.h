@@ -11,12 +11,20 @@ class TeseoGPS : public IGPS {
 public:
     static constexpr const char* kSensorName = "Generic NMEA GPS";
 
+    struct Diagnostics {
+        uint32_t initFailureCount = 0;
+        uint32_t readFailureCount = 0;
+        uint32_t staleReturnCount = 0;
+    };
+
     const char* SensorName() const override { return kSensorName; }
     TeseoGPS() = default;
     explicit TeseoGPS(uint8_t address);
     explicit TeseoGPS(I2CDevice& bus);
     bool Initialize() override;
     Common::GPSData ReadData() override;
+    Diagnostics GetDiagnostics() const;
+    void ClearDiagnostics();
 
 private:
     static constexpr size_t kMaxSentenceLen = 128;
@@ -26,6 +34,7 @@ private:
     I2CDevice i2c_{};
     I2CDevice* bus_ = &i2c_;
     Common::GPSData data_{};
+    Diagnostics diagnostics_{};
     char sentence_[kMaxSentenceLen]{};
     size_t sentence_len_ = 0;
     bool initialized_ = false;

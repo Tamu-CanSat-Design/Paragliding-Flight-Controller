@@ -10,9 +10,17 @@ class Barometer : public IBarometer {
 public:
     static constexpr const char* kSensorName = "BMP390";
 
+    struct Diagnostics {
+        uint32_t initFailureCount = 0;
+        uint32_t readFailureCount = 0;
+        uint32_t staleReturnCount = 0;
+    };
+
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::BarometerData ReadData() override;
+    Diagnostics GetDiagnostics() const;
+    void ClearDiagnostics();
 
 private:
     struct Calibration {
@@ -41,6 +49,7 @@ private:
     float CompensatePressure(uint32_t raw_press);
 
     Common::BarometerData data_{};
+    Diagnostics diagnostics_{};
     Calibration calib_{};
     I2CDevice device_{};
     bool initialized_ = false;

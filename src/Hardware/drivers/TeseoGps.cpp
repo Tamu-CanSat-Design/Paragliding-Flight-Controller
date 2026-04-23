@@ -39,6 +39,7 @@ TeseoGPS::TeseoGPS(I2CDevice& bus)
 
 bool TeseoGPS::Initialize() {
     data_ = {};
+    diagnostics_ = {};
     sentence_len_ = 0;
     initialized_ = false;
 
@@ -50,11 +51,13 @@ bool TeseoGPS::Initialize() {
     }
 
     if (bus_->address() == 0) {
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
     uint8_t available_bytes[2] = {};
     if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
+        ++diagnostics_.initFailureCount;
         return false;
     }
 
@@ -64,11 +67,14 @@ bool TeseoGPS::Initialize() {
 
 Common::GPSData TeseoGPS::ReadData() {
     if (!initialized_) {
+        ++diagnostics_.staleReturnCount;
         return data_;
     }
 
     uint8_t available_bytes[2] = {};
     if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
+        ++diagnostics_.readFailureCount;
+        ++diagnostics_.staleReturnCount;
         return data_;
     }
 
@@ -90,6 +96,7 @@ Common::GPSData TeseoGPS::ReadData() {
         }
 
         if (!bus_->ReadRegisters(kGpsDataReg, chunk, chunk_len, false)) {
+            ++diagnostics_.readFailureCount;
             break;
         }
 
@@ -322,4 +329,12 @@ uint8_t TeseoGPS::HexToNibble(char c) {
         return static_cast<uint8_t>(c - 'a' + 10);
     }
     return 0;
+}
+
+TeseoGPS::Diagnostics TeseoGPS::GetDiagnostics() const {
+    return diagnostics_;
+}
+
+void TeseoGPS::ClearDiagnostics() {
+    diagnostics_ = {};
 }
