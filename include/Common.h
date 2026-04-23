@@ -13,13 +13,10 @@ namespace Common {
     inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
     inline constexpr size_t COMMAND_BUFFER_LENGTH = 32;
 
-    inline constexpr uint8_t VOLTAGE_PIN = 48;
-    inline constexpr uint8_t CURRENT_PIN = 49;
-    inline constexpr uint8_t BAROMETER_PIN = 44;
-    inline constexpr uint8_t IMU_PIN = 42;
-    inline constexpr uint8_t GPS_PIN = 50;
-    inline constexpr uint8_t MAGNETOMETER_PIN = 43;
-    inline constexpr uint8_t LIDAR_PIN = 45;
+    // TODO(schematic): confirm pin from hardware schematic before driver implementation.
+    inline constexpr uint8_t BUZZER_PIN = 0xFF;
+    // TODO(schematic): confirm pin from hardware schematic before driver implementation.
+    inline constexpr uint8_t CAMERA_PIN = 0xFF;
     inline constexpr uint8_t SD_PIN = 46;
 
     
