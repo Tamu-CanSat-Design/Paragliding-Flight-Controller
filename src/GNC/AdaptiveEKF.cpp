@@ -3,7 +3,6 @@
 AdaptiveEKF::AdaptiveEKF(){
         stateVector.Fill(0.0);
         processNoiseCovariance.Fill(0.1f); // Initial process noise
-        // measurementNoiseCovariance.Fill(0.1f); // Initial measurement noise
         
         // Constant Barometer Jacobian (linear measurement)
         barometerMeasurementJacobian.Fill(0.0); 
