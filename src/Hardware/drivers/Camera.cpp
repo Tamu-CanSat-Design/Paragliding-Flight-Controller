@@ -4,29 +4,36 @@
 
 #include "Common.h"
 
+namespace {
+void TriggerCameraToggle() {
+    // Shared trigger assumes ESP32-CAM firmware matches the Adafruit video-toggle pulse contract.
+    digitalWrite(Common::CAMERA_TRIGGER_PIN, LOW);
+    delay(Common::CAMERA_TRIGGER_PULSE_MS);
+    digitalWrite(Common::CAMERA_TRIGGER_PIN, HIGH);
+}
+}  // namespace
+
 bool Camera::Initialize() {
     diagnostics_ = {};
     initialized_ = false;
     capturing_ = false;
-    pinMode(Common::CAMERA_PIN, OUTPUT);
-    digitalWrite(Common::CAMERA_PIN, LOW);
+    pinMode(Common::CAMERA_TRIGGER_PIN, OUTPUT);
+    digitalWrite(Common::CAMERA_TRIGGER_PIN, HIGH);
     initialized_ = true;
     return true;
 }
 
-// Asserts trigger HIGH; both ESP32-CAM boards begin recording simultaneously.
-// In production this is called once ~1-2 s after power-up and stays HIGH.
 bool Camera::StartCapture() {
-    if (!initialized_) { return false; }
-    digitalWrite(Common::CAMERA_PIN, HIGH);
+    if (!initialized_ || capturing_) { return false; }
+    TriggerCameraToggle();
     capturing_ = true;
     ++diagnostics_.startCount;
     return true;
 }
 
 bool Camera::StopCapture() {
-    if (!initialized_) { return false; }
-    digitalWrite(Common::CAMERA_PIN, LOW);
+    if (!initialized_ || !capturing_) { return false; }
+    TriggerCameraToggle();
     capturing_ = false;
     ++diagnostics_.stopCount;
     return true;

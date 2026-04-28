@@ -1,9 +1,9 @@
-// #ifndef TEST_SUPPORT_ARDUINO_H
-// #define TEST_SUPPORT_ARDUINO_H
+#ifndef TEST_SUPPORT_ARDUINO_H
+#define TEST_SUPPORT_ARDUINO_H
 
-// #include <cstddef>
-// #include <cstdint>
+#include <cstddef>
+#include <cstdint>
 
-// inline void delay(unsigned long) {}
+inline void delay(unsigned long) {}
 
-// #endif
+#endif
