@@ -363,7 +363,7 @@ void IMU::Calibrate() {
     accelBias_ = Common::Vector3{
         accelSum.x / sampleCount,
         accelSum.y / sampleCount,
-        (accelSum.z / sampleCount) - kGravityMps2,
+        accelSum.z / sampleCount,
     };
 
     // Gyro bias should converge near zero for a stationary device.
