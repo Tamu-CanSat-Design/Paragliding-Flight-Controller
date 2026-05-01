@@ -14,7 +14,8 @@ namespace Common {
     inline constexpr size_t COMMAND_BUFFER_LENGTH = 32;
 
     inline constexpr uint8_t BUZZER_PIN = 20;
-    inline constexpr uint8_t CAMERA_PIN = 41;
+    inline constexpr uint8_t CAMERA_TRIGGER_PIN = 41;
+    inline constexpr unsigned long CAMERA_TRIGGER_PULSE_MS = 600;
     inline constexpr uint8_t SD_PIN = 46;
 
     
@@ -120,6 +121,7 @@ namespace Common {
     struct IMUData {
         Vector3 gyroVel;
         Vector3 acceleration;
+        float temperatureCelsius;
         uint32_t timestampMicros;
     };
 

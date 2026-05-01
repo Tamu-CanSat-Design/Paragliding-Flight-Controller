@@ -5,10 +5,8 @@
 
 #include "../interfaces/CameraInterface.h"
 
-// GPIO trigger driver for two ESP32-CAM boards sharing one trigger line.
-// StartCapture() asserts the trigger HIGH; both cameras begin recording.
-// StopCapture() deasserts LOW. In production, StartCapture() is called once
-// ~1-2 s after power-up and the pin stays HIGH for the full mission duration.
+// Shared trigger driver for the ESP32-CAM and Adafruit Mini Spy Camera paths.
+// Both cameras use one idle-HIGH GPIO and active-LOW pulse for start/stop.
 class Camera : public ICamera {
 public:
     struct Diagnostics {
@@ -16,7 +14,7 @@ public:
         uint32_t stopCount = 0;
     };
 
-    static constexpr const char* kSensorName = "ESP32-CAM";
+    static constexpr const char* kSensorName = "ESP32-CAM + Mini Spy Camera";
 
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;

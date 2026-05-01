@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <Wire.h>
+#include "Wire.h"
 
 #include "RegisterBus.h"
 

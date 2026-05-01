@@ -22,6 +22,7 @@ constexpr uint8_t kFifoCtrl4Reg = 0x0A;
 constexpr uint8_t kFifoStatus1Reg = 0x3A;
 constexpr uint8_t kFifoStatus2Reg = 0x3B;
 constexpr uint8_t kFifoDataOutTagReg = 0x78;
+constexpr uint8_t kImuOutTempLReg = 0x20;
 constexpr uint8_t kImuOutXLGReg = 0x22;
 
 constexpr uint8_t kImuCtrl3CSwReset = 0x01;
@@ -47,6 +48,8 @@ constexpr uint8_t kFifoFullStatusBit = 1u << 5;
 
 constexpr float kGravityMps2 = 9.80665f;
 constexpr float kDegToRad = 0.017453292519943295f;
+constexpr float kTemperatureZeroCelsius = 25.0f;
+constexpr float kTemperatureLsbPerCelsius = 256.0f;
 
 struct RawImuSample {
     int16_t gx;
@@ -74,6 +77,20 @@ bool ReadImuRaw(const I2CDevice& device, RawImuSample* sample) {
     sample->ax = static_cast<int16_t>((raw[7] << 8) | raw[6]);
     sample->ay = static_cast<int16_t>((raw[9] << 8) | raw[8]);
     sample->az = static_cast<int16_t>((raw[11] << 8) | raw[10]);
+    return true;
+}
+
+bool ReadTemperatureRaw(const I2CDevice& device, int16_t* rawTemperature) {
+    if (rawTemperature == nullptr) {
+        return false;
+    }
+
+    uint8_t raw[2] = {};
+    if (!device.ReadRegisters(kImuOutTempLReg, raw, sizeof(raw), false)) {
+        return false;
+    }
+
+    *rawTemperature = static_cast<int16_t>((raw[1] << 8) | raw[0]);
     return true;
 }
 
@@ -144,12 +161,32 @@ Common::Vector3 ConvertGyro(const RawImuSample& sample) {
     };
 }
 
-Common::IMUData BuildImuData(const RawImuSample& imuRaw) {
+float ConvertTemperatureCelsius(int16_t rawTemperature) {
+    return kTemperatureZeroCelsius
+        + (static_cast<float>(rawTemperature) / kTemperatureLsbPerCelsius);
+}
+
+bool ReadTemperatureCelsius(const I2CDevice& device, float* temperatureCelsius) {
+    if (temperatureCelsius == nullptr) {
+        return false;
+    }
+
+    int16_t rawTemperature = 0;
+    if (!ReadTemperatureRaw(device, &rawTemperature)) {
+        return false;
+    }
+
+    *temperatureCelsius = ConvertTemperatureCelsius(rawTemperature);
+    return true;
+}
+
+Common::IMUData BuildImuData(const RawImuSample& imuRaw, float temperatureCelsius) {
     Common::Vector3 accel = ConvertAccel(imuRaw);
     Common::Vector3 gyro = ConvertGyro(imuRaw);
     Common::IMUData data{};
     data.acceleration = accel;
     data.gyroVel = gyro;
+    data.temperatureCelsius = temperatureCelsius;
 
     return data;
 }
@@ -239,7 +276,10 @@ Common::IMUData IMU::ReadData() {
         return data_;
     }
 
-    data_ = BuildImuData(imuRaw);
+    float temperatureCelsius = data_.temperatureCelsius;
+    (void)ReadTemperatureCelsius(imuDevice_, &temperatureCelsius);
+
+    data_ = BuildImuData(imuRaw, temperatureCelsius);
     return data_;
 }
 
@@ -269,6 +309,8 @@ size_t IMU::ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples) {
     bool haveGyro = false;
     bool haveAccel = false;
     size_t samplesRead = 0;
+    float temperatureCelsius = data_.temperatureCelsius;
+    (void)ReadTemperatureCelsius(imuDevice_, &temperatureCelsius);
 
     const uint16_t wordsToRead = std::min<uint16_t>(unreadWords, static_cast<uint16_t>(maxSamples * 2));
     for (uint16_t i = 0; i < wordsToRead; ++i) {
@@ -294,7 +336,7 @@ size_t IMU::ReadFifoSamples(Common::IMUData* outSamples, size_t maxSamples) {
         }
 
         if (haveGyro && haveAccel) {
-            outSamples[samplesRead] = BuildImuData(pending);
+            outSamples[samplesRead] = BuildImuData(pending, temperatureCelsius);
             data_ = outSamples[samplesRead];
             ++samplesRead;
             haveGyro = false;

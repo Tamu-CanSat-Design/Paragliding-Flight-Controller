@@ -59,6 +59,8 @@
 //     PrintVector3(direct.gyroVel);
 //     Serial.print(" accel=");
 //     PrintVector3(direct.acceleration);
+//     Serial.print(" temp_C=");
+//     Serial.print(direct.temperatureCelsius, 2);
 //     Serial.print(" fifo_count=");
 //     Serial.print(count);
 
