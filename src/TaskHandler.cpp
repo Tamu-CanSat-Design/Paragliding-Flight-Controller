@@ -121,29 +121,29 @@ namespace Tasks
             kReadCommandTaskPriority,
             ReadCommandTaskStack, &ReadCommandTaskBuffer);
 
-        ControlTaskHandle = xTaskCreateStatic(
-            ControlTask,
-            "Control Task",
-            kControlTaskStackDepth,
-            nullptr,
-            kControlTaskPriority, 
-            ControlTaskStack, &ControlTaskBuffer);
+        // ControlTaskHandle = xTaskCreateStatic(
+        //     ControlTask,
+        //     "Control Task",
+        //     kControlTaskStackDepth,
+        //     nullptr,
+        //     kControlTaskPriority, 
+        //     ControlTaskStack, &ControlTaskBuffer);
 
-        NavigationTaskHandle = xTaskCreateStatic(
-            NavigationTask,
-            "Navigation Task",
-            kNavigationTaskStackDepth,
-            nullptr,
-            kNavigationTaskPriority, 
-            NavigationTaskStack, &NavigationTaskBuffer);
+        // NavigationTaskHandle = xTaskCreateStatic(
+        //     NavigationTask,
+        //     "Navigation Task",
+        //     kNavigationTaskStackDepth,
+        //     nullptr,
+        //     kNavigationTaskPriority, 
+        //     NavigationTaskStack, &NavigationTaskBuffer);
         
-        GuidanceTaskHandle = xTaskCreateStatic(
-            GuidanceTask,
-            "Guidance Task",
-            kGuidanceTaskStackDepth,
-            nullptr,
-            kGuidanceTaskPriority, 
-            GuidanceTaskStack, &GuidanceTaskBuffer);
+        // GuidanceTaskHandle = xTaskCreateStatic(
+        //     GuidanceTask,
+        //     "Guidance Task",
+        //     kGuidanceTaskStackDepth,
+        //     nullptr,
+        //     kGuidanceTaskPriority, 
+        //     GuidanceTaskStack, &GuidanceTaskBuffer);
 
         MissionManagerTaskHandle = xTaskCreateStatic(
             MissionManagerTask,

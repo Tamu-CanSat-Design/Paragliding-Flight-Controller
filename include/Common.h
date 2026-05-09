@@ -210,7 +210,7 @@ namespace Common {
             return count;
         }
 
-        bool isDescending() const {
+        bool isAscending() const {
             if(count < 2) return false;
             int down = 0;
             for(int i = 1; i < count; i++){
@@ -221,7 +221,7 @@ namespace Common {
             return down > (count - 1) / 2;
         }
 
-        bool isAscending() const {
+        bool isDescending() const {
             if(count < 2) return false;
             int up = 0;
             for(int i = 1; i < count; i++){
