@@ -2,7 +2,7 @@
 #define HARDWARE_H
 #include "Hardware/drivers/Barometer.h"
 #include "Hardware/drivers/Imu.h"
-#include "Hardware/drivers/Magnetometer.h"
+#include "Hardware/drivers/MagnetometerOTS.h"
 #include "Hardware/drivers/TeseoGPS.h"
 #include "Hardware/drivers/Lidar.h"
 #include "Hardware/drivers/VoltageSensor.h"
@@ -28,7 +28,7 @@ namespace Hardware {
     //Sensors:
     extern Barometer barometer_;
     extern IMU imu_;
-    extern Magnetometer magnetometer_;
+    extern MagnetometerOTS magnetometer_;
     extern TeseoGPS gps_;
     extern Lidar lidar_;
     extern VoltageSensor voltageSensor_;

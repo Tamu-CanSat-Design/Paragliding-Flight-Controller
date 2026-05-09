@@ -1,7 +1,7 @@
 #include "GNC/PathPlanner.h"
 
 PathPlanner::PathPlanner(const Common::StateVector state, const Common::Vector3 waypoint)
-    : Energy{}, Phase(EnergyBleed) {
+    : Energy{}, Phase(GNC::GliderPhase::EnergyBleed) {
     float dx = waypoint.x - state.x;
     float dy = waypoint.y - state.y;
     float vx = state.vx, vy = state.vy, vz = state.vz;
@@ -18,9 +18,9 @@ PathPlanner::PathPlanner(const Common::StateVector state, const Common::Vector3 
     Energy.EnergySurplus = Energy.EnergyAval - EnergyTrans;
 
     if (Energy.EnergySurplus > 0.0f) {
-        Phase = EnergyBleed;
+        Phase = GNC::GliderPhase::EnergyBleed;
     } else {
-        Phase = Approach;
+        Phase = GNC::GliderPhase::Approach;
     }
 };
 
@@ -41,9 +41,9 @@ void PathPlanner::UpdateState(const Common::StateVector state, const Common::Vec
     Energy.EnergySurplus = Energy.EnergyAval - EnergyTrans;
 
     if (Energy.EnergySurplus > 0.0f) {
-        Phase = EnergyBleed;
+        Phase = GNC::GliderPhase::EnergyBleed;
     } else {
-        Phase = Approach;
+        Phase = GNC::GliderPhase::Approach;
     }
 };
 

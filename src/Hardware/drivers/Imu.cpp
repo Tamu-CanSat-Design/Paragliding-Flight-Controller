@@ -202,8 +202,8 @@ bool IMU::Initialize() {
     initialized_ = false;
 
     // IMU uses I2C for both chips; keep setup centralized here for now.
-    Wire.begin();
-    Wire.setClock(Common::I2C_BAUDRATE);
+    Wire1.begin();
+    Wire1.setClock(Common::I2C_BAUDRATE);
 
     // WHO_AM_I read validates we are talking to the expected device.
     uint8_t whoami = 0;

@@ -4,6 +4,9 @@ AdaptiveEKF::AdaptiveEKF(){
         stateVector.Fill(0.0);
         processNoiseCovariance.Fill(0.1f); // Initial process noise
         
+        // initialize all jacobians
+
+
         // Constant Barometer Jacobian (linear measurement)
         barometerMeasurementJacobian.Fill(0.0); 
         barometerMeasurementJacobian(0, 2) = -1.0f; // Barometer measures altitude (z position)
@@ -15,6 +18,17 @@ AdaptiveEKF::AdaptiveEKF(){
         hprProcessJacobian.Fill(0.0);
         paragliderProcessJacobian.Fill(0.0);
 
+
+        currentFlightState = Common::FlightState::STANDBY;
+
+
+        // Initialize measurement noise covariances
+
+
+
+
+
+        // Determine initial states based on initial sensor readings and current flight state
         
 }
 
@@ -246,12 +260,15 @@ void AdaptiveEKF::UpdateGPS(const Common::GPSData& gpsData){
 void AdaptiveEKF::UpdateLidar(const Common::LidarData& lidarData){
 
     //TODO: Account for lidar position offset from center of mass in measurement model
+    //TODO: Add singularity handler
 
     const float Denominator = 1.f - 2 * (stateVector(7)*stateVector(7) + stateVector(8)*stateVector(8));
 
     const float PredictedLidar = - stateVector(2) / Denominator;
 
     lidarMeasurementJacobian(0, 2) = -1.f / Denominator;
+    // lidarMeasurementJacobian(0, 7)
+    // lidarMeasurementJacobian(0, 8)
 
     UpdateEKFMeasurement(lidarMeasurementJacobian, {lidarData.distanceMeters - PredictedLidar}, lidarNoiseCovariance);
 }
@@ -264,4 +281,10 @@ void AdaptiveEKF::SetFlightState(Common::FlightState flightState) {
         SetMeasurementNoiseCovariance();
 }
 
+
+void AdaptiveEKF::UpdateZeroVelocity(){
+    
+    UpdateEKFMeasurement(zeroVelocityMeasurementJacobian, {0.0f, 0.0f, 0.0f}, zeroVelocityNoiseCovariance);
+    
+}
 

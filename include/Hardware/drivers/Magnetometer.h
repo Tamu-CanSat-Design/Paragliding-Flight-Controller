@@ -23,7 +23,7 @@ public:
 private:
     Common::MagData data_{};
     Diagnostics diagnostics_{};
-    I2CDevice device_{};
+    I2CDevice device_{0x1E, Wire1};
     bool initialized_ = false;
 };
 

@@ -26,34 +26,41 @@ bool Magnetometer::Initialize() {
     diagnostics_ = {};
     initialized_ = false;
 
-    Wire.begin();
-    Wire.setClock(Common::I2C_BAUDRATE);
-
+    Wire1.begin();
+    Wire1.setClock(Common::I2C_BAUDRATE);
+    delay(10);
     device_.setAddress(kMagAddress);
 
     uint8_t whoami = 0;
-    
-    if (!device_.ReadRegister(kMagWhoAmIReg, &whoami) || whoami != kMagWhoAmIValue) {
+    bool whoamiOk = device_.ReadRegister(kMagWhoAmIReg, &whoami);
+    Serial.printf("WHO_AM_I read ok: %s, value: 0x%02X (expect 0x40)\n", whoamiOk ? "yes" : "no", whoami);
+    if (!whoamiOk || whoami != kMagWhoAmIValue) {
         ++diagnostics_.initFailureCount;
         return false;
     }
+    Serial.println("Magnetometer WHO_AM_I OK");
+    
     if (!device_.WriteRegister(kMagCfgAReg, kMagCfgAReset)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
+    Serial.println("Magnetometer reset OK");
+    delay(10);
     if (!device_.WriteRegister(kMagCfgAReg, kMagCfgA)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
+    Serial.println("Magnetometer CFG_A OK");
     if (!device_.WriteRegister(kMagCfgBReg, kMagCfgB)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
+    Serial.println("Magnetometer CFG_B OK");
     if (!device_.WriteRegister(kMagCfgCReg, kMagCfgC)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
-
+    Serial.println("Magnetometer CFG_C OK");
     initialized_ = true;
     return true;
 }

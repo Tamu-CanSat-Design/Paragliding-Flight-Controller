@@ -4,14 +4,12 @@
 #include "Common.h"
 #include "GNC/GNC.h"
 
+
+
 class PathPlanner{
     private:
 
-        enum GliderPhase{
-            EnergyBleed,
-            Approach,
-            Abort,
-        };
+        
 
         struct EnergyValues{
             float DistReq{0.0f};
@@ -25,12 +23,12 @@ class PathPlanner{
         };        
 
         EnergyValues Energy;
-        GliderPhase Phase;
+        GNC::GliderPhase Phase;
 
 
     public:
 
-        PathPlanner() : Phase(EnergyBleed), Energy{} {}
+        PathPlanner() : Phase(GNC::GliderPhase::EnergyBleed), Energy{} {}
 
         PathPlanner(const Common::StateVector state, const Common::Vector3 waypoint);
 

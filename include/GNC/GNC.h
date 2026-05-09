@@ -4,6 +4,12 @@
 #include <BasicLinearAlgebra.h>
 #include "Common.h"
 namespace GNC{
+    enum class GliderPhase{
+            EnergyBleed,
+            Approach,
+            Abort,
+    };
+
 
     // Calibration
     inline constexpr float MAGREFX = 0.0; // Placeholder values for magnetometer calibration

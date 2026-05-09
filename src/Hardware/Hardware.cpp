@@ -7,7 +7,7 @@ namespace Hardware {
     
     Barometer barometer_;
     IMU imu_;
-    Magnetometer magnetometer_;
+    MagnetometerOTS magnetometer_;
     TeseoGPS gps_;
     Lidar lidar_;
     VoltageSensor voltageSensor_;

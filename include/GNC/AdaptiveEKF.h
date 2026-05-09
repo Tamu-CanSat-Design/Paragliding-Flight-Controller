@@ -19,7 +19,7 @@ public:
     void UpdateBarometer(const Common::BarometerData& baroData);
     void UpdateGPS(const Common::GPSData& gpsData);
     void UpdateLidar(const Common::LidarData& lidarData);
-
+    void UpdateZeroVelocity();
 
     void SetFlightState(Common::FlightState flightState);
 
@@ -52,6 +52,7 @@ private:
     BLA::Matrix<3, 3> gpsNoiseCovariance;
     BLA::Matrix<1, 1> barometerNoiseCovariance;
     BLA::Matrix<1, 1> lidarNoiseCovariance;
+    BLA::Matrix<3, 3> zeroVelocityNoiseCovariance;
 
     BLA::Matrix<15, 15> hprProcessJacobian;
     BLA::Matrix<15, 15> paragliderProcessJacobian;
@@ -59,6 +60,7 @@ private:
     BLA::Matrix<3,15> gpsMeasurementJacobian;
     BLA::Matrix<1,15> barometerMeasurementJacobian;
     BLA::Matrix<1,15> lidarMeasurementJacobian;
+    BLA::Matrix<3,15> zeroVelocityMeasurementJacobian;
 
     
     Common::FlightState currentFlightState;

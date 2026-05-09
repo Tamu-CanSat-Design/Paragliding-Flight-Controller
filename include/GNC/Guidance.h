@@ -5,13 +5,22 @@
 #include "GNC/GNC.h"
 
 class Guidance{
-    private:
+public:
+    Guidance() : L_1(0.0), R(8.0f), chi(0), chi_L(0), chi_cp(0), eta(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0) {}
 
-    float MaxTurnRadius = 6; //m
-    float P_L = 0.5; //s
-    float Zeta_L = 0.707f;
+    Guidance(Common::StateVector state, Common::Vector3 waypoint);
+    float CalculateRoll(Common::StateVector state, Common::Vector3 waypoint);
+    
+    float GetRoll() const{return phi_ref;};
+
+
+private:
+
+    static constexpr float MaxTurnRadius = 6; //m
+    static constexpr float P_L = 0.5; //s
+    static constexpr float Zeta_L = 0.707f;
     float R = 8.0f; //Will need to be adaptive eventually for approach
-    float phi_max = (float)PI/4;
+    static constexpr float phi_max = (float)PI/4;
 
     float L_1;
     float chi;
@@ -26,15 +35,6 @@ class Guidance{
     float gamma;
     float e_t;
     float phi_ref;
-
-    public:
-    Guidance() : L_1(0.0), R(0), chi(0), chi_L(0), chi_cp(0), eta(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0) {}
-
-    Guidance(Common::StateVector state, Common::Vector3 waypoint);
-    float CalculateRoll(Common::StateVector state, Common::Vector3 waypoint);
-    
-    float GetRoll() const{return phi_ref;};
-
 
 };
 

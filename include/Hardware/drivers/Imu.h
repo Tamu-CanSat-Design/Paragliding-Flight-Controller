@@ -35,7 +35,7 @@ private:
     Common::Vector3 accelBias_{};
     Common::Vector3 gyroBias_{};
     // Separate bus handles keep address/protocol state per sensor die.
-    I2CDevice imuDevice_{};
+    I2CDevice imuDevice_{0x6A, Wire1};
     // Guards against reads before hardware is configured.
     bool initialized_{false};
 };
