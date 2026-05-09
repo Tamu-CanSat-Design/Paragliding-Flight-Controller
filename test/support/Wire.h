@@ -38,6 +38,7 @@ public:
 
         if (txBuffer_.size() == 1) {
             registerPointer_[currentAddress_] = txBuffer_[0];
+            registerReadPending_[currentAddress_] = true;
             return 0;
         }
 
@@ -46,6 +47,7 @@ public:
             registers_[MakeKey(currentAddress_, static_cast<uint8_t>(reg + i - 1))] = txBuffer_[i];
         }
         registerPointer_[currentAddress_] = reg;
+        registerReadPending_[currentAddress_] = false;
         return 0;
     }
 
@@ -53,6 +55,24 @@ public:
         rxBuffer_.clear();
         rxIndex_ = 0;
 
+        if (!registerReadPending_[address]) {
+            if (rawReadFailures_[address]) {
+                return 0;
+            }
+
+            auto& stream = streamBytes_[address];
+            for (uint8_t i = 0; i < quantity; ++i) {
+                if (!stream.empty()) {
+                    rxBuffer_.push_back(stream.front());
+                    stream.pop_front();
+                } else {
+                    rxBuffer_.push_back(0xFF);
+                }
+            }
+            return rxBuffer_.size();
+        }
+
+        registerReadPending_[address] = false;
         const uint8_t reg = registerPointer_[address];
         if (failReads_[MakeKey(address, reg)]) {
             return 0;
@@ -94,6 +114,9 @@ public:
         fifoWords_.clear();
         fifoStatus2Bits_.clear();
         failReads_.clear();
+        rawReadFailures_.clear();
+        streamBytes_.clear();
+        registerReadPending_.clear();
         writeLog_.clear();
         txBuffer_.clear();
         rxBuffer_.clear();
@@ -115,6 +138,24 @@ public:
 
     void setReadFailure(uint8_t address, uint8_t reg, bool enabled) {
         failReads_[MakeKey(address, reg)] = enabled;
+    }
+
+    void setRawReadFailure(uint8_t address, bool enabled) {
+        rawReadFailures_[address] = enabled;
+    }
+
+    void pushStreamByte(uint8_t address, uint8_t value) {
+        streamBytes_[address].push_back(value);
+    }
+
+    void pushStreamBytes(uint8_t address, const char* values) {
+        if (values == nullptr) {
+            return;
+        }
+        while (*values != '\0') {
+            streamBytes_[address].push_back(static_cast<uint8_t>(*values));
+            ++values;
+        }
     }
 
     size_t fifoWordCount(uint8_t address) const {
@@ -140,12 +181,16 @@ private:
     std::vector<uint8_t> rxBuffer_{};
     std::unordered_map<uint16_t, uint8_t> registers_{};
     std::unordered_map<uint8_t, uint8_t> registerPointer_{};
+    std::unordered_map<uint8_t, bool> registerReadPending_{};
     std::unordered_map<uint8_t, std::deque<std::array<uint8_t, 7>>> fifoWords_{};
     std::unordered_map<uint8_t, uint8_t> fifoStatus2Bits_{};
     std::unordered_map<uint16_t, bool> failReads_{};
+    std::unordered_map<uint8_t, bool> rawReadFailures_{};
+    std::unordered_map<uint8_t, std::deque<uint8_t>> streamBytes_{};
     std::vector<WriteEntry> writeLog_{};
 };
 
 inline TwoWire Wire;
+inline TwoWire& Wire1 = Wire;
 
 #endif
