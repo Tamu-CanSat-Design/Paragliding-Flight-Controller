@@ -36,8 +36,36 @@ public:
         return ReadRegisters(reg, value, 1, false);
     }
 
+    // Raw reads are for stream-style I2C devices that are not register indexed.
+    bool ReadBytes(uint8_t* data, size_t length) const {
+        if (data == nullptr || length == 0 || length > 255) {
+            return false;
+        }
+
+        const size_t readCount = wire_->requestFrom(address_, static_cast<uint8_t>(length));
+        if (readCount != length) {
+            return false;
+        }
+
+        for (size_t i = 0; i < length; ++i) {
+            if (!wire_->available()) {
+                return false;
+            }
+            const int value = wire_->read();
+            if (value < 0 || value > 255) {
+                return false;
+            }
+            data[i] = static_cast<uint8_t>(value);
+        }
+        return true;
+    }
+
     // Some I2C sensors auto-increment when MSB is set on the sub-address.
     bool ReadRegisters(uint8_t reg, uint8_t* data, size_t length, bool autoIncrementMsb) const override {
+        if (data == nullptr || length == 0 || length > 255) {
+            return false;
+        }
+
         // Compose the starting register address.
         uint8_t startReg = reg;
         // Optionally set the MSB to enable auto-increment for multi-byte reads.
@@ -63,7 +91,11 @@ public:
             if (!wire_->available()) {
                 return false;
             }
-            data[i] = wire_->read();
+            const int value = wire_->read();
+            if (value < 0 || value > 255) {
+                return false;
+            }
+            data[i] = static_cast<uint8_t>(value);
         }
         return true;
     }

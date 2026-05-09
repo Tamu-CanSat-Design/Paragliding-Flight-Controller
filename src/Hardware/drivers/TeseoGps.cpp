@@ -12,23 +12,13 @@ constexpr uint8_t kGpsI2cAddress = 0x42;
 constexpr uint8_t kGpsI2cAddress = static_cast<uint8_t>(GPS_I2C_ADDRESS);
 #endif
 
-#ifndef GPS_I2C_BYTES_AVAILABLE_REG
-constexpr uint8_t kGpsBytesAvailableReg = 0xFD;
-#else
-constexpr uint8_t kGpsBytesAvailableReg = static_cast<uint8_t>(GPS_I2C_BYTES_AVAILABLE_REG);
-#endif
-
-#ifndef GPS_I2C_DATA_REG
-constexpr uint8_t kGpsDataReg = 0xFF;
-#else
-constexpr uint8_t kGpsDataReg = static_cast<uint8_t>(GPS_I2C_DATA_REG);
-#endif
-
 #ifndef GPS_I2C_MAX_BYTES_PER_READ
 constexpr size_t kGpsMaxBytesPerRead = 128;
 #else
 constexpr size_t kGpsMaxBytesPerRead = static_cast<size_t>(GPS_I2C_MAX_BYTES_PER_READ);
 #endif
+
+constexpr uint8_t kGpsIdleByte = 0xFF;
 }  // namespace
 
 TeseoGPS::TeseoGPS(uint8_t address)
@@ -55,10 +45,17 @@ bool TeseoGPS::Initialize() {
         return false;
     }
 
-    uint8_t available_bytes[2] = {};
-    if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
+    // ST UM2229 dm00398983 describes Teseo I2C NMEA reads as direct stream
+    // reads. Register 0xFF is the NMEA stream; 0x00-0xFE are reserved.
+    uint8_t probe = kGpsIdleByte;
+    if (!bus_->ReadBytes(&probe, 1)) {
         ++diagnostics_.initFailureCount;
         return false;
+    }
+    if (probe != kGpsIdleByte) {
+        ProcessChar(static_cast<char>(probe));
+    } else {
+        ++diagnostics_.idleByteCount;
     }
 
     initialized_ = true;
@@ -71,39 +68,34 @@ Common::GPSData TeseoGPS::ReadData() {
         return data_;
     }
 
-    uint8_t available_bytes[2] = {};
-    if (!bus_->ReadRegisters(kGpsBytesAvailableReg, available_bytes, sizeof(available_bytes), false)) {
-        ++diagnostics_.readFailureCount;
-        ++diagnostics_.staleReturnCount;
-        return data_;
-    }
-
-    size_t bytes_to_read = static_cast<size_t>(available_bytes[0])
-        | (static_cast<size_t>(available_bytes[1]) << 8);
-    if (bytes_to_read == 0) {
-        return data_;
-    }
-
-    if (bytes_to_read > kGpsMaxBytesPerRead) {
-        bytes_to_read = kGpsMaxBytesPerRead;
-    }
-
     uint8_t chunk[kMaxI2cChunkLen] = {};
+    size_t bytes_to_read = kGpsMaxBytesPerRead;
     while (bytes_to_read > 0) {
         size_t chunk_len = bytes_to_read;
         if (chunk_len > kMaxI2cChunkLen) {
             chunk_len = kMaxI2cChunkLen;
         }
 
-        if (!bus_->ReadRegisters(kGpsDataReg, chunk, chunk_len, false)) {
+        if (!bus_->ReadBytes(chunk, chunk_len)) {
             ++diagnostics_.readFailureCount;
+            ++diagnostics_.staleReturnCount;
             break;
         }
 
+        bool saw_idle_byte = false;
         for (size_t i = 0; i < chunk_len; ++i) {
+            if (chunk[i] == kGpsIdleByte) {
+                ++diagnostics_.idleByteCount;
+                saw_idle_byte = true;
+                continue;
+            }
             ProcessChar(static_cast<char>(chunk[i]));
         }
+
         bytes_to_read -= chunk_len;
+        if (saw_idle_byte) {
+            break;
+        }
     }
 
     return data_;

@@ -6,4 +6,14 @@
 
 inline void delay(unsigned long) {}
 
+class SerialStub {
+public:
+    template <typename... Args>
+    void printf(const char*, Args...) {}
+
+    void println(const char*) {}
+};
+
+inline SerialStub Serial;
+
 #endif

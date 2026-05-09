@@ -15,6 +15,7 @@ public:
         uint32_t initFailureCount = 0;
         uint32_t readFailureCount = 0;
         uint32_t staleReturnCount = 0;
+        uint32_t idleByteCount = 0;
     };
 
     const char* SensorName() const override { return kSensorName; }
