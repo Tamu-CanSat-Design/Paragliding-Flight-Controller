@@ -14,9 +14,10 @@ constexpr uint16_t kManufIdValue = 0x5449;  // Expected Manufacturer ID.
 
 // INA260 uses big-endian byte order (MSB first) — opposite of IIS2MDC/ISM330DHCX.
 // Byte combine: (buf[0] << 8) | buf[1]
-constexpr float kCurrentLsbMa = 1.25f;  // 1.25 mA / LSB
-constexpr float kVoltageLsbMv = 1.25f;  // 1.25 mV / LSB
-constexpr float kPowerLsbMw   = 10.0f;  // 10 mW / LSB
+// LSB weights converted to SI units (V, A, W) so VoltageData fields match telemetry expectations.
+constexpr float kCurrentLsbA = 0.00125f;  // 1.25 mA / LSB → A
+constexpr float kVoltageLsbV = 0.00125f;  // 1.25 mV / LSB → V
+constexpr float kPowerLsbW   = 0.01f;     // 10 mW / LSB   → W
 }  // namespace
 
 bool VoltageSensor::Initialize() {
@@ -73,9 +74,9 @@ Common::VoltageData VoltageSensor::ReadData() {
     const uint16_t powerRaw = static_cast<uint16_t>((static_cast<uint16_t>(raw[0]) << 8) | raw[1]);
 
     data_ = Common::VoltageData{
-        voltageRaw * kVoltageLsbMv,
-        currentRaw * kCurrentLsbMa,
-        powerRaw   * kPowerLsbMw,
+        voltageRaw * kVoltageLsbV,
+        currentRaw * kCurrentLsbA,
+        powerRaw   * kPowerLsbW,
     };
     return data_;
 }

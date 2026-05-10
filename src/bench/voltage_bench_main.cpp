@@ -29,13 +29,13 @@
 //     const Common::VoltageData data = gVoltageSensor.ReadData();
 //     const VoltageSensor::Diagnostics diag = gVoltageSensor.GetDiagnostics();
 
-//     // Units: voltage_mV, current_mA, power_mW (INA260 LSB scaling applied by driver).
-//     Serial.print("voltage_bench: voltage_mV=");
-//     Serial.print(data.voltage, 2);
-//     Serial.print(" current_mA=");
-//     Serial.print(data.current, 2);
-//     Serial.print(" power_mW=");
-//     Serial.print(data.power, 2);
+//     // Units: V, A, W (INA260 LSB scaling converted to SI by driver).
+//     Serial.print("voltage_bench: voltage_V=");
+//     Serial.print(data.voltage, 4);
+//     Serial.print(" current_A=");
+//     Serial.print(data.current, 4);
+//     Serial.print(" power_W=");
+//     Serial.print(data.power, 4);
 //     Serial.print(" diag={initFail=");
 //     Serial.print(diag.initFailureCount);
 //     Serial.print(",readFail=");
