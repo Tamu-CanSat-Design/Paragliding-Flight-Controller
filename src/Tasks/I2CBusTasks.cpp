@@ -35,7 +35,7 @@ namespace {
 constexpr float kDefaultReferencePressureHpa = 1013.25f;
 constexpr TickType_t kBusTaskLoopPeriod = 1;
 constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
-constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(200);        // 5 Hz
+constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(100);        // 10 Hz
 constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(10);       // 100 Hz
 constexpr TickType_t kMagPeriodTicks = pdMS_TO_TICKS(20);         // 50 Hz
 constexpr TickType_t kVoltagePeriodTicks = pdMS_TO_TICKS(143);    // nearest tick period to ~7 Hz

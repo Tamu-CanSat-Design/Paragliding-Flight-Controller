@@ -16,6 +16,8 @@ public:
         uint32_t readFailureCount = 0;
         uint32_t staleReturnCount = 0;
         uint32_t idleByteCount = 0;
+        uint32_t invalidGroundSpeedCount = 0;
+        uint32_t invalidCourseOverGroundCount = 0;
     };
 
     const char* SensorName() const override { return kSensorName; }
@@ -45,6 +47,8 @@ private:
     void ParseGga(char* const* fields, size_t count);
     void ParseRmc(char* const* fields, size_t count);
     static bool ParseDegrees(const char* field, bool is_latitude, float* out);
+    static bool ParseGroundSpeedMetersPerSecond(const char* field, float* out);
+    static bool ParseCourseOverGroundDegrees(const char* field, float* out);
     static float ParseTimeSeconds(const char* field);
     static bool CheckChecksum(const char* start, const char* asterisk);
     static uint8_t HexToNibble(char c);

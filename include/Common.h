@@ -115,6 +115,10 @@ namespace Common {
         float longitude;
         float altitude;
         float time;
+        float groundSpeedMetersPerSecond;
+        float courseOverGroundDegrees;
+        bool groundSpeedValid;
+        bool courseOverGroundValid;
         int satellites;
     };
     
