@@ -15,7 +15,7 @@ namespace{
     uint8_t gI2C1LidarQueueStorage[LIDARQUEUEDEPTH * sizeof(Common::LidarData)];
     uint8_t gI2C2IMUQueueStorage[IMUQUEUEDEPTH * sizeof(Common::IMUBatch)];
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
-    uint8_t gI2C2VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
+    uint8_t gI2C1VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
 }
 
@@ -73,10 +73,10 @@ namespace SharedData {
     
     static StaticQueue_t gI2C2IMUQueueBuffer;
     static StaticQueue_t gI2C2MagQueueBuffer;
-    static StaticQueue_t gI2C2VoltageQueueBuffer;
+    static StaticQueue_t gI2C1VoltageQueueBuffer;
     QueueHandle_t gI2C2IMUQueue = nullptr;
     QueueHandle_t gI2C2MagQueue = nullptr;
-    QueueHandle_t gI2C2VoltageQueue = nullptr;
+    QueueHandle_t gI2C1VoltageQueue = nullptr;
 
     static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
@@ -99,7 +99,7 @@ namespace SharedData {
         // IMU queue now carries FIFO-drained batches instead of one sample per send.
         gI2C2IMUQueue = xQueueCreateStatic(IMUQUEUEDEPTH, sizeof(Common::IMUBatch), gI2C2IMUQueueStorage, &gI2C2IMUQueueBuffer);
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
-        gI2C2VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C2VoltageQueueStorage, &gI2C2VoltageQueueBuffer);
+        gI2C1VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C1VoltageQueueStorage, &gI2C1VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
 
         gFlightState = Common::FlightState::STANDBY;
@@ -109,7 +109,7 @@ namespace SharedData {
         memset(gCommand, 0, sizeof(gCommand));
 
         if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex || !gRollAngleSetpointMutex || !gRollAngularVelocityMutex ||
-           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C2VoltageQueue || !gCommandQueue) {
+           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C1VoltageQueue || !gCommandQueue) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");
             while (true) {} // Halt execution

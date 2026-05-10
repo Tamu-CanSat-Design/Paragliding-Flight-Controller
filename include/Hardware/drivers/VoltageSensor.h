@@ -23,7 +23,7 @@ public:
 private:
     Common::VoltageData data_{};
     Diagnostics diagnostics_{};
-    I2CDevice device_{};
+    I2CDevice device_{0x40, Wire};
     bool initialized_ = false;
 };
 

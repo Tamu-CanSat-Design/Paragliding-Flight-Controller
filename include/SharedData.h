@@ -47,7 +47,7 @@ namespace SharedData {
     //I2C 2 queues to Nav
     extern QueueHandle_t gI2C2IMUQueue;
     extern QueueHandle_t gI2C2MagQueue;
-    extern QueueHandle_t gI2C2VoltageQueue;
+    extern QueueHandle_t gI2C1VoltageQueue;
 
     //Command queue
     extern QueueHandle_t gCommandQueue;

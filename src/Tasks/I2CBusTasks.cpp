@@ -13,6 +13,9 @@ namespace {
 //   INA260      -> 7 Hz effective
 //   LIDAR-Lite  -> 100 Hz internal
 //
+// I2C1BusTask (Wire):  barometer, GPS, lidar, voltage sensor
+// I2C2BusTask (Wire1): IMU (FIFO), magnetometer
+//
 // These two bus tasks are the only code that touches the physical I2C buses.
 // Each task wakes once per RTOS tick, checks which sensors are due, reads only
 // those sensors, then pushes the freshest values into:
@@ -109,6 +112,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     Common::BarometerData latestBaro = {};
     Common::GPSData latestGps = {};
     Common::LidarData latestLidar = {};
+    Common::VoltageData latestVoltage = {};
 
     // lastWakeTime drives vTaskDelayUntil so the task wakes on a stable RTOS
     // cadence instead of drifting over time.
@@ -116,6 +120,7 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     TickType_t nextBarometerTick = lastWakeTime;
     TickType_t nextGpsTick = lastWakeTime;
     TickType_t nextLidarTick = lastWakeTime;
+    TickType_t nextVoltageTick = lastWakeTime;
 
     while (true) {
         const TickType_t now = xTaskGetTickCount();
@@ -158,6 +163,13 @@ void Tasks::I2C1BusTask(void* pvParameters) {
             AdvanceDeadline(&nextLidarTick, kLidarPeriodTicks, now);
         }
 
+        if (IsTimeDue(now, nextVoltageTick)) {
+            latestVoltage = Hardware::voltageSensor_.ReadData();
+            xQueueSend(SharedData::gI2C1VoltageQueue, &latestVoltage, portMAX_DELAY); // TODO: Don't make this a blocking send
+            UpdateSnapshot(&Common::SensorSnapshot::voltageData, latestVoltage);
+            AdvanceDeadline(&nextVoltageTick, kVoltagePeriodTicks, now);
+        }
+
         // One-tick pacing keeps bus ownership responsive while still giving the
         // scheduler room to run higher-priority tasks.
         vTaskDelayUntil(&lastWakeTime, kBusTaskLoopPeriod);
@@ -175,12 +187,10 @@ void Tasks::I2C2BusTask(void* pvParameters) {
     Common::IMUBatch imuBatch = {};
     Common::IMUData latestImu = {};
     Common::MagData latestMag = {};
-    Common::VoltageData latestVoltage = {};
 
     TickType_t lastWakeTime = xTaskGetTickCount();
     TickType_t nextImuPollTick = lastWakeTime;
     TickType_t nextMagTick = lastWakeTime;
-    TickType_t nextVoltageTick = lastWakeTime;
 
     while (true) {
         const TickType_t now = xTaskGetTickCount();
@@ -230,15 +240,6 @@ void Tasks::I2C2BusTask(void* pvParameters) {
             xQueueSend(SharedData::gI2C2MagQueue, &latestMag, portMAX_DELAY); // TODO: Don't make this a blocking send
             UpdateSnapshot(&Common::SensorSnapshot::magData, latestMag);
             AdvanceDeadline(&nextMagTick, kMagPeriodTicks, now);
-        }
-
-        // Power telemetry is much slower than the inertial sensors, so it gets
-        // its own low-rate schedule on the second I2C bus.
-        if (IsTimeDue(now, nextVoltageTick)) {
-            latestVoltage = Hardware::voltageSensor_.ReadData();
-            xQueueSend(SharedData::gI2C2VoltageQueue, &latestVoltage, portMAX_DELAY); // TODO: Don't make this a blocking send
-            UpdateSnapshot(&Common::SensorSnapshot::voltageData, latestVoltage);
-            AdvanceDeadline(&nextVoltageTick, kVoltagePeriodTicks, now);
         }
 
         vTaskDelayUntil(&lastWakeTime, kBusTaskLoopPeriod);
