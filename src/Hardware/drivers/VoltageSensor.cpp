@@ -4,11 +4,7 @@
 #include <Wire.h>
 
 namespace {
-// TODO(schematic): confirm I2C bus (Wire vs Wire1) and A0/A1 strapping.
-// Default address 0x40 assumes A0=A1=GND.
-constexpr uint8_t kIna260Address = 0x40;
-
-// Register map (INA260, TI SBOS656C).
+// register map (INA260, TI SBOS656C); device is on Wire (I2C bus 1), address 0x40 assumes A0=A1=GND
 constexpr uint8_t kCurrentReg    = 0x01;
 constexpr uint8_t kVoltageReg    = 0x02;
 constexpr uint8_t kPowerReg      = 0x03;
@@ -30,7 +26,6 @@ bool VoltageSensor::Initialize() {
 
     Wire.begin();
     Wire.setClock(Common::I2C_BAUDRATE);
-    device_.setAddress(kIna260Address);
 
     // Verify device identity via big-endian 2-byte Manufacturer ID register.
     uint8_t id[2] = {};
