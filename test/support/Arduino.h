@@ -20,6 +20,12 @@ private:
 
 inline constexpr int HEX = 16;
 
+class Stream {
+public:
+    size_t print(const char*) { return 0; }
+    size_t print(char) { return 0; }
+};
+
 class SerialStub {
 public:
     template <typename... Args>

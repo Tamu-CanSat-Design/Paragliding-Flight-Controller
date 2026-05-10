@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <MicroNMEA.h>
+
 #include "../bus/I2CDevice.h"
 #include "../interfaces/GPSInterface.h"
 
@@ -18,6 +20,8 @@ public:
         uint32_t idleByteCount = 0;
         uint32_t invalidGroundSpeedCount = 0;
         uint32_t invalidCourseOverGroundCount = 0;
+        uint32_t badChecksumCount = 0;
+        uint32_t unknownSentenceCount = 0;
     };
 
     const char* SensorName() const override { return kSensorName; }
@@ -30,28 +34,23 @@ public:
     void ClearDiagnostics();
 
 private:
-    static constexpr size_t kMaxSentenceLen = 128;
-    static constexpr size_t kMaxFields = 20;
     static constexpr size_t kMaxI2cChunkLen = 32;
+    static constexpr size_t kNmeaBufferLen = 128;
 
     I2CDevice i2c_{};
     I2CDevice* bus_ = &i2c_;
     Common::GPSData data_{};
     Diagnostics diagnostics_{};
-    char sentence_[kMaxSentenceLen]{};
-    size_t sentence_len_ = 0;
+    char nmea_buffer_[kNmeaBufferLen]{};
+    MicroNMEA nmea_{nmea_buffer_, sizeof(nmea_buffer_)};
     bool initialized_ = false;
 
     void ProcessChar(char c);
-    void HandleSentence(char* sentence);
-    void ParseGga(char* const* fields, size_t count);
-    void ParseRmc(char* const* fields, size_t count);
-    static bool ParseDegrees(const char* field, bool is_latitude, float* out);
-    static bool ParseGroundSpeedMetersPerSecond(const char* field, float* out);
-    static bool ParseCourseOverGroundDegrees(const char* field, float* out);
-    static float ParseTimeSeconds(const char* field);
-    static bool CheckChecksum(const char* start, const char* asterisk);
-    static uint8_t HexToNibble(char c);
+    void CopyParsedSentence();
+    void CopyPositionAndTime();
+    void CopyGgaData();
+    void CopyRmcData();
+    bool RmcNumericFieldValid(uint8_t field_index, bool course_field) const;
 };
 
 #endif  // HARDWARE_GPS_DRIVER_H

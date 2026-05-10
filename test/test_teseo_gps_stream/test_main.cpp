@@ -75,7 +75,7 @@ void test_gga_sentence_updates_position_altitude_time_and_satellites() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n");
+                         "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*69\r\n");
 
     const Common::GPSData data = gps.ReadData();
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "GGA latitude mismatch");
@@ -93,11 +93,11 @@ void test_rmc_sentence_updates_position_when_split_across_reads() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
 
-    Wire.pushStreamBytes(kTestGpsAddress, "$GPRMC,123519,A,4807.038,N,01131.");
+    Wire.pushStreamBytes(kTestGpsAddress, "$GPRMC,123519.00,A,4807.038,N,01131.");
     Common::GPSData data = gps.ReadData();
     AssertFloatNear(0.0f, data.latitude, 1e-5f, "Partial RMC should not update latitude");
 
-    Wire.pushStreamBytes(kTestGpsAddress, "000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+    Wire.pushStreamBytes(kTestGpsAddress, "000,E,022.4,084.4,230394,003.1,W*44\r\n");
     data = gps.ReadData();
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "Split RMC latitude mismatch");
     AssertFloatNear(11.516666f, data.longitude, 1e-4f, "Split RMC longitude mismatch");
@@ -113,7 +113,7 @@ void test_dummy_idle_bytes_do_not_corrupt_cached_data() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n");
+                         "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*69\r\n");
     const Common::GPSData first = gps.ReadData();
 
     Wire.pushStreamByte(kTestGpsAddress, 0xFF);
@@ -133,12 +133,30 @@ void test_bad_checksum_is_rejected() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n");
+                         "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n");
 
     const Common::GPSData data = gps.ReadData();
+    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(0.0f, data.latitude, 1e-5f, "Bad checksum should not update latitude");
     AssertFloatNear(0.0f, data.longitude, 1e-5f, "Bad checksum should not update longitude");
     AssertTrue(data.satellites == 0, "Bad checksum should not update satellites");
+    AssertEqualU32(1, diagnostics.badChecksumCount, "Bad checksum should increment diagnostics");
+}
+
+void test_unknown_sentence_is_ignored_and_counted() {
+    setUp();
+    PrimeIdleProbe();
+
+    TeseoGPS gps;
+    AssertTrue(gps.Initialize(), "GPS initialize failed");
+    Wire.pushStreamBytes(kTestGpsAddress,
+                         "$GPGLL,4916.45,N,12311.12,W,225444,A*31\r\n");
+
+    const Common::GPSData data = gps.ReadData();
+    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
+    AssertFloatNear(0.0f, data.latitude, 1e-5f, "Unknown sentence should not update latitude");
+    AssertFloatNear(0.0f, data.longitude, 1e-5f, "Unknown sentence should not update longitude");
+    AssertEqualU32(1, diagnostics.unknownSentenceCount, "Unknown sentence should increment diagnostics");
 }
 
 void test_raw_read_failure_returns_stale_data_and_tracks_diagnostics() {
@@ -163,13 +181,13 @@ void test_bad_rmc_speed_marks_degraded_without_overwriting_cached_speed() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     Common::GPSData data = gps.ReadData();
     AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f, "Initial RMC ground speed mismatch");
     AssertTrue(data.groundSpeedValid, "Initial RMC ground speed should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,abc,084.4,230394,003.1,W*20\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,abc,084.4,230394,003.1,W*0E\r\n");
     data = gps.ReadData();
 
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
@@ -187,12 +205,12 @@ void test_empty_rmc_speed_marks_degraded_without_overwriting_cached_speed() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     Common::GPSData data = gps.ReadData();
     AssertTrue(data.groundSpeedValid, "Initial RMC ground speed should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,,084.4,230394,003.1,W*40\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,,084.4,230394,003.1,W*6E\r\n");
     data = gps.ReadData();
 
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
@@ -210,11 +228,11 @@ void test_inactive_rmc_does_not_update_cached_speed() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     const Common::GPSData first = gps.ReadData();
 
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*7D\r\n");
+                         "$GPRMC,123519.00,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*53\r\n");
     const Common::GPSData second = gps.ReadData();
 
     AssertFloatNear(first.groundSpeedMetersPerSecond, second.groundSpeedMetersPerSecond, 1e-5f,
@@ -229,7 +247,7 @@ void test_rmc_sentence_parses_course_over_ground() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     const Common::GPSData data = gps.ReadData();
     AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f, "RMC COG mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG should be valid");
@@ -241,9 +259,8 @@ void test_rmc_cog_north_boundary() {
 
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
-    // COG 000.0 (due north): checksum 0x6A ^ (0x30^0x38^0x34^0x2E^0x34) ^ 0 = 0x6A ^ 0x26 ^ 0 (same length, replacing 084.4 with 000.0: diff 0x08) = 0x62
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,000.0,230394,003.1,W*62\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,000.0,230394,003.1,W*4C\r\n");
     const Common::GPSData data = gps.ReadData();
     AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-4f, "RMC COG 000.0 mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG 000.0 should be valid");
@@ -255,9 +272,8 @@ void test_rmc_cog_upper_boundary() {
 
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
-    // COG 359.9: diff from 084.4 = 0x03^0x0D^0x0D^0x0D = 0x0E, checksum = 0x6A^0x0E = 0x64
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,359.9,230394,003.1,W*64\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,359.9,230394,003.1,W*4A\r\n");
     const Common::GPSData data = gps.ReadData();
     AssertFloatNear(359.9f, data.courseOverGroundDegrees, 1e-3f, "RMC COG 359.9 mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG 359.9 should be valid");
@@ -269,10 +285,8 @@ void test_rmc_cog_360_is_rejected() {
 
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
-    // COG 360.0 is out of range and must be rejected.
-    // diff from 084.4: 0x03^0x0E^0x04^0x04 = 0x0D, checksum = 0x6A^0x0D = 0x67
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,360.0,230394,003.1,W*67\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,360.0,230394,003.1,W*49\r\n");
     const Common::GPSData data = gps.ReadData();
     AssertTrue(!data.courseOverGroundValid, "RMC COG 360.0 should be rejected as invalid");
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
@@ -287,13 +301,12 @@ void test_empty_rmc_cog_marks_degraded_without_overwriting_cached_cog() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     Common::GPSData data = gps.ReadData();
     AssertTrue(data.courseOverGroundValid, "Initial RMC COG should be valid");
 
-    // Empty COG field (stationary receiver). Remove 084.4 (XOR = 0x26), checksum = 0x6A^0x26 = 0x4C
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*4C\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*62\r\n");
     data = gps.ReadData();
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f,
@@ -310,13 +323,12 @@ void test_bad_rmc_cog_marks_degraded_without_overwriting_cached_cog() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     Common::GPSData data = gps.ReadData();
     AssertTrue(data.courseOverGroundValid, "Initial RMC COG should be valid");
 
-    // Non-numeric COG field. Replace 084.4 with abc: diff 0x26^0x60=0x46, checksum=0x6A^0x46=0x2C
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,abc,230394,003.1,W*2C\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,abc,230394,003.1,W*02\r\n");
     data = gps.ReadData();
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f,
@@ -332,9 +344,8 @@ void test_rmc_with_too_few_fields_marks_cog_invalid() {
 
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
-    // Sentence ends after field 7 (speed); no COG field present. Checksum = 0x38.
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4*38\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4*16\r\n");
     const Common::GPSData data = gps.ReadData();
     AssertTrue(!data.courseOverGroundValid, "RMC with too few fields should mark COG invalid");
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
@@ -349,11 +360,11 @@ void test_inactive_rmc_does_not_update_cached_cog() {
     TeseoGPS gps;
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n");
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
     const Common::GPSData first = gps.ReadData();
 
     Wire.pushStreamBytes(kTestGpsAddress,
-                         "$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*7D\r\n");
+                         "$GPRMC,123519.00,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*53\r\n");
     const Common::GPSData second = gps.ReadData();
 
     AssertFloatNear(first.courseOverGroundDegrees, second.courseOverGroundDegrees, 1e-5f,
@@ -367,6 +378,7 @@ int main(int, char**) {
     test_rmc_sentence_updates_position_when_split_across_reads();
     test_dummy_idle_bytes_do_not_corrupt_cached_data();
     test_bad_checksum_is_rejected();
+    test_unknown_sentence_is_ignored_and_counted();
     test_raw_read_failure_returns_stale_data_and_tracks_diagnostics();
     test_bad_rmc_speed_marks_degraded_without_overwriting_cached_speed();
     test_empty_rmc_speed_marks_degraded_without_overwriting_cached_speed();
