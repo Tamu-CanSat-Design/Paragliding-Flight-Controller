@@ -27,21 +27,21 @@ namespace Hardware {
 
     bool InitializeAllSensors() {
         bool ok = true;
-        ok = barometer_.Initialize() && ok;
+        // ok = barometer_.Initialize() && ok;
         ok = imu_.Initialize() && ok;
         ok = magnetometer_.Initialize() && ok;
         ok = gps_.Initialize() && ok;
-        ok = lidar_.Initialize() && ok;
+        // ok = lidar_.Initialize() && ok;
         ok = voltageSensor_.Initialize() && ok;
         ok = radio_.Initialize() && ok;
-        ok = audioBeacon_.Initialize() && ok;
-        ok = camera_.Initialize() && ok;
+        // ok = audioBeacon_.Initialize() && ok;
+        // ok = camera_.Initialize() && ok;
 
-        ok = EggInstrumentServo_.Initialize() && ok;
-        ok = LidarCameraServo_.Initialize() && ok;
-        ok = ContainerPayloadServo_.Initialize() && ok;
-        ok = LeftServo_.Initialize() && ok;
-        ok = RightServo_.Initialize() && ok;
+        // ok = EggInstrumentServo_.Initialize() && ok;
+        // ok = LidarCameraServo_.Initialize() && ok;
+        // ok = ContainerPayloadServo_.Initialize() && ok;
+        // ok = LeftServo_.Initialize() && ok;
+        // ok = RightServo_.Initialize() && ok;
         return ok;
     }
 }

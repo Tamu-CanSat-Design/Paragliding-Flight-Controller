@@ -27,20 +27,20 @@ namespace{
 
 void setup() {
 
-    clearI2CBus(17, 16); // Clear the I2C bus by toggling SCL and checking SDA. Adjust pins as needed for your board.
+    clearI2CBus(18, 19); // Clear the I2C bus by toggling SCL and checking SDA. Adjust pins as needed for your board.
     Serial.begin(115200);
     while (!Serial) delay(10);
     Serial.println("Starting I2C scan...");
 
-    Wire1.begin();
-    Wire1.setClock(400000);
+    Wire.begin();
+    Wire.setClock(400000);
     delay(10);
 
-    Serial.println("Scanning Wire1...");
+    Serial.println("Scanning Wire...");
     int found = 0;
     for (uint8_t addr = 0x08; addr < 0x78; ++addr) {
-        Wire1.beginTransmission(addr);
-        uint8_t err = Wire1.endTransmission();
+        Wire.beginTransmission(addr);
+        uint8_t err = Wire.endTransmission();
         if (err == 0) {
             Serial.printf("  Found device at 0x%02X\n", addr);
             ++found;

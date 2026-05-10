@@ -7,7 +7,7 @@
 
 namespace {
 #ifndef GPS_I2C_ADDRESS
-constexpr uint8_t kGpsI2cAddress = 0x42;
+constexpr uint8_t kGpsI2cAddress = 0x3A;
 #else
 constexpr uint8_t kGpsI2cAddress = static_cast<uint8_t>(GPS_I2C_ADDRESS);
 #endif
@@ -35,29 +35,32 @@ bool TeseoGPS::Initialize() {
 
     Wire.begin();
     Wire.setClock(Common::I2C_BAUDRATE);
-
+    Serial.println("TeseoGPS: I2C bus initialized for GPS");
     if (bus_ == &i2c_ && bus_->address() == 0) {
         bus_->setAddress(kGpsI2cAddress);
     }
-
+    Serial.println("TeseoGPS: I2C device address set to 0x" + String(bus_->address(), HEX));
     if (bus_->address() == 0) {
         ++diagnostics_.initFailureCount;
         return false;
     }
-
+    Serial.println("TeseoGPS: Starting GPS initialization sequence");
     // ST UM2229 dm00398983 describes Teseo I2C NMEA reads as direct stream
     // reads. Register 0xFF is the NMEA stream; 0x00-0xFE are reserved.
+    delay(2000);
     uint8_t probe = kGpsIdleByte;
     if (!bus_->ReadBytes(&probe, 1)) {
         ++diagnostics_.initFailureCount;
         return false;
     }
+    delay(2000);
+    Serial.println("TeseoGPS: I2C probe read byte 0x" + String(probe, HEX));
     if (probe != kGpsIdleByte) {
         ProcessChar(static_cast<char>(probe));
     } else {
         ++diagnostics_.idleByteCount;
     }
-
+    Serial.println("TeseoGPS: GPS initialization sequence complete");
     initialized_ = true;
     return true;
 }
