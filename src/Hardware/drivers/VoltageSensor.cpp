@@ -33,6 +33,7 @@ bool VoltageSensor::Initialize() {
     device_.setAddress(kIna260Address);
 
     // Verify device identity via big-endian 2-byte Manufacturer ID register.
+    delay(1000);
     uint8_t id[2] = {};
     if (!device_.ReadRegisters(kManufIdReg, id, sizeof(id), false)) {
         ++diagnostics_.initFailureCount;
