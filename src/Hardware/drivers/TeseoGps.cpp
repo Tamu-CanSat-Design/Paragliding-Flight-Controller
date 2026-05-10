@@ -18,7 +18,10 @@ constexpr size_t kGpsMaxBytesPerRead = 128;
 constexpr size_t kGpsMaxBytesPerRead = static_cast<size_t>(GPS_I2C_MAX_BYTES_PER_READ);
 #endif
 
+// the teseo streams 0xFF on the i2c bus when no nmea data is ready (st um2229)
 constexpr uint8_t kGpsIdleByte = 0xFF;
+// 1 knot = 0.514444 m/s (exact per international definition)
+constexpr float kKnotsToMetersPerSecond = 0.514444f;
 }  // namespace
 
 TeseoGPS::TeseoGPS(uint8_t address)
@@ -45,9 +48,9 @@ bool TeseoGPS::Initialize() {
         return false;
     }
     Serial.println("TeseoGPS: Starting GPS initialization sequence");
-    // ST UM2229 dm00398983 describes Teseo I2C NMEA reads as direct stream
-    // reads. Register 0xFF is the NMEA stream; 0x00-0xFE are reserved.
+    // st um2229 dm00398983: teseo i2c nmea reads are direct stream reads; 0xFF is the stream, 0x00-0xFE are reserved
     delay(2000);
+    // probe one byte to confirm the bus is responsive before marking initialized
     uint8_t probe = kGpsIdleByte;
     if (!bus_->ReadBytes(&probe, 1)) {
         ++diagnostics_.initFailureCount;
@@ -96,6 +99,7 @@ Common::GPSData TeseoGPS::ReadData() {
         }
 
         bytes_to_read -= chunk_len;
+        // an idle byte means the stream is drained; stop reading early
         if (saw_idle_byte) {
             break;
         }
@@ -103,9 +107,10 @@ Common::GPSData TeseoGPS::ReadData() {
 
     return data_;
 }
-    
+
 void TeseoGPS::ProcessChar(char c) {
     if (c == '$') {
+        // '$' always starts a fresh sentence, discarding any partial buffer
         sentence_len_ = 0;
         sentence_[sentence_len_++] = c;
         return;
@@ -129,6 +134,7 @@ void TeseoGPS::ProcessChar(char c) {
     if (sentence_len_ < (kMaxSentenceLen - 1)) {
         sentence_[sentence_len_++] = c;
     } else {
+        // sentence exceeded buffer; discard and wait for the next '$'
         sentence_len_ = 0;
     }
 }
@@ -143,12 +149,14 @@ void TeseoGPS::HandleSentence(char* sentence) {
         if (!CheckChecksum(sentence + 1, asterisk)) {
             return;
         }
+        // null-terminate at '*' so field parsing never reaches checksum bytes
         *asterisk = '\0';
     }
 
     char* fields[kMaxFields] = {};
     size_t field_count = 0;
 
+    // split on commas in-place; fields[] point directly into sentence buffer
     fields[field_count++] = sentence + 1;
     for (char* p = sentence + 1; *p != '\0' && field_count < kMaxFields; ++p) {
         if (*p == ',') {
@@ -166,6 +174,7 @@ void TeseoGPS::HandleSentence(char* sentence) {
         return;
     }
 
+    // skip the two-char talker id (e.g. "GP", "GN") to get the message type
     const char* message = type + 2;
     if (std::strncmp(message, "GGA", 3) == 0) {
         ParseGga(fields, field_count);
@@ -179,6 +188,7 @@ void TeseoGPS::ParseGga(char* const* fields, size_t count) {
         return;
     }
 
+    // fix quality 0 means no fix; negative values are malformed
     const int fix_quality = std::atoi(fields[6]);
     if (fix_quality <= 0) {
         return;
@@ -216,10 +226,12 @@ void TeseoGPS::ParseGga(char* const* fields, size_t count) {
 }
 
 void TeseoGPS::ParseRmc(char* const* fields, size_t count) {
+    // rmc field layout (0-indexed): type,time,status,lat,N/S,lon,E/W,speed_knots,cog_degrees,...
     if (count < 7) {
         return;
     }
 
+    // status 'A' = active fix; anything else (typically 'V') means no valid data
     if (fields[2][0] != 'A') {
         return;
     }
@@ -245,9 +257,31 @@ void TeseoGPS::ParseRmc(char* const* fields, size_t count) {
         return;
     }
 
+    // keep the cached speed on parse failure so callers see last-good value
+    float ground_speed_mps = data_.groundSpeedMetersPerSecond;
+    bool ground_speed_valid = false;
+    if (count >= 8 && ParseGroundSpeedMetersPerSecond(fields[7], &ground_speed_mps)) {
+        ground_speed_valid = true;
+    } else {
+        ++diagnostics_.invalidGroundSpeedCount;
+    }
+
+    // cog is undefined when stationary; empty field is normal and not a fault
+    float cog_degrees = data_.courseOverGroundDegrees;
+    bool cog_valid = false;
+    if (count >= 9 && ParseCourseOverGroundDegrees(fields[8], &cog_degrees)) {
+        cog_valid = true;
+    } else {
+        ++diagnostics_.invalidCourseOverGroundCount;
+    }
+
     data_.time = ParseTimeSeconds(fields[1]);
     data_.latitude = latitude;
     data_.longitude = longitude;
+    data_.groundSpeedMetersPerSecond = ground_speed_mps;
+    data_.groundSpeedValid = ground_speed_valid;
+    data_.courseOverGroundDegrees = cog_degrees;
+    data_.courseOverGroundValid = cog_valid;
 }
 
 bool TeseoGPS::ParseDegrees(const char* field, bool is_latitude, float* out) {
@@ -261,6 +295,7 @@ bool TeseoGPS::ParseDegrees(const char* field, bool is_latitude, float* out) {
         return false;
     }
 
+    // nmea encodes position as DDDMM.MMMM; split into integer degrees and minutes
     const int degrees = static_cast<int>(raw / 100.0);
     const double minutes = raw - (degrees * 100.0);
     if (minutes < 0.0 || minutes >= 60.0) {
@@ -277,6 +312,37 @@ bool TeseoGPS::ParseDegrees(const char* field, bool is_latitude, float* out) {
     return true;
 }
 
+bool TeseoGPS::ParseCourseOverGroundDegrees(const char* field, float* out) {
+    if (field == nullptr || field[0] == '\0' || out == nullptr) {
+        return false;
+    }
+
+    char* end = nullptr;
+    const double cog = std::strtod(field, &end);
+    // *end != '\0' catches trailing garbage; >= 360 rejects wrap-around (360 == 0)
+    if (end == field || *end != '\0' || cog < 0.0 || cog >= 360.0) {
+        return false;
+    }
+
+    *out = static_cast<float>(cog);
+    return true;
+}
+
+bool TeseoGPS::ParseGroundSpeedMetersPerSecond(const char* field, float* out) {
+    if (field == nullptr || field[0] == '\0' || out == nullptr) {
+        return false;
+    }
+
+    char* end = nullptr;
+    const double speed_knots = std::strtod(field, &end);
+    if (end == field || *end != '\0' || speed_knots < 0.0) {
+        return false;
+    }
+
+    *out = static_cast<float>(speed_knots) * kKnotsToMetersPerSecond;
+    return true;
+}
+
 float TeseoGPS::ParseTimeSeconds(const char* field) {
     if (field == nullptr || field[0] == '\0') {
         return 0.0f;
@@ -288,6 +354,7 @@ float TeseoGPS::ParseTimeSeconds(const char* field) {
         return 0.0f;
     }
 
+    // nmea time is HHMMSS.SS packed as a single decimal number
     const int hours = static_cast<int>(raw / 10000.0);
     const int minutes = static_cast<int>((raw - (hours * 10000.0)) / 100.0);
     const double seconds = raw - (hours * 10000.0) - (minutes * 100.0);
@@ -299,6 +366,7 @@ bool TeseoGPS::CheckChecksum(const char* start, const char* asterisk) {
         return false;
     }
 
+    // nmea checksum is xor of all bytes between '$' and '*'
     uint8_t checksum = 0;
     for (const char* p = start; p < asterisk; ++p) {
         checksum ^= static_cast<uint8_t>(*p);
