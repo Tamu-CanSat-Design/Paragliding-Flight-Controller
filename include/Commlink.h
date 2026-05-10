@@ -12,7 +12,7 @@ public:
     void ReadGroundRadio(char* buffer, size_t length);
     bool CheckCommand(const char* command);
 
-    inline HardwareSerial& GetXbeeSerial() { return Serial1; }
+    inline HardwareSerial& GetXbeeSerial() { return Serial7; }
     
 private:
     static int index;
