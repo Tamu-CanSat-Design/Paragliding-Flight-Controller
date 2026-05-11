@@ -33,7 +33,7 @@ void PrintGpsSample(const Common::GPSData& sample) {
 }
 
 void PrintGpsDiagnostics(const TeseoGPS::Diagnostics& diagnostics) {
-    Serial.print("GPS diag: initFail=");
+    Serial.print("GPS diag core: initFail=");
     Serial.print(diagnostics.initFailureCount);
     Serial.print(" readFail=");
     Serial.print(diagnostics.readFailureCount);
@@ -49,6 +49,46 @@ void PrintGpsDiagnostics(const TeseoGPS::Diagnostics& diagnostics) {
     Serial.print(diagnostics.invalidGroundSpeedCount);
     Serial.print(" invalidCog=");
     Serial.print(diagnostics.invalidCourseOverGroundCount);
+    Serial.println();
+
+    Serial.print("GPS diag i2c: attempts=");
+    Serial.print(diagnostics.i2cReadAttemptCount);
+    Serial.print(" success=");
+    Serial.print(diagnostics.i2cReadSuccessCount);
+    Serial.print(" bytesReq=");
+    Serial.print(diagnostics.i2cBytesRequestedCount);
+    Serial.print(" bytesRx=");
+    Serial.print(diagnostics.i2cBytesReceivedCount);
+    Serial.print(" last=0x");
+    Serial.print(diagnostics.lastI2cByte, HEX);
+    Serial.print(" lastData=0x");
+    Serial.print(diagnostics.lastNonIdleByte, HEX);
+    Serial.println();
+
+    Serial.print("GPS diag parser: dataBytes=");
+    Serial.print(diagnostics.nonIdleByteCount);
+    Serial.print(" clears=");
+    Serial.print(diagnostics.parserClearCount);
+    Serial.print(" complete=");
+    Serial.print(diagnostics.sentenceCompleteCount);
+    Serial.print(" empty=");
+    Serial.print(diagnostics.emptySentenceCount);
+    Serial.print(" lastMsg=");
+    Serial.print(diagnostics.lastMessageId);
+    Serial.println();
+
+    Serial.print("GPS diag sentences: gga=");
+    Serial.print(diagnostics.ggaSentenceCount);
+    Serial.print(" ggaValid=");
+    Serial.print(diagnostics.ggaValidCount);
+    Serial.print(" ggaInvalid=");
+    Serial.print(diagnostics.ggaInvalidFixCount);
+    Serial.print(" rmc=");
+    Serial.print(diagnostics.rmcSentenceCount);
+    Serial.print(" rmcValid=");
+    Serial.print(diagnostics.rmcValidCount);
+    Serial.print(" rmcInvalid=");
+    Serial.print(diagnostics.rmcInvalidFixCount);
     Serial.println();
 }
 
@@ -84,6 +124,6 @@ void loop() {
     PrintGpsSample(sample);
     PrintGpsDiagnostics(diagnostics);
     Serial.println();
-    delay(1000);
+    delay(100);
 
 }

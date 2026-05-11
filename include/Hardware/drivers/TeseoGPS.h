@@ -22,6 +22,23 @@ public:
         uint32_t invalidCourseOverGroundCount = 0;
         uint32_t badChecksumCount = 0;
         uint32_t unknownSentenceCount = 0;
+        uint32_t i2cReadAttemptCount = 0;
+        uint32_t i2cReadSuccessCount = 0;
+        uint32_t i2cBytesRequestedCount = 0;
+        uint32_t i2cBytesReceivedCount = 0;
+        uint32_t nonIdleByteCount = 0;
+        uint32_t parserClearCount = 0;
+        uint32_t sentenceCompleteCount = 0;
+        uint32_t emptySentenceCount = 0;
+        uint32_t ggaSentenceCount = 0;
+        uint32_t rmcSentenceCount = 0;
+        uint32_t ggaValidCount = 0;
+        uint32_t rmcValidCount = 0;
+        uint32_t ggaInvalidFixCount = 0;
+        uint32_t rmcInvalidFixCount = 0;
+        uint8_t lastI2cByte = 0;
+        uint8_t lastNonIdleByte = 0;
+        char lastMessageId[4] = {};
     };
 
     const char* SensorName() const override { return kSensorName; }

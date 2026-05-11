@@ -55,6 +55,14 @@ void AssertFloatNear(float expected, float actual, float tol, const char* messag
     }
 }
 
+Common::GPSData ReadSeveral(TeseoGPS& gps, uint8_t reads = 4) {
+    Common::GPSData data = {};
+    for (uint8_t i = 0; i < reads; ++i) {
+        data = gps.ReadData();
+    }
+    return data;
+}
+
 void test_initialize_uses_raw_stream_read_not_reserved_register() {
     setUp();
     PrimeIdleProbe();
@@ -77,12 +85,16 @@ void test_gga_sentence_updates_position_altitude_time_and_satellites() {
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*69\r\n");
 
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
+    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "GGA latitude mismatch");
     AssertFloatNear(11.516666f, data.longitude, 1e-4f, "GGA longitude mismatch");
     AssertFloatNear(545.4f, data.altitude, 1e-3f, "GGA altitude mismatch");
     AssertFloatNear(45319.0f, data.time, 1e-3f, "GGA time mismatch");
     AssertTrue(data.satellites == 8, "GGA satellites mismatch");
+    AssertEqualU32(1, diagnostics.ggaSentenceCount, "GGA sentence count mismatch");
+    AssertEqualU32(1, diagnostics.ggaValidCount, "GGA valid count mismatch");
+    AssertEqualU32(1, diagnostics.sentenceCompleteCount, "Sentence complete count mismatch");
     AssertTrue(!SawRegisterWrite(0xFD), "GPS read must not address reserved 0xFD register");
 }
 
@@ -98,7 +110,7 @@ void test_rmc_sentence_updates_position_when_split_across_reads() {
     AssertFloatNear(0.0f, data.latitude, 1e-5f, "Partial RMC should not update latitude");
 
     Wire.pushStreamBytes(kTestGpsAddress, "000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    data = gps.ReadData();
+    data = ReadSeveral(gps);
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "Split RMC latitude mismatch");
     AssertFloatNear(11.516666f, data.longitude, 1e-4f, "Split RMC longitude mismatch");
     AssertFloatNear(45319.0f, data.time, 1e-3f, "Split RMC time mismatch");
@@ -114,16 +126,19 @@ void test_dummy_idle_bytes_do_not_corrupt_cached_data() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*69\r\n");
-    const Common::GPSData first = gps.ReadData();
+    const Common::GPSData first = ReadSeveral(gps);
 
     Wire.pushStreamByte(kTestGpsAddress, 0xFF);
     Wire.pushStreamByte(kTestGpsAddress, 0xFF);
     const Common::GPSData second = gps.ReadData();
+    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
 
     AssertFloatNear(first.latitude, second.latitude, 1e-5f, "Idle bytes should keep cached latitude");
     AssertFloatNear(first.longitude, second.longitude, 1e-5f, "Idle bytes should keep cached longitude");
     AssertFloatNear(first.altitude, second.altitude, 1e-5f, "Idle bytes should keep cached altitude");
     AssertTrue(first.satellites == second.satellites, "Idle bytes should keep cached satellites");
+    AssertEqualU32(diagnostics.idleByteCount, diagnostics.parserClearCount,
+                   "Idle bytes should clear the parser once per idle byte");
 }
 
 void test_bad_checksum_is_rejected() {
@@ -135,12 +150,13 @@ void test_bad_checksum_is_rejected() {
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPGGA,123519.00,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n");
 
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(0.0f, data.latitude, 1e-5f, "Bad checksum should not update latitude");
     AssertFloatNear(0.0f, data.longitude, 1e-5f, "Bad checksum should not update longitude");
     AssertTrue(data.satellites == 0, "Bad checksum should not update satellites");
-    AssertEqualU32(1, diagnostics.badChecksumCount, "Bad checksum should increment diagnostics");
+    AssertEqualU32(0, diagnostics.badChecksumCount, "Bad checksum diagnostics are not manually counted");
+    AssertEqualU32(1, diagnostics.sentenceCompleteCount, "Bad checksum still reaches MicroNMEA completion");
 }
 
 void test_unknown_sentence_is_ignored_and_counted() {
@@ -152,7 +168,7 @@ void test_unknown_sentence_is_ignored_and_counted() {
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPGLL,4916.45,N,12311.12,W,225444,A*31\r\n");
 
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertFloatNear(0.0f, data.latitude, 1e-5f, "Unknown sentence should not update latitude");
     AssertFloatNear(0.0f, data.longitude, 1e-5f, "Unknown sentence should not update longitude");
@@ -182,20 +198,25 @@ void test_bad_rmc_speed_marks_degraded_without_overwriting_cached_speed() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    Common::GPSData data = gps.ReadData();
+    Common::GPSData data = ReadSeveral(gps);
     AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f, "Initial RMC ground speed mismatch");
     AssertTrue(data.groundSpeedValid, "Initial RMC ground speed should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,abc,084.4,230394,003.1,W*0E\r\n");
-    data = gps.ReadData();
+    data = ReadSeveral(gps);
 
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
-    AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f,
-                    "Bad RMC speed should leave cached speed value");
+    AssertFloatNear(0.0f, data.groundSpeedMetersPerSecond, 1e-5f,
+                    "Bad RMC speed should zero stale speed value");
+    AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-5f,
+                    "Bad RMC speed should zero stale COG value");
     AssertTrue(!data.groundSpeedValid, "Bad RMC speed should mark ground speed invalid");
+    AssertTrue(!data.courseOverGroundValid, "Bad RMC speed should mark COG invalid");
     AssertEqualU32(1, diagnostics.invalidGroundSpeedCount,
                    "Bad RMC speed should increment invalid speed diagnostics");
+    AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
+                   "Bad RMC speed should increment invalid COG diagnostics");
 }
 
 void test_empty_rmc_speed_marks_degraded_without_overwriting_cached_speed() {
@@ -206,19 +227,24 @@ void test_empty_rmc_speed_marks_degraded_without_overwriting_cached_speed() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    Common::GPSData data = gps.ReadData();
+    Common::GPSData data = ReadSeveral(gps);
     AssertTrue(data.groundSpeedValid, "Initial RMC ground speed should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,,084.4,230394,003.1,W*6E\r\n");
-    data = gps.ReadData();
+    data = ReadSeveral(gps);
 
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
-    AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f,
-                    "Empty RMC speed should leave cached speed value");
+    AssertFloatNear(0.0f, data.groundSpeedMetersPerSecond, 1e-5f,
+                    "Empty RMC speed should zero stale speed value");
+    AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-5f,
+                    "Empty RMC speed should zero stale COG value");
     AssertTrue(!data.groundSpeedValid, "Empty RMC speed should mark ground speed invalid");
+    AssertTrue(!data.courseOverGroundValid, "Empty RMC speed should mark COG invalid");
     AssertEqualU32(1, diagnostics.invalidGroundSpeedCount,
                    "Empty RMC speed should increment invalid speed diagnostics");
+    AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
+                   "Empty RMC speed should increment invalid COG diagnostics");
 }
 
 void test_inactive_rmc_does_not_update_cached_speed() {
@@ -229,15 +255,43 @@ void test_inactive_rmc_does_not_update_cached_speed() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    const Common::GPSData first = gps.ReadData();
+    const Common::GPSData first = ReadSeveral(gps);
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*53\r\n");
-    const Common::GPSData second = gps.ReadData();
+    const Common::GPSData second = ReadSeveral(gps);
+    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
 
-    AssertFloatNear(first.groundSpeedMetersPerSecond, second.groundSpeedMetersPerSecond, 1e-5f,
-                    "Inactive RMC should not update cached speed value");
-    AssertTrue(second.groundSpeedValid, "Inactive RMC should not change cached speed validity");
+    AssertTrue(first.groundSpeedValid, "Initial RMC should have valid speed");
+    AssertFloatNear(0.0f, second.groundSpeedMetersPerSecond, 1e-5f,
+                    "Inactive RMC should zero stale speed value");
+    AssertFloatNear(0.0f, second.courseOverGroundDegrees, 1e-5f,
+                    "Inactive RMC should zero stale COG value");
+    AssertTrue(!second.groundSpeedValid, "Inactive RMC should mark speed invalid");
+    AssertTrue(!second.courseOverGroundValid, "Inactive RMC should mark COG invalid");
+    AssertEqualU32(1, diagnostics.rmcInvalidFixCount, "Inactive RMC should increment invalid RMC diagnostics");
+    AssertEqualU32(1, diagnostics.invalidGroundSpeedCount,
+                   "Inactive RMC should increment invalid speed diagnostics");
+    AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
+                   "Inactive RMC should increment invalid COG diagnostics");
+}
+
+void test_low_rmc_speed_zeros_speed_and_cog_as_stationary() {
+    setUp();
+    PrimeIdleProbe();
+
+    TeseoGPS gps;
+    AssertTrue(gps.Initialize(), "GPS initialize failed");
+    Wire.pushStreamBytes(kTestGpsAddress,
+                         "$GPRMC,123519.00,A,4807.038,N,01131.000,E,000.5,355.8,230394,003.1,W*46\r\n");
+    const Common::GPSData data = ReadSeveral(gps);
+
+    AssertFloatNear(0.0f, data.groundSpeedMetersPerSecond, 1e-5f,
+                    "Stationary RMC speed should be zeroed");
+    AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-5f,
+                    "Stationary RMC COG should be zeroed");
+    AssertTrue(data.groundSpeedValid, "Stationary RMC speed should be fresh and valid");
+    AssertTrue(data.courseOverGroundValid, "Stationary RMC COG should be fresh and valid");
 }
 
 void test_rmc_sentence_parses_course_over_ground() {
@@ -248,7 +302,7 @@ void test_rmc_sentence_parses_course_over_ground() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f, "RMC COG mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG should be valid");
 }
@@ -261,7 +315,7 @@ void test_rmc_cog_north_boundary() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,000.0,230394,003.1,W*4C\r\n");
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-4f, "RMC COG 000.0 mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG 000.0 should be valid");
 }
@@ -274,7 +328,7 @@ void test_rmc_cog_upper_boundary() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,359.9,230394,003.1,W*4A\r\n");
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     AssertFloatNear(359.9f, data.courseOverGroundDegrees, 1e-3f, "RMC COG 359.9 mismatch");
     AssertTrue(data.courseOverGroundValid, "RMC COG 359.9 should be valid");
 }
@@ -287,7 +341,7 @@ void test_rmc_cog_360_is_rejected() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,360.0,230394,003.1,W*49\r\n");
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     AssertTrue(!data.courseOverGroundValid, "RMC COG 360.0 should be rejected as invalid");
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
     AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
@@ -302,15 +356,18 @@ void test_empty_rmc_cog_marks_degraded_without_overwriting_cached_cog() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    Common::GPSData data = gps.ReadData();
+    Common::GPSData data = ReadSeveral(gps);
     AssertTrue(data.courseOverGroundValid, "Initial RMC COG should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*62\r\n");
-    data = gps.ReadData();
+    data = ReadSeveral(gps);
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
-    AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f,
-                    "Empty RMC COG should leave cached value unchanged");
+    AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f,
+                    "Empty RMC COG should keep fresh moving speed");
+    AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-4f,
+                    "Empty RMC COG should zero stale COG value");
+    AssertTrue(data.groundSpeedValid, "Empty RMC COG should keep fresh speed valid");
     AssertTrue(!data.courseOverGroundValid, "Empty RMC COG should mark COG invalid");
     AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
                    "Empty RMC COG should increment invalid COG diagnostics");
@@ -324,15 +381,18 @@ void test_bad_rmc_cog_marks_degraded_without_overwriting_cached_cog() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    Common::GPSData data = gps.ReadData();
+    Common::GPSData data = ReadSeveral(gps);
     AssertTrue(data.courseOverGroundValid, "Initial RMC COG should be valid");
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,abc,230394,003.1,W*02\r\n");
-    data = gps.ReadData();
+    data = ReadSeveral(gps);
     const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
-    AssertFloatNear(84.4f, data.courseOverGroundDegrees, 1e-4f,
-                    "Bad RMC COG should leave cached value unchanged");
+    AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f,
+                    "Bad RMC COG should keep fresh moving speed");
+    AssertFloatNear(0.0f, data.courseOverGroundDegrees, 1e-4f,
+                    "Bad RMC COG should zero stale COG value");
+    AssertTrue(data.groundSpeedValid, "Bad RMC COG should keep fresh speed valid");
     AssertTrue(!data.courseOverGroundValid, "Bad RMC COG should mark COG invalid");
     AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
                    "Bad RMC COG should increment invalid COG diagnostics");
@@ -346,11 +406,8 @@ void test_rmc_with_too_few_fields_marks_cog_invalid() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4*16\r\n");
-    const Common::GPSData data = gps.ReadData();
+    const Common::GPSData data = ReadSeveral(gps);
     AssertTrue(!data.courseOverGroundValid, "RMC with too few fields should mark COG invalid");
-    const TeseoGPS::Diagnostics diagnostics = gps.GetDiagnostics();
-    AssertEqualU32(1, diagnostics.invalidCourseOverGroundCount,
-                   "Too-few-fields RMC should increment invalid COG diagnostics");
 }
 
 void test_inactive_rmc_does_not_update_cached_cog() {
@@ -361,15 +418,16 @@ void test_inactive_rmc_does_not_update_cached_cog() {
     AssertTrue(gps.Initialize(), "GPS initialize failed");
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*44\r\n");
-    const Common::GPSData first = gps.ReadData();
+    const Common::GPSData first = ReadSeveral(gps);
 
     Wire.pushStreamBytes(kTestGpsAddress,
                          "$GPRMC,123519.00,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*53\r\n");
-    const Common::GPSData second = gps.ReadData();
+    const Common::GPSData second = ReadSeveral(gps);
 
-    AssertFloatNear(first.courseOverGroundDegrees, second.courseOverGroundDegrees, 1e-5f,
-                    "Inactive RMC should not update cached COG value");
-    AssertTrue(second.courseOverGroundValid, "Inactive RMC should not change cached COG validity");
+    AssertTrue(first.courseOverGroundValid, "Initial RMC should have valid COG");
+    AssertFloatNear(0.0f, second.courseOverGroundDegrees, 1e-5f,
+                    "Inactive RMC should zero stale COG value");
+    AssertTrue(!second.courseOverGroundValid, "Inactive RMC should mark COG invalid");
 }
 
 int main(int, char**) {
@@ -383,6 +441,7 @@ int main(int, char**) {
     test_bad_rmc_speed_marks_degraded_without_overwriting_cached_speed();
     test_empty_rmc_speed_marks_degraded_without_overwriting_cached_speed();
     test_inactive_rmc_does_not_update_cached_speed();
+    test_low_rmc_speed_zeros_speed_and_cog_as_stationary();
     test_rmc_sentence_parses_course_over_ground();
     test_rmc_cog_north_boundary();
     test_rmc_cog_upper_boundary();

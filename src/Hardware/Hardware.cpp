@@ -14,11 +14,11 @@ namespace Hardware {
     Radio radio_;
     AudioBeacon audioBeacon_;
     Camera camera_;
-    ReleaseServo ContainerPayloadServo_;
-    ReleaseServo EggInstrumentServo_;
-    ReleaseServo LidarCameraServo_;
-    SteeringServo LeftServo_;
-    SteeringServo RightServo_;
+    ReleaseServo ContainerPayloadServo_{/* TODO: pin */ 2};
+    ReleaseServo EggInstrumentServo_{/* TODO: pin */ 3};
+    ReleaseServo LidarCameraServo_{/* TODO: pin */ 4};
+    SteeringServo LeftServo_{[]{ SteeringServo::Config c; c.pin = /* TODO: pin */ 5; return c; }()};
+    SteeringServo RightServo_{[]{ SteeringServo::Config c; c.pin = /* TODO: pin */ 6; return c; }()};
     I2CDevice i2c1_{};
     I2CDevice i2c2_{};
     
