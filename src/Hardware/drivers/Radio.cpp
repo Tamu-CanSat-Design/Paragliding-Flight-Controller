@@ -5,9 +5,10 @@
 #include "Common.h"
 
 namespace {
-// TODO(schematic): confirm which HardwareSerial port the XBee is wired to.
+// Keep this aligned with Commlink::GetXbeeSerial(), which is the task-facing
+// command/telemetry path used by ReadCommandTask and WriteTelemetryTask.
 // XBee must be pre-configured to 115200 baud before use (factory default: 9600).
-HardwareSerial& kXbeeSerial = Serial1;
+HardwareSerial& kXbeeSerial = Serial7;
 }  // namespace
 
 bool Radio::Initialize() {

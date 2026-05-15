@@ -23,6 +23,9 @@ T clamp(T v, T lo, T hi) { return v < lo ? lo : (v > hi ? hi : v); }
 // Construction / lifecycle
 // -----------------------------------------------------------------------------
 
+SteeringServo::SteeringServo()
+    : SteeringServo(Config{}) {}
+
 SteeringServo::SteeringServo(const Config& config)
     : config_(config),
       lastPulseUs_(config.centerPulseUs),

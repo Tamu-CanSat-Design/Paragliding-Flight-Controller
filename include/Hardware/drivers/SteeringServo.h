@@ -59,7 +59,8 @@ public:
     // -------------------------------------------------------------------------
     // Construction / lifecycle
     // -------------------------------------------------------------------------
-    explicit SteeringServo(const Config& config = Config{});
+    SteeringServo();
+    explicit SteeringServo(const Config& config);
 
     // Attach to the configured pin; returns false if pin is invalid.
     bool Initialize() override;
@@ -144,7 +145,7 @@ private:
     void warn_(Stream& out, const char* msg) const;
 
     Config      config_;
-    Servo       servo_;
+    mutable Servo servo_;
     Diagnostics diagnostics_{};
     int         lastPulseUs_  = 1500;
     float       lastAngleDeg_ = 150.0f;
