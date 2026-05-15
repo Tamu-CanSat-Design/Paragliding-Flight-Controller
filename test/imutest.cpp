@@ -7,18 +7,27 @@ namespace {
 
 IMU gImu;
 
+void PrintVector3(const Common::Vector3& vec) {
+    Serial.print("{");
+    Serial.print(vec.x, 4);
+    Serial.print(", ");
+    Serial.print(vec.y, 4);
+    Serial.print(", ");
+    Serial.print(vec.z, 4);
+    Serial.print("}");
+}
 
-    void PrintVector3(const Common::Vector3& vec) {
-        Serial.print("{");
-        Serial.print(vec.x, 2);
-        Serial.print(", ");
-        Serial.print(vec.y, 2);
-        Serial.print(", ");
-        Serial.print(vec.z, 2);
-        Serial.print("}");
+void PrintImuData(const Common::IMUData& d) {
+    Serial.print("gyro=");
+    PrintVector3(d.gyroVel);
+    Serial.print(" accel=");
+    PrintVector3(d.acceleration);
+    Serial.print(" temp=");
+    Serial.print(d.temperatureCelsius, 2);
+    Serial.println();
+}
 
-    }  
-}// namespace
+}  // namespace
 
 void setup() {
     Serial.begin(115200);
@@ -27,32 +36,43 @@ void setup() {
     const bool imuOk = gImu.Initialize();
     Serial.print("IMU init: ");
     Serial.println(imuOk ? "OK" : "FAIL");
-    //suspend if failed
     if (!imuOk) {
         while (true) {
             delay(1000);
         }
     }
-
-   
-   
 }
 
 void loop() {
-    static unsigned long lastPrintMs = 0;
-    const unsigned long nowMs = millis();
-    
-    lastPrintMs = nowMs;
+    // Drain FIFO each iteration; fall back to direct read when FIFO is empty.
+    Common::IMUData fifoSamples[IMU::kFifoWatermarkPairs];
+    const size_t fifoCount = gImu.ReadFifoSamples(fifoSamples, IMU::kFifoWatermarkPairs);
 
-    const Common::IMUData sample = gImu.ReadData();
+    if (fifoCount > 0) {
+        Serial.print("[FIFO] ");
+        Serial.print(fifoCount);
+        Serial.println(" sample(s):");
+        for (size_t i = 0; i < fifoCount; ++i) {
+            Serial.print("  [");
+            Serial.print(i);
+            Serial.print("] ");
+            PrintImuData(fifoSamples[i]);
+        }
 
-    Serial.print("gyro=");
-    PrintVector3(sample.gyroVel);
-    Serial.print(" accel=");
-    PrintVector3(sample.acceleration);
-    Serial.println();
-    Serial.print("temp=");
-    Serial.print(sample.temperatureCelsius, 4);
+        const IMU::FifoDiagnostics diag = gImu.GetFifoDiagnostics();
+        if (diag.overrunCount > 0 || diag.truncatedPairCount > 0 || diag.unexpectedTagCount > 0) {
+            Serial.print("[FIFO diag] overruns=");
+            Serial.print(diag.overrunCount);
+            Serial.print(" truncated=");
+            Serial.print(diag.truncatedPairCount);
+            Serial.print(" unexpectedTags=");
+            Serial.println(diag.unexpectedTagCount);
+        }
+    } else {
+        // No FIFO data available; fall back to direct register read.
+        Serial.print("[direct] ");
+        PrintImuData(gImu.ReadData());
+    }
 
-
+    delay(10);
 }
