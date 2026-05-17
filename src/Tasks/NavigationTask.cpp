@@ -16,7 +16,7 @@ namespace {
     //vTaskDelay for a short period to yield to other tasks (e.g.,
     //control task might want to run at a different frequency)
 
-    AdaptiveEKF ekf; // EKF instance
+    
     constexpr float kImuPredictDtSec = IMU::kSamplePeriodSeconds;
     Common::IMUBatch      latestImuBatch = {};
     Common::MagData      latestMag   = {};
@@ -39,9 +39,13 @@ namespace {
 
 void Tasks::NavigationTask(void* pvParameters) {
     pvParameters = pvParameters; // Avoid unused parameter warning
-    //Predict
+    // TODO: Take the average of multiple samples of mag, accel, and GPS to initialize the EKF state vector
+    float magX = 0.0f, magY = 0.0f, magZ = 0.0f;
+    float accelX = 0.0f, accelY = 0.0f, accelZ = 0.0f;
+    float latitude = 0.0f, longitude = 0.0f, altitude = 0.0f;
 
-    
+
+    AdaptiveEKF ekf(magX, magY, magZ, accelX, accelY, accelZ, latitude, longitude, altitude); // EKF instance
     //Pseudocode for navigation task:
     while (true) {
 

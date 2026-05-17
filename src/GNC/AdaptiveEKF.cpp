@@ -1,6 +1,6 @@
 #include "GNC/AdaptiveEKF.h"
 
-AdaptiveEKF::AdaptiveEKF(){
+AdaptiveEKF::AdaptiveEKF(float MagX, float MagY, float MagZ, float AccelX, float AccelY, float AccelZ, float latitude, float longitude, float altitude) {
         stateVector.Fill(0.0);
         processNoiseCovariance.Fill(0.1f); // Initial process noise
         
@@ -30,6 +30,10 @@ AdaptiveEKF::AdaptiveEKF(){
 
         // Determine initial states based on initial sensor readings and current flight state
         
+
+
+
+
 }
 
 

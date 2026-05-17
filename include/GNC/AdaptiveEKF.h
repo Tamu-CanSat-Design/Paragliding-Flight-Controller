@@ -8,7 +8,7 @@
 class AdaptiveEKF {
 public:
 
-    AdaptiveEKF();
+    AdaptiveEKF(float MagX, float MagY, float MagZ, float AccelX, float AccelY, float AccelZ, float latitude, float longitude, float altitude);
 
     void Reset();
     void Predict(const Common::IMUData& imuData, float dt);

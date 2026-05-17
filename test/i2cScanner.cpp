@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
-
+#include "Commlink.h"
+#include <string>
 namespace{
     void clearI2CBus(int sdaPin, int sclPin) {
     pinMode(sclPin, OUTPUT);
@@ -19,8 +20,12 @@ namespace{
     delayMicroseconds(5);
     digitalWrite(sdaPin, HIGH);
     delayMicroseconds(5);
-    Wire1.begin();
+    Wire.begin();
 }
+
+
+Commlink commlink;
+
 }
 
 
@@ -36,6 +41,9 @@ void setup() {
     Wire.setClock(400000);
     delay(10);
 
+    commlink.Initialize();
+
+
     Serial.println("Scanning Wire...");
     int found = 0;
     for (uint8_t addr = 0x08; addr < 0x78; ++addr) {
@@ -47,6 +55,15 @@ void setup() {
         }
     }
     if (found == 0) Serial.println("  No devices found.");
+    while(found == 0){
+        commlink.WriteGroundRadio("No devices found");
+        delay(1000);
+    }
+    while(found == 1){
+        std::string devices = std::to_string(found);
+        const char* pchar = devices.c_str();
+        commlink.WriteGroundRadio("pchar");
+    }
     Serial.printf("Scan done. %d device(s) found.\n", found);
 }
 
