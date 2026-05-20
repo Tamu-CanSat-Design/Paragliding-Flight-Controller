@@ -5,6 +5,12 @@
 #include <cstdint>
 #include <string>
 
+// GCC native builds define unix as a target macro; production Common.h has a
+// TimeData field with that name.
+#ifdef unix
+#undef unix
+#endif
+
 inline void delay(unsigned long) {}
 
 // stub for Arduino String so native tests compile with Serial.println(String(...))

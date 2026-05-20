@@ -24,9 +24,6 @@ namespace SharedData {
     extern bool gCXFlag;
     extern SemaphoreHandle_t gCXFlagMutex;
 
-    extern float gReferencePressureHpa;
-    extern SemaphoreHandle_t gReferencePressureMutex;
-
     extern Common::StateVector gStateVector;
     extern SemaphoreHandle_t gStateVectorMutex;
 
@@ -53,6 +50,9 @@ namespace SharedData {
     extern QueueHandle_t gCommandQueue;
 
     extern QueueHandle_t gSetTimeQueue;
+
+    // Depth-1 queue for barometer pressure calibration requests in hPa.
+    extern QueueHandle_t gBarometerCalibrationQueue;
 
     // Depth-1 queue for the latest roll angle setpoint from GuidanceTask.
     // Write with xQueueOverwrite; read with xQueuePeek (non-blocking).

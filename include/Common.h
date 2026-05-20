@@ -5,13 +5,20 @@
 
 #include <Arduino.h>
 
+#ifndef CANSAT_ENABLE_LIDAR
+#define CANSAT_ENABLE_LIDAR 0
+#endif
+
 namespace Common {
+
+    inline constexpr bool LIDAR_ENABLED = CANSAT_ENABLE_LIDAR != 0;
 
     inline constexpr int I2C_BAUDRATE = 400000;
     inline constexpr int XBEE_BAUDRATE = 115200;
     inline constexpr uint16_t TEAM_ID = 1030;
     inline constexpr unsigned long TELEMETRY_INTERVAL_MS = 1000;
     inline constexpr size_t COMMAND_BUFFER_LENGTH = 32;
+    inline constexpr size_t TIME_STRING_LENGTH = 16;
 
     inline constexpr uint8_t BUZZER_PIN = 20;
     inline constexpr uint8_t CAMERA_TRIGGER_PIN = 41;
@@ -121,7 +128,7 @@ namespace Common {
         float latitude;
         float longitude;
         float altitude;
-        float time;
+        char time[TIME_STRING_LENGTH];
         float groundSpeedMetersPerSecond;
         float courseOverGroundDegrees;
         bool groundSpeedValid;
@@ -182,7 +189,7 @@ namespace Common {
     };
 
     struct telemetry {  // This struct needs to be reordered for memory optimization
-        char missionTime[16];
+        char missionTime[TIME_STRING_LENGTH];
         int packetCount;
         char Mode;
         FlightState state;
@@ -193,7 +200,7 @@ namespace Common {
         float current;
         IMUData imuData;
         MagData magnetometer;
-        float GPSTime;
+        char GPSTime[TIME_STRING_LENGTH];
         Vector3 GPSLoc;
         int GPSSats;
         char CMDEcho[32];
@@ -272,8 +279,8 @@ namespace Common {
         return std::snprintf(
             buffer,
             bufferSize,
-            "ID:%d,Time:%f,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
-            "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%f,"
+            "ID:%d,Time:%s,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
+            "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%s,"
             "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f,"
             "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f",
             TEAM_ID,

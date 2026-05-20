@@ -32,7 +32,12 @@ namespace Hardware {
         ok = imu_.Initialize() && ok;
         ok = magnetometer_.Initialize() && ok;
         ok = gps_.Initialize() && ok;
+#if CANSAT_ENABLE_LIDAR
         ok = lidar_.Initialize() && ok;
+#else
+        // LiDAR temporarily disabled until mechanical LiDAR leg is complete.
+        Serial.println("Hardware: LiDAR disabled");
+#endif
         ok = voltageSensor_.Initialize() && ok;
         ok = radio_.Initialize() && ok;
         ok = rtc_.Initialize() && ok;

@@ -1,7 +1,7 @@
 #include <cstring>
 #include "SharedData.h"
 
-namespace{
+namespace {
     constexpr UBaseType_t BAROMETERQUEUEDEPTH = 20;
     constexpr UBaseType_t GPSQUEUEDEPTH = 10;
     constexpr UBaseType_t LIDARQUEUEDEPTH = 20;
@@ -10,6 +10,7 @@ namespace{
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
     constexpr UBaseType_t SETTIMEQUEUEDEPTH = 5;
+    constexpr UBaseType_t BAROMETERCALIBRATIONQUEUEDEPTH = 1;
 
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
@@ -19,92 +20,76 @@ namespace{
     uint8_t gI2C1VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
     uint8_t gSetTimeQueueStorage[SETTIMEQUEUEDEPTH * sizeof(Common::TimeData)];
-}
+    uint8_t gBarometerCalibrationQueueStorage[BAROMETERCALIBRATIONQUEUEDEPTH * sizeof(float)];
 
+    StaticSemaphore_t gSnapshotMutexBuffer;
+    StaticSemaphore_t gFlightStateMutexBuffer;
+    StaticSemaphore_t gSimEnabledMutexBuffer;
+    StaticSemaphore_t gCXFlagMutexBuffer;
+    StaticSemaphore_t gKalmanFlagMutexBuffer;
+    StaticSemaphore_t gStateVectorMutexBuffer;
+    StaticSemaphore_t gRollAngleSetpointMutexBuffer;
+    StaticSemaphore_t gRollAngularVelocityMutexBuffer;
+    StaticSemaphore_t gCommandMutexBuffer;
+
+    StaticQueue_t gI2C1BarometerQueueBuffer;
+    StaticQueue_t gI2C1GPSQueueBuffer;
+    StaticQueue_t gI2C1LidarQueueBuffer;
+    StaticQueue_t gI2C2IMUQueueBuffer;
+    StaticQueue_t gI2C2MagQueueBuffer;
+    StaticQueue_t gI2C1VoltageQueueBuffer;
+    StaticQueue_t gCommandQueueBuffer;
+    StaticQueue_t gSetTimeQueueBuffer;
+    StaticQueue_t gBarometerCalibrationQueueBuffer;
+}
 
 namespace SharedData {
 
     Commlink commlink;
-
-    // Storage for the shared sensor snapshot.
     Common::SensorSnapshot gSnapshot;
-    SemaphoreHandle_t gSnapshotMutex = nullptr;
-    static StaticSemaphore_t gSnapshotMutexBuffer;
-
-
     Common::FlightState gFlightState;
-    SemaphoreHandle_t gFlightStateMutex = nullptr;
-    static StaticSemaphore_t gFlightStateMutexBuffer;
-
-
     bool gSimEnabled = false;
-    SemaphoreHandle_t gSimEnabledMutex = nullptr;
-    static StaticSemaphore_t gSimEnabledMutexBuffer;
-
     bool gCXFlag = false;
-    SemaphoreHandle_t gCXFlagMutex = nullptr;
-    static StaticSemaphore_t gCXFlagMutexBuffer;
-
     bool gKalmanFlag = false;
-    SemaphoreHandle_t gKalmanFlagMutex;
-    static StaticSemaphore_t gKalmanFlagMutexBuffer;
-
-
-    float gReferencePressureHpa = 1013.25f;
-    SemaphoreHandle_t gReferencePressureMutex = nullptr;
-    static StaticSemaphore_t gReferencePressureMutexBuffer;
-
     Common::StateVector gStateVector;
-    SemaphoreHandle_t gStateVectorMutex = nullptr;
-    static StaticSemaphore_t gStateVectorMutexBuffer;
-
     float gRollAngleSetpoint = 0.0f;
-    SemaphoreHandle_t gRollAngleSetpointMutex = nullptr;
-    static StaticSemaphore_t gRollAngleSetpointMutexBuffer;
-
     float gRollAngularVelocity = 0.0f;
-    SemaphoreHandle_t gRollAngularVelocityMutex = nullptr;
-    static StaticSemaphore_t gRollAngularVelocityMutexBuffer;
-
     char gCommand[Common::COMMAND_BUFFER_LENGTH] = {};
-    SemaphoreHandle_t gCommandMutex = nullptr;
-    static StaticSemaphore_t gCommandMutexBuffer;
 
-//Queues
-    static StaticQueue_t gI2C1BarometerQueueBuffer;
-    static StaticQueue_t gI2C1GPSQueueBuffer;
-    static StaticQueue_t gI2C1LidarQueueBuffer;
+    SemaphoreHandle_t gSnapshotMutex = nullptr;
+    SemaphoreHandle_t gFlightStateMutex = nullptr;
+    SemaphoreHandle_t gSimEnabledMutex = nullptr;
+    SemaphoreHandle_t gCXFlagMutex = nullptr;
+    SemaphoreHandle_t gKalmanFlagMutex = nullptr;
+    SemaphoreHandle_t gStateVectorMutex = nullptr;
+    SemaphoreHandle_t gRollAngleSetpointMutex = nullptr;
+    SemaphoreHandle_t gRollAngularVelocityMutex = nullptr;
+    SemaphoreHandle_t gCommandMutex = nullptr;
+
     QueueHandle_t gI2C1BarometerQueue = nullptr;
     QueueHandle_t gI2C1GPSQueue = nullptr;
     QueueHandle_t gI2C1LidarQueue = nullptr;
-    
-    static StaticQueue_t gI2C2IMUQueueBuffer;
-    static StaticQueue_t gI2C2MagQueueBuffer;
-    static StaticQueue_t gI2C1VoltageQueueBuffer;
     QueueHandle_t gI2C2IMUQueue = nullptr;
     QueueHandle_t gI2C2MagQueue = nullptr;
     QueueHandle_t gI2C1VoltageQueue = nullptr;
-
-    static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
-    
-    static StaticQueue_t gSetTimeQueueBuffer;
     QueueHandle_t gSetTimeQueue = nullptr;
+    QueueHandle_t gBarometerCalibrationQueue = nullptr;
 
-
-    void InitializeThreadSafeData() {
-        // Mutexes for shared data
+namespace {
+    void CreateMutexes() {
         gSnapshotMutex = xSemaphoreCreateMutexStatic(&gSnapshotMutexBuffer);
         gFlightStateMutex = xSemaphoreCreateMutexStatic(&gFlightStateMutexBuffer);
         gSimEnabledMutex = xSemaphoreCreateMutexStatic(&gSimEnabledMutexBuffer);
         gStateVectorMutex = xSemaphoreCreateMutexStatic(&gStateVectorMutexBuffer);
         gCommandMutex = xSemaphoreCreateMutexStatic(&gCommandMutexBuffer);
         gCXFlagMutex = xSemaphoreCreateMutexStatic(&gCXFlagMutexBuffer);
-        gReferencePressureMutex = xSemaphoreCreateMutexStatic(&gReferencePressureMutexBuffer);
+        gKalmanFlagMutex = xSemaphoreCreateMutexStatic(&gKalmanFlagMutexBuffer);
         gRollAngleSetpointMutex = xSemaphoreCreateMutexStatic(&gRollAngleSetpointMutexBuffer);
         gRollAngularVelocityMutex = xSemaphoreCreateMutexStatic(&gRollAngularVelocityMutexBuffer);
+    }
 
-        // Queues for sensor data and commands
+    void CreateQueues() {
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
         gI2C1LidarQueue = xQueueCreateStatic(LIDARQUEUEDEPTH, sizeof(Common::LidarData), gI2C1LidarQueueStorage, &gI2C1LidarQueueBuffer);
@@ -113,14 +98,45 @@ namespace SharedData {
         gI2C1VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C1VoltageQueueStorage, &gI2C1VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
         gSetTimeQueue = xQueueCreateStatic(SETTIMEQUEUEDEPTH, sizeof(Common::TimeData), gSetTimeQueueStorage, &gSetTimeQueueBuffer);
+        gBarometerCalibrationQueue = xQueueCreateStatic(BAROMETERCALIBRATIONQUEUEDEPTH, sizeof(float), gBarometerCalibrationQueueStorage, &gBarometerCalibrationQueueBuffer);
+    }
+
+    void InitializeDefaults() {
         gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
         gCXFlag = false;
-        gReferencePressureHpa = 1013.25f;
+        gKalmanFlag = false;
         memset(gCommand, 0, sizeof(gCommand));
+    }
 
-        if(!gSnapshotMutex || !gFlightStateMutex || !gSimEnabledMutex || !gStateVectorMutex || !gCommandMutex || !gCXFlagMutex || !gReferencePressureMutex || !gRollAngleSetpointMutex || !gRollAngularVelocityMutex ||
-           !gI2C1BarometerQueue || !gI2C1GPSQueue || !gI2C1LidarQueue || !gI2C2IMUQueue || !gI2C2MagQueue || !gI2C1VoltageQueue || !gCommandQueue) {
+    bool ResourcesReady() {
+        return gSnapshotMutex != nullptr
+            && gFlightStateMutex != nullptr
+            && gSimEnabledMutex != nullptr
+            && gStateVectorMutex != nullptr
+            && gCommandMutex != nullptr
+            && gCXFlagMutex != nullptr
+            && gKalmanFlagMutex != nullptr
+            && gRollAngleSetpointMutex != nullptr
+            && gRollAngularVelocityMutex != nullptr
+            && gI2C1BarometerQueue != nullptr
+            && gI2C1GPSQueue != nullptr
+            && gI2C1LidarQueue != nullptr
+            && gI2C2IMUQueue != nullptr
+            && gI2C2MagQueue != nullptr
+            && gI2C1VoltageQueue != nullptr
+            && gCommandQueue != nullptr
+            && gSetTimeQueue != nullptr
+            && gBarometerCalibrationQueue != nullptr;
+    }
+}
+
+    void InitializeThreadSafeData() {
+        CreateMutexes();
+        CreateQueues();
+        InitializeDefaults();
+
+        if(!ResourcesReady()) {
             // Handle error: insufficient resources to create mutexes or queues
             Serial.println("Error initializing shared data mutexes or queues");
             while (true) {} // Halt execution

@@ -1,13 +1,14 @@
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
-#include "../support/Wire.h"
+#include "../../support/Wire.h"
 #include "Hardware/drivers/TeseoGPS.h"
 
 // Pull the production implementation directly into the native test harness so
 // the Teseo I2C stream behavior is tested without widening the public API.
-#include "../../src/Hardware/drivers/TeseoGps.cpp"
+#include "../../../src/Hardware/drivers/TeseoGps.cpp"
 
 namespace {
 constexpr uint8_t kTestGpsAddress = 0x3A;
@@ -55,6 +56,13 @@ void AssertFloatNear(float expected, float actual, float tol, const char* messag
     }
 }
 
+void AssertStringEqual(const char* expected, const char* actual, const char* message) {
+    if (std::strcmp(expected, actual) != 0) {
+        std::cerr << "FAIL: " << message << " expected=" << expected << " actual=" << actual << '\n';
+        std::exit(1);
+    }
+}
+
 Common::GPSData ReadSeveral(TeseoGPS& gps, uint8_t reads = 4) {
     Common::GPSData data = {};
     for (uint8_t i = 0; i < reads; ++i) {
@@ -90,7 +98,7 @@ void test_gga_sentence_updates_position_altitude_time_and_satellites() {
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "GGA latitude mismatch");
     AssertFloatNear(11.516666f, data.longitude, 1e-4f, "GGA longitude mismatch");
     AssertFloatNear(545.4f, data.altitude, 1e-3f, "GGA altitude mismatch");
-    AssertFloatNear(45319.0f, data.time, 1e-3f, "GGA time mismatch");
+    AssertStringEqual("12:35:19", data.time, "GGA time mismatch");
     AssertTrue(data.satellites == 8, "GGA satellites mismatch");
     AssertEqualU32(1, diagnostics.ggaSentenceCount, "GGA sentence count mismatch");
     AssertEqualU32(1, diagnostics.ggaValidCount, "GGA valid count mismatch");
@@ -113,7 +121,7 @@ void test_rmc_sentence_updates_position_when_split_across_reads() {
     data = ReadSeveral(gps);
     AssertFloatNear(48.1173f, data.latitude, 1e-4f, "Split RMC latitude mismatch");
     AssertFloatNear(11.516666f, data.longitude, 1e-4f, "Split RMC longitude mismatch");
-    AssertFloatNear(45319.0f, data.time, 1e-3f, "Split RMC time mismatch");
+    AssertStringEqual("12:35:19", data.time, "Split RMC time mismatch");
     AssertFloatNear(11.523546f, data.groundSpeedMetersPerSecond, 1e-5f, "Split RMC ground speed mismatch");
     AssertTrue(data.groundSpeedValid, "Split RMC ground speed should be valid");
 }

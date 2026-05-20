@@ -1,6 +1,7 @@
 #include "Hardware/drivers/TeseoGPS.h"
 
 #include <climits>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -199,10 +200,12 @@ void TeseoGPS::CopyParsedSentence() {
 }
 
 void TeseoGPS::CopyPositionAndTime() {
-    data_.time = static_cast<float>(nmea_.getHour() * 3600U)
-        + static_cast<float>(nmea_.getMinute() * 60U)
-        + static_cast<float>(nmea_.getSecond())
-        + (static_cast<float>(nmea_.getHundredths()) / 100.0f);
+    std::snprintf(data_.time,
+                  sizeof(data_.time),
+                  "%02u:%02u:%02u",
+                  static_cast<unsigned>(nmea_.getHour()),
+                  static_cast<unsigned>(nmea_.getMinute()),
+                  static_cast<unsigned>(nmea_.getSecond()));
     data_.latitude = static_cast<float>(nmea_.getLatitude()) * kMillionthsToDegrees;
     data_.longitude = static_cast<float>(nmea_.getLongitude()) * kMillionthsToDegrees;
 }

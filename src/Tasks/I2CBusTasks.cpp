@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 
 namespace {
 // The mission sensor budget from the current requirements screenshot is:
@@ -13,7 +12,7 @@ namespace {
 //   INA260      -> 7 Hz effective
 //   LIDAR-Lite  -> 100 Hz internal
 //
-// I2C1BusTask (Wire):  barometer, GPS, lidar, voltage sensor
+// I2C1BusTask (Wire):  barometer, GPS, voltage sensor; LiDAR is feature-gated
 // I2C2BusTask (Wire1): IMU (FIFO), magnetometer
 //
 // These two bus tasks are the only code that touches the physical I2C buses.
@@ -35,11 +34,12 @@ namespace {
 // 416 Hz task wakeups. Each FIFO drain is forwarded to NavigationTask as one
 // ordered IMU batch carrying reconstructed per-sample timestamps so the MEKF can
 // process the samples sequentially without losing the original sensor cadence.
-constexpr float kDefaultReferencePressureHpa = 1013.25f;
 constexpr TickType_t kBusTaskLoopPeriod = 1;
 constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
 constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(100);        // 10 Hz
+#if CANSAT_ENABLE_LIDAR
 constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(10);       // 100 Hz
+#endif
 constexpr TickType_t kMagPeriodTicks = pdMS_TO_TICKS(20);         // 50 Hz
 constexpr TickType_t kVoltagePeriodTicks = pdMS_TO_TICKS(143);    // nearest tick period to ~7 Hz
 constexpr TickType_t kImuPollPeriodTicks = pdMS_TO_TICKS(10);     // poll FIFO every 10 ms for 4-sample bursts
@@ -63,33 +63,6 @@ void AdvanceDeadline(TickType_t* deadline, TickType_t periodTicks, TickType_t no
     } while (IsTimeDue(now, *deadline));
 }
 
-// Reference pressure is calibrated by CAL and shared with the bus task so the
-// published barometer altitude is relative to the current launch baseline rather
-// than a fixed sea-level constant baked into the sensor driver.
-float ReadReferencePressureHpa() {
-    float referencePressure = kDefaultReferencePressureHpa;
-
-    if (SharedData::gReferencePressureMutex != nullptr
-        && xSemaphoreTake(SharedData::gReferencePressureMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-        referencePressure = SharedData::gReferencePressureHpa;
-        xSemaphoreGive(SharedData::gReferencePressureMutex);
-    }
-
-    return referencePressure;
-}
-
-// Convert the current pressure sample into altitude relative to the stored
-// reference pressure. This is done at the publication boundary so the raw driver
-// stays responsible only for physical sensor units.
-float PressureToRelativeAltitude(float pressureHpa, float referencePressureHpa) {
-    if (pressureHpa <= 0.0f || referencePressureHpa <= 0.0f) {
-        return 0.0f;
-    }
-
-    const float ratio = pressureHpa / referencePressureHpa;
-    return 44330.0f * (1.0f - std::pow(ratio, 0.190294957f));
-}
-
 template <typename T>
 void UpdateSnapshot(T Common::SensorSnapshot::* field, const T& value) {
     if (SharedData::gSnapshotMutex == nullptr) {
@@ -102,6 +75,58 @@ void UpdateSnapshot(T Common::SensorSnapshot::* field, const T& value) {
     }
 }
 
+template <typename T>
+bool PublishQueue(QueueHandle_t queue, const T& value) {
+    return queue != nullptr && xQueueSend(queue, &value, 0) == pdTRUE;
+}
+
+void PublishBarometer(const Common::BarometerData& data) {
+    PublishQueue(SharedData::gI2C1BarometerQueue, data);
+    UpdateSnapshot(&Common::SensorSnapshot::barometerData, data);
+}
+
+void PublishGps(const Common::GPSData& data) {
+    PublishQueue(SharedData::gI2C1GPSQueue, data);
+    UpdateSnapshot(&Common::SensorSnapshot::gpsData, data);
+}
+
+#if CANSAT_ENABLE_LIDAR
+void PublishLidar(const Common::LidarData& data) {
+    if (data.valid) {
+        PublishQueue(SharedData::gI2C1LidarQueue, data);
+    }
+    UpdateSnapshot(&Common::SensorSnapshot::lidarData, data);
+}
+#endif
+
+void PublishVoltage(const Common::VoltageData& data) {
+    PublishQueue(SharedData::gI2C1VoltageQueue, data);
+    UpdateSnapshot(&Common::SensorSnapshot::voltageData, data);
+}
+
+void PublishImuBatch(const Common::IMUBatch& batch) {
+    PublishQueue(SharedData::gI2C2IMUQueue, batch);
+    UpdateSnapshot(&Common::SensorSnapshot::imuData, batch.samples[batch.count - 1]);
+}
+
+void PublishMagnetometer(const Common::MagData& data) {
+    PublishQueue(SharedData::gI2C2MagQueue, data);
+    UpdateSnapshot(&Common::SensorSnapshot::magData, data);
+}
+
+void ApplyBarometerCalibrationRequests() {
+    if (SharedData::gBarometerCalibrationQueue == nullptr) {
+        return;
+    }
+
+    float pressureHpa = 0.0f;
+    while (xQueueReceive(SharedData::gBarometerCalibrationQueue, &pressureHpa, 0) == pdTRUE) {
+        if (!Hardware::barometer_.SetCalibrationPressure(pressureHpa)) {
+            Serial.println("I2C1: rejected barometer calibration pressure");
+        }
+    }
+}
+
 }  // namespace
 
 void Tasks::I2C1BusTask(void* pvParameters) {
@@ -111,7 +136,6 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     // inject zeros into the rest of the flight stack.
     Common::BarometerData latestBaro = {};
     Common::GPSData latestGps = {};
-    Common::LidarData latestLidar = {};
     Common::VoltageData latestVoltage = {};
 
     // lastWakeTime drives vTaskDelayUntil so the task wakes on a stable RTOS
@@ -119,20 +143,20 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     TickType_t nextBarometerTick = lastWakeTime;
     TickType_t nextGpsTick = lastWakeTime;
+#if CANSAT_ENABLE_LIDAR
     TickType_t nextLidarTick = lastWakeTime;
+#endif
     TickType_t nextVoltageTick = lastWakeTime;
 
     while (true) {
         const TickType_t now = xTaskGetTickCount();
+        ApplyBarometerCalibrationRequests();
 
-        // Barometer ownership lives here. After a read, the task computes the
-        // relative altitude, queues the sample for NavigationTask, and mirrors it
-        // into gSnapshot for telemetry/logging/mission logic.
+        // Barometer ownership lives here. The driver owns BMP390 compensation and
+        // altitude calibration; the bus task only schedules and publishes samples.
         if (IsTimeDue(now, nextBarometerTick)) {
             latestBaro = Hardware::barometer_.ReadData();
-            latestBaro.altitude = PressureToRelativeAltitude(latestBaro.pressure, ReadReferencePressureHpa());
-            xQueueSend(SharedData::gI2C1BarometerQueue, &latestBaro, portMAX_DELAY); // TODO: Don't make this a blocking send
-            UpdateSnapshot(&Common::SensorSnapshot::barometerData, latestBaro);
+            PublishBarometer(latestBaro);
             AdvanceDeadline(&nextBarometerTick, kBarometerPeriodTicks, now);
         }
 
@@ -141,32 +165,23 @@ void Tasks::I2C1BusTask(void* pvParameters) {
         // downlink at 1 Hz.
         if (IsTimeDue(now, nextGpsTick)) {
             latestGps = Hardware::gps_.ReadData();
-            xQueueSend(SharedData::gI2C1GPSQueue, &latestGps, portMAX_DELAY); //TODO: Don't make this a blocking send
-            UpdateSnapshot(&Common::SensorSnapshot::gpsData, latestGps);
+            PublishGps(latestGps);
             AdvanceDeadline(&nextGpsTick, kGpsPeriodTicks, now);
         }
 
+#if CANSAT_ENABLE_LIDAR
         // Lidar is bus-owned here as well. Just like the other sensors, the read
         // result is published to both the queue path and the snapshot path.
         if (IsTimeDue(now, nextLidarTick)) {
             const Common::LidarData lidarRead = Hardware::lidar_.ReadData();
-            // Navigation should only fuse confirmed-valid range measurements, but
-            // snapshot consumers still benefit from seeing the latest LiDAR
-            // health metadata even when the read failed.
-            if (lidarRead.valid) {
-                latestLidar = lidarRead;
-                xQueueSend(SharedData::gI2C1LidarQueue, &latestLidar, portMAX_DELAY); //TODO: Don't make this a blocking send
-            } else {
-                latestLidar = lidarRead;
-            }
-            UpdateSnapshot(&Common::SensorSnapshot::lidarData, latestLidar);
+            PublishLidar(lidarRead);
             AdvanceDeadline(&nextLidarTick, kLidarPeriodTicks, now);
         }
+#endif
 
         if (IsTimeDue(now, nextVoltageTick)) {
             latestVoltage = Hardware::voltageSensor_.ReadData();
-            xQueueSend(SharedData::gI2C1VoltageQueue, &latestVoltage, portMAX_DELAY); // TODO: Don't make this a blocking send
-            UpdateSnapshot(&Common::SensorSnapshot::voltageData, latestVoltage);
+            PublishVoltage(latestVoltage);
             AdvanceDeadline(&nextVoltageTick, kVoltagePeriodTicks, now);
         }
 
@@ -220,25 +235,19 @@ void Tasks::I2C2BusTask(void* pvParameters) {
                     imuBatch.samples[i] = latestImu;
                 }
 
-                xQueueSend(SharedData::gI2C2IMUQueue, &imuBatch, portMAX_DELAY); //TODO: Don't make this a blocking send
+                PublishImuBatch(imuBatch);
                 if(xSemaphoreTake(SharedData::gRollAngularVelocityMutex, 0) == pdTRUE){
                     SharedData::gRollAngularVelocity = latestImu.gyroVel.x;
                     xSemaphoreGive(SharedData::gRollAngularVelocityMutex);
                 }
-            
-                }
-                // Snapshot keeps only the freshest IMU sample; the full ordered
-                // history for MEKF propagation lives in the batch queue.
-                UpdateSnapshot(&Common::SensorSnapshot::imuData, imuBatch.samples[sampleCount - 1]);
             }
             AdvanceDeadline(&nextImuPollTick, kImuPollPeriodTicks, now);
-        
+        }
 
         // The magnetometer remains a separate 50 Hz read on the companion die.
         if (IsTimeDue(now, nextMagTick)) {
             latestMag = Hardware::magnetometer_.ReadData();
-            xQueueSend(SharedData::gI2C2MagQueue, &latestMag, portMAX_DELAY); // TODO: Don't make this a blocking send
-            UpdateSnapshot(&Common::SensorSnapshot::magData, latestMag);
+            PublishMagnetometer(latestMag);
             AdvanceDeadline(&nextMagTick, kMagPeriodTicks, now);
         }
 
