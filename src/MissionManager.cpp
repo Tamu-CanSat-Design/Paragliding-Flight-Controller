@@ -41,6 +41,7 @@ namespace MissionManager {
     bool EGRELFlag = false;
     bool AUDFlag = false;
     bool localEKFFlag = false;
+    bool BarometerMode = false;
 
     bool StandbyStartedFlag = false;
     bool AscentStartedFlag = false;

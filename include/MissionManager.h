@@ -16,6 +16,7 @@ namespace MissionManager {
   extern bool EGRELFlag;
   extern bool AUDFlag; 
   extern bool localEKFFlag;
+  extern bool BarometerMode;
 
   extern bool StandbyStartedFlag;
   extern bool AscentStartedFlag;
