@@ -54,25 +54,19 @@ void Tasks::MissionManagerTask(void* pvParameters){
                     MissionManager::localCXFlag = false;
                 } 
             }
-            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T') 
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T' && MissionManager::Command[2] == ',') 
             {
                 // Take rest of the command after ST as a string then send it over a queue to RTC thread to set the RTC time. If the command has GPS then tell the RTC to set time from GPS
-                char* timeArg = &MissionManager::Command[3];
+               
+                char timeArg[Common::TIME_STRING_LENGTH] = {0};
+                //get rid of the "ST," part of the command
+                memcpy(timeArg, MissionManager::Command + 3, sizeof(timeArg) - 1);
+                timeArg[sizeof(timeArg) - 1] = '\0';
 
-                if(strcmp(timeArg, "GPS") == 0) {
-                    float gpsSeconds = Hardware::gps_.ReadData().time;
-                    int hour = (int)gpsSeconds / 3600;
-                    int minute = ((int)gpsSeconds % 3600) / 60;
-                    int second = (int)gpsSeconds % 60;
+                
 
-                    char gpsTimeCommand[Common::COMMAND_BUFFER_LENGTH] = {};
-                    snprintf(gpsTimeCommand, sizeof(gpsTimeCommand), "%02d:%02d:%02d", hour, minute, second);
 
-                    xQueueSend(SharedData::gSetTimeQueue, gpsTimeCommand, pdMS_TO_TICKS(100));
-
-                } else {
-                    xQueueSend(SharedData::gSetTimeQueue, timeArg, pdMS_TO_TICKS(100));
-                }
+                xQueueSend(SharedData::gSetTimeQueue, &timeArg, 0);
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == '\0') {
 

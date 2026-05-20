@@ -43,8 +43,9 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         //Task Notification Receiving
 
         
-        char timeStr[16] = {0};
-        snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d", localSnapshot.timeData.hour, localSnapshot.timeData.minute, localSnapshot.timeData.second);
+        char timeStr[16];
+        snprintf(timeStr, sizeof(timeStr), "%s", localSnapshot.timeData);
+
 
 
         strncpy(data.missionTime, timeStr, sizeof(data.missionTime) - 1);
@@ -67,7 +68,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         
         
         if(localCXFlag) {
-            SharedData::commlink.WriteGroundRadio(telemetryBuf);
+            Hardware::commlink_.WriteGroundRadio(telemetryBuf);
         }
         vTaskDelay(pdMS_TO_TICKS(1000)); // Adjust delay as needed
     }

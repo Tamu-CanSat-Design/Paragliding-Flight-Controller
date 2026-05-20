@@ -62,9 +62,8 @@ void Tasks::DataLoggingTask(void* pvParameters) {
         // 4) Format the CSV line (no mutex held)
         Common::telemetry dataToLog = {};
 
-        char timeStr[16] = {0};
-        snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d", localSensorSnapshot.timeData.hour, localSensorSnapshot.timeData.minute, localSensorSnapshot.timeData.second);
-
+        char timeStr[16];
+        snprintf(timeStr, sizeof(timeStr), "%s", localSensorSnapshot.timeData);
 
         strncpy(dataToLog.missionTime, timeStr, sizeof(dataToLog.missionTime) - 1);
         dataToLog.missionTime[sizeof(dataToLog.missionTime) - 1] = '\0';

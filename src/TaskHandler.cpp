@@ -81,7 +81,6 @@ namespace Tasks
 
         // Create the shared-data before any tasks start.
         SharedData::InitializeThreadSafeData();
-        SharedData::commlink.Initialize();
 
         // Create Each Task
         I2C1BusTaskHandle = xTaskCreateStatic(

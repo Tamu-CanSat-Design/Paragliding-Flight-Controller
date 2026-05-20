@@ -118,11 +118,11 @@ namespace Common {
         float altitude;
     };
 
-    struct TimeData{
-        int year, month, day;
-        int hour, minute, second;
-        time_t unix;
-    };
+    // struct TimeData{
+    //     int year, month, day;
+    //     int hour, minute, second;
+    //     time_t unix;
+    // };
 
     struct GPSData {
         float latitude;
@@ -185,7 +185,7 @@ namespace Common {
         VoltageData voltageData;
         LidarData lidarData;
         MagData magData;
-        TimeData timeData;
+        char timeData[TIME_STRING_LENGTH];
     };
 
     struct telemetry {  // This struct needs to be reordered for memory optimization

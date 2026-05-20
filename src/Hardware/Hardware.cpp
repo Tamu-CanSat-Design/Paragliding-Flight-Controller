@@ -11,7 +11,8 @@ namespace Hardware {
     TeseoGPS gps_;
     Lidar lidar_;
     VoltageSensor voltageSensor_;
-    Radio radio_;
+    Commlink commlink_;
+
     AudioBeacon audioBeacon_;
     RTC rtc_;
     Camera camera_;
@@ -39,7 +40,7 @@ namespace Hardware {
         Serial.println("Hardware: LiDAR disabled");
 #endif
         ok = voltageSensor_.Initialize() && ok;
-        ok = radio_.Initialize() && ok;
+        // ok = radio_.Initialize() && ok;
         ok = rtc_.Initialize() && ok;
         // ok = audioBeacon_.Initialize() && ok;
         // ok = camera_.Initialize() && ok;
