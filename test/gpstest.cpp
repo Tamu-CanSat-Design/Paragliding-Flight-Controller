@@ -12,7 +12,7 @@ void PrintBool(const bool value) {
 
 void PrintGpsSample(const Common::GPSData& sample) {
     Serial.print("GPS: time=");
-    Serial.print(sample.time, 2);
+    Serial.print(sample.time);
     Serial.print(" lat=");
     Serial.print(sample.latitude, 6);
     Serial.print(" lon=");

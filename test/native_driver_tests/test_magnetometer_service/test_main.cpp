@@ -2,12 +2,12 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "../support/Wire.h"
+#include "../../support/Wire.h"
 #include "Hardware/drivers/Magnetometer.h"
 
 // Pull the production implementation directly into the native test harness so
 // the register sequencing is tested without refactoring the driver.
-#include "../../src/Hardware/drivers/Magnetometer.cpp"
+#include "../../../src/Hardware/drivers/Magnetometer.cpp"
 
 namespace {
 constexpr uint8_t kTestMagAddress = 0x1E;

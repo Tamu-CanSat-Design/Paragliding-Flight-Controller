@@ -92,7 +92,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 //Altitude calculated from pressure
             }
             else if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'A' && MissionManager::Command[2] == 'L' && MissionManager::Command[3] == '\0') {
-                //Calibrate altitude to be 0 by uploading current pressure and writing to EEPROM
+                MissionManager::CAL();
             }
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' && MissionManager::Command[3] == ',' 
                 && MissionManager::Command[4] == 'E' && MissionManager::Command[5] == 'G' && MissionManager::Command[6] == 'R' && MissionManager::Command[7] == 'E' 

@@ -77,7 +77,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
         dataToLog.current = localSensorSnapshot.voltageData.current;
         dataToLog.imuData = localSensorSnapshot.imuData;
         dataToLog.magnetometer = localSensorSnapshot.magData;
-        dataToLog.GPSTime = localSensorSnapshot.gpsData.time;
+        snprintf(dataToLog.GPSTime, sizeof(dataToLog.GPSTime), "%s", localSensorSnapshot.gpsData.time);
         dataToLog.GPSLoc = {localSensorSnapshot.gpsData.latitude, localSensorSnapshot.gpsData.longitude, localSensorSnapshot.gpsData.altitude};
         dataToLog.GPSSats = localSensorSnapshot.gpsData.satellites;
         dataToLog.stateVector = localStateVector;

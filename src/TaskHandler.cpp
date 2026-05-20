@@ -166,7 +166,7 @@ namespace Tasks
             return false;
         }
 
-        if (xSemaphoreTake(SharedData::gSnapshotMutex, portMAX_DELAY) != pdTRUE) {
+        if (xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(10)) != pdTRUE) {
             return false;
         }
 

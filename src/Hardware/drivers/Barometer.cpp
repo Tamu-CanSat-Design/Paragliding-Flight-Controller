@@ -63,6 +63,8 @@ constexpr uint8_t kIirFilter = 0x02; // Coefficient 3.
 // Power control: enable press+temp, normal mode for continuous measurements.
 constexpr uint8_t kPwrCtrl = 0x33;   // Press + temp enable, normal mode.
 
+constexpr float kDefaultReferencePressureHpa = 1013.25f;
+
 // Read an unsigned 16-bit little-endian value from a byte buffer for coefficient unpacking.
 uint16_t ReadU16(const uint8_t* data, size_t index) {
     return static_cast<uint16_t>(data[index])
@@ -83,6 +85,7 @@ bool Barometer::Initialize() {
     data_ = {};
     // Clear calibration cache so old trims are not reused.
     calib_ = {};
+    referencePressureHpa_ = kDefaultReferencePressureHpa;
     diagnostics_ = {};
 
     // Start I2C bus so the device is addressable.
@@ -151,12 +154,20 @@ Common::BarometerData Barometer::ReadData() {
     const float pressure_pa = CompensatePressure(raw_press);
     // Convert Pa to hPa to match telemetry expectations and existing code.
     data.pressure = pressure_pa * 0.01f;  // Pa -> hPa
-    // Altitude zeroing is owned outside the driver by the sensor publication path.
-    data.altitude = 0.0f;
+    data.altitude = PressureToRelativeAltitude(data.pressure);
 
     // Cache and return the latest sample so failures keep the last good data.
     data_ = data;
     return data_;
+}
+
+bool Barometer::SetCalibrationPressure(float pressureHpa) {
+    if (!std::isfinite(pressureHpa) || pressureHpa <= 0.0f) {
+        return false;
+    }
+
+    referencePressureHpa_ = pressureHpa;
+    return true;
 }
 
 // Send a soft reset command to the sensor to clear prior configuration.
@@ -327,6 +338,15 @@ float Barometer::CompensatePressure(uint32_t raw_press) {
 
     // Sum all branches to get compensated pressure in Pa.
     return partial_out1 + partial_out2 + partial_data4;
+}
+
+float Barometer::PressureToRelativeAltitude(float pressureHpa) const {
+    if (pressureHpa <= 0.0f || referencePressureHpa_ <= 0.0f) {
+        return 0.0f;
+    }
+
+    const float ratio = pressureHpa / referencePressureHpa_;
+    return 44330.0f * (1.0f - std::pow(ratio, 0.190294957f));
 }
 
 Barometer::Diagnostics Barometer::GetDiagnostics() const {

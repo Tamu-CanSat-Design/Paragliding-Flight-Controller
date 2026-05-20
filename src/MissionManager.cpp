@@ -73,13 +73,12 @@ namespace MissionManager {
 
     void CAL() {
         float pressureHpa = 0.0f;
-        if (!TryGetCurrentBarometerPressure(&pressureHpa) || SharedData::gReferencePressureMutex == nullptr) {
+        if (!TryGetCurrentBarometerPressure(&pressureHpa) || SharedData::gBarometerCalibrationQueue == nullptr) {
             return;
         }
 
-        if (xSemaphoreTake(SharedData::gReferencePressureMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-            SharedData::gReferencePressureHpa = pressureHpa;
-            xSemaphoreGive(SharedData::gReferencePressureMutex);
+        if (xQueueOverwrite(SharedData::gBarometerCalibrationQueue, &pressureHpa) != pdPASS) {
+            return;
         }
 
         MaxAltitude = 0.0f;

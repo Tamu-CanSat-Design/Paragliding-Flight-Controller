@@ -14,7 +14,8 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
     bool localCXFlag = false;
     while (true) {
         if(xSemaphoreTake(SharedData::gCXFlagMutex, pdMS_TO_TICKS(100)) == pdTRUE){
-            localCXFlag = true;
+            localCXFlag = SharedData::gCXFlag;
+            xSemaphoreGive(SharedData::gCXFlagMutex);
         }
         
 
@@ -57,7 +58,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         data.current = localSnapshot.voltageData.current;
         data.imuData = localSnapshot.imuData;
         data.magnetometer = localSnapshot.magData;
-        data.GPSTime = localSnapshot.gpsData.time;
+        snprintf(data.GPSTime, sizeof(data.GPSTime), "%s", localSnapshot.gpsData.time);
         data.GPSLoc = {localSnapshot.gpsData.latitude, localSnapshot.gpsData.longitude, localSnapshot.gpsData.altitude};
         data.GPSSats = localSnapshot.gpsData.satellites;
         data.stateVector = localStateVector;

@@ -19,6 +19,7 @@ public:
     const char* SensorName() const override { return kSensorName; }
     bool Initialize() override;
     Common::BarometerData ReadData() override;
+    bool SetCalibrationPressure(float pressureHpa);
     Diagnostics GetDiagnostics() const;
     void ClearDiagnostics();
 
@@ -47,11 +48,13 @@ private:
     bool ReadRaw(uint32_t* raw_press, uint32_t* raw_temp);
     float CompensateTemperature(uint32_t raw_temp);
     float CompensatePressure(uint32_t raw_press);
+    float PressureToRelativeAltitude(float pressureHpa) const;
 
     Common::BarometerData data_{};
     Diagnostics diagnostics_{};
     Calibration calib_{};
     I2CDevice device_{};
+    float referencePressureHpa_ = 1013.25f;
     bool initialized_ = false;
 };
 

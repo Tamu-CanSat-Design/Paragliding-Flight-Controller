@@ -3,12 +3,12 @@
 #include <cmath>
 #include <iostream>
 
-#include "../support/Wire.h"
+#include "../../support/Wire.h"
 #include "Hardware/drivers/Imu.h"
 
 // Pull the production implementation directly into the native test harness so
 // the FIFO service logic is exercised without refactoring the driver.
-#include "../../src/Hardware/drivers/Imu.cpp"
+#include "../../../src/Hardware/drivers/Imu.cpp"
 
 namespace {
 constexpr uint8_t kTestImuAddress = 0x6A;

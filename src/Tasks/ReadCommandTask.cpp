@@ -10,7 +10,7 @@ void Tasks::ReadCommandTask(void* pvParameters) {
         SharedData::commlink.ReadGroundRadio(cmdBuf, sizeof(cmdBuf));
         if (cmdBuf[0] != '\0') { // Check if we received a command
             if (SharedData::commlink.CheckCommand(cmdBuf)) {
-                xQueueSend(SharedData::gCommandQueue, &cmdBuf, portMAX_DELAY); // Send command to MissionManager
+                xQueueSend(SharedData::gCommandQueue, cmdBuf, 0); // Send command to MissionManager if queue has room.
             }
         }
 
