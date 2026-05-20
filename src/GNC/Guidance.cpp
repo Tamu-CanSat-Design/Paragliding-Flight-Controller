@@ -1,7 +1,7 @@
 #include "GNC/Guidance.h"
 
 Guidance::Guidance(Common::StateVector state, Common::Vector3 waypoint)
-    : L_1(0.0), R(0), chi(0), chi_L(0), chi_cp(0), eta(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0){
+    : R(0), L_1(0.0), chi(0), chi_cp(0), chi_L(0), eta(0), eta_L(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0){
     float v_x = state.vx, v_y = state.vy;
     float x = state.x, y = state.y;
     float x_f = waypoint.x, y_f = waypoint.y;

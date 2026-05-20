@@ -8,16 +8,6 @@
 #include <cstdlib>
 
 namespace {
-    // void SetSharedSimEnabled(bool enabled) {
-    //     if (SharedData::gSimEnabledMutex == nullptr) {
-    //         return;
-    //     }
-
-    //     if (xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-    //         SharedData::gSimEnabled = enabled;
-    //         xSemaphoreGive(SharedData::gSimEnabledMutex);
-    //     }
-    // }
 
     bool TryGetCurrentBarometerPressure(float* outPressureHpa) {
         if (outPressureHpa == nullptr || SharedData::gSnapshotMutex == nullptr) {
@@ -46,10 +36,11 @@ namespace MissionManager {
 
     bool simArmed = false;
     bool simEnabled = false;
-    bool CXFlag = false;
+    bool localCXFlag = false;
     bool LDARFlag = false;
     bool EGRELFlag = false;
     bool AUDFlag = false;
+    bool localEKFFlag = false;
 
     bool StandbyStartedFlag = false;
     bool AscentStartedFlag = false;

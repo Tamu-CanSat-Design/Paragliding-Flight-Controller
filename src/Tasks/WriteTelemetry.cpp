@@ -8,18 +8,15 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
     Common::StateVector localStateVector = {};
     Common::FlightState localFlightState = Common::FlightState::STANDBY;
     char localCommand[32] = {};
-    bool simEnabled = false;
+    
     Common::telemetry data;
-
+    bool simEnabled = false;
     bool localCXFlag = false;
     while (true) {
-        if(ulTaskNotifyTake(pdFALSE, 0) % 2 == 1){
+        if(xSemaphoreTake(SharedData::gCXFlagMutex, pdMS_TO_TICKS(100)) == pdTRUE){
             localCXFlag = true;
         }
-        else{
-            localCXFlag = false;
-        }
-
+        
 
         //Mutexes to safely read shared data
         if(xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
@@ -35,8 +32,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             xSemaphoreGive(SharedData::gFlightStateMutex);
         }
         if(xSemaphoreTake(SharedData::gCommandMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-            strncpy(localCommand, SharedData::gCommand, sizeof(localCommand) - 1);
-            localCommand[sizeof(localCommand) - 1] = '\0'; // Copy command under mutex
+            snprintf(localCommand, sizeof(localCommand), "%s", SharedData::gCommand); // Copy command under mutex
             xSemaphoreGive(SharedData::gCommandMutex);
         }
         if(xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
@@ -45,11 +41,14 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         }
         //Task Notification Receiving
 
+        
+        char timeStr[16] = {0};
+        snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d", localSnapshot.timeData.hour, localSnapshot.timeData.minute, localSnapshot.timeData.second);
 
 
-
-        data.missionTime = static_cast<float>(millis()) * 0.001f;
-        data.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'N' for normal mode
+        strncpy(data.missionTime, timeStr, sizeof(data.missionTime) - 1);
+        data.missionTime[sizeof(data.missionTime) - 1] = '\0';
+        data.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'F' for flight mode
         data.state = localFlightState;
         data.baroAltitude = localSnapshot.barometerData.altitude;
         data.temperature = localSnapshot.barometerData.temperature;

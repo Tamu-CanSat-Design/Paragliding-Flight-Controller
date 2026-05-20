@@ -11,10 +11,11 @@ namespace MissionManager {
 
   
   
-  extern bool CXFlag;
+  extern bool localCXFlag;
   extern bool LDARFlag;
   extern bool EGRELFlag;
   extern bool AUDFlag; 
+  extern bool localEKFFlag;
 
   extern bool StandbyStartedFlag;
   extern bool AscentStartedFlag;

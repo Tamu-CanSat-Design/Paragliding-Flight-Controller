@@ -9,6 +9,7 @@ namespace{
     constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
+    constexpr UBaseType_t SETTIMEQUEUEDEPTH = 5;
 
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
@@ -17,6 +18,7 @@ namespace{
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C1VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
+    uint8_t gSetTimeQueueStorage[SETTIMEQUEUEDEPTH * sizeof(Common::TimeData)];
 }
 
 
@@ -42,6 +44,11 @@ namespace SharedData {
     bool gCXFlag = false;
     SemaphoreHandle_t gCXFlagMutex = nullptr;
     static StaticSemaphore_t gCXFlagMutexBuffer;
+
+    bool gKalmanFlag = false;
+    SemaphoreHandle_t gKalmanFlagMutex;
+    static StaticSemaphore_t gKalmanFlagMutexBuffer;
+
 
     float gReferencePressureHpa = 1013.25f;
     SemaphoreHandle_t gReferencePressureMutex = nullptr;
@@ -81,9 +88,12 @@ namespace SharedData {
     static StaticQueue_t gCommandQueueBuffer;
     QueueHandle_t gCommandQueue = nullptr;
     
+    static StaticQueue_t gSetTimeQueueBuffer;
+    QueueHandle_t gSetTimeQueue = nullptr;
 
 
     void InitializeThreadSafeData() {
+        // Mutexes for shared data
         gSnapshotMutex = xSemaphoreCreateMutexStatic(&gSnapshotMutexBuffer);
         gFlightStateMutex = xSemaphoreCreateMutexStatic(&gFlightStateMutexBuffer);
         gSimEnabledMutex = xSemaphoreCreateMutexStatic(&gSimEnabledMutexBuffer);
@@ -93,15 +103,16 @@ namespace SharedData {
         gReferencePressureMutex = xSemaphoreCreateMutexStatic(&gReferencePressureMutexBuffer);
         gRollAngleSetpointMutex = xSemaphoreCreateMutexStatic(&gRollAngleSetpointMutexBuffer);
         gRollAngularVelocityMutex = xSemaphoreCreateMutexStatic(&gRollAngularVelocityMutexBuffer);
+
+        // Queues for sensor data and commands
         gI2C1BarometerQueue = xQueueCreateStatic(BAROMETERQUEUEDEPTH, sizeof(Common::BarometerData), gI2C1BarometerQueueStorage, &gI2C1BarometerQueueBuffer);
         gI2C1GPSQueue = xQueueCreateStatic(GPSQUEUEDEPTH, sizeof(Common::GPSData), gI2C1GPSQueueStorage, &gI2C1GPSQueueBuffer);
         gI2C1LidarQueue = xQueueCreateStatic(LIDARQUEUEDEPTH, sizeof(Common::LidarData), gI2C1LidarQueueStorage, &gI2C1LidarQueueBuffer);
-        // IMU queue now carries FIFO-drained batches instead of one sample per send.
         gI2C2IMUQueue = xQueueCreateStatic(IMUQUEUEDEPTH, sizeof(Common::IMUBatch), gI2C2IMUQueueStorage, &gI2C2IMUQueueBuffer);
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C1VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C1VoltageQueueStorage, &gI2C1VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
-
+        gSetTimeQueue = xQueueCreateStatic(SETTIMEQUEUEDEPTH, sizeof(Common::TimeData), gSetTimeQueueStorage, &gSetTimeQueueBuffer);
         gFlightState = Common::FlightState::STANDBY;
         gSimEnabled = false;
         gCXFlag = false;

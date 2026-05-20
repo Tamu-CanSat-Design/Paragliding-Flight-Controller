@@ -11,6 +11,7 @@ namespace {
     constexpr uint16_t kNavigationTaskStackDepth = 2048;
     constexpr uint16_t kMissionManagerTaskStackDepth = 2048;
     constexpr uint16_t kGuidanceTaskStackDepth = 2048;
+    constexpr uint16_t kRTCTaskStackDepth = 512;
     // constexpr uint16_t kWatchdogTaskStackDepth = 2048;
 
 
@@ -26,7 +27,7 @@ namespace {
     constexpr UBaseType_t kGuidanceTaskPriority = 9;
 
 
-    
+
 }
 
 
@@ -69,7 +70,9 @@ namespace Tasks
     StaticTask_t MissionManagerTaskBuffer;
     StackType_t MissionManagerTaskStack[kMissionManagerTaskStackDepth];
 
-    // TaskHandle_t WatchdogTaskHandle = nullptr;
+
+    TaskHandle_t RTCTaskHandle = nullptr;
+    StaticTask_t RTCTaskBuffer;
 
 
 

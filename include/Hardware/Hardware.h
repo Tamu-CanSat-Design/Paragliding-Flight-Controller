@@ -11,7 +11,7 @@
 #include "Hardware/drivers/Camera.h"
 #include "Hardware/drivers/ReleaseServo.h"
 #include "Hardware/drivers/SteeringServo.h"
-
+#include "Hardware/drivers/RTC.h"
 #include "bus/I2CDevice.h"
 #include <array>
 
@@ -32,7 +32,7 @@ namespace Hardware {
     extern TeseoGPS gps_;
     extern Lidar lidar_;
     extern VoltageSensor voltageSensor_;
-    
+    extern RTC rtc_;
 
     //Actuators
     extern Radio radio_;

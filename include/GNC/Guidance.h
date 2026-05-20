@@ -6,7 +6,7 @@
 
 class Guidance{
 public:
-    Guidance() : L_1(0.0), R(8.0f), chi(0), chi_L(0), chi_cp(0), eta(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0) {}
+    Guidance() : R(8.0f), L_1(0.0), chi(0), chi_cp(0), chi_L(0), eta(0), eta_L(0), a_ref(0), v_g(0), k_L(0), q_L(0), gamma(0), e_t(0), phi_ref(0) {}
 
     Guidance(Common::StateVector state, Common::Vector3 waypoint);
     float CalculateRoll(Common::StateVector state, Common::Vector3 waypoint);

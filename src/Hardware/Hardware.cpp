@@ -13,6 +13,7 @@ namespace Hardware {
     VoltageSensor voltageSensor_;
     Radio radio_;
     AudioBeacon audioBeacon_;
+    RTC rtc_;
     Camera camera_;
     ReleaseServo ContainerPayloadServo_{/* TODO: pin */ 2};
     ReleaseServo EggInstrumentServo_{/* TODO: pin */ 3};
@@ -34,6 +35,7 @@ namespace Hardware {
         ok = lidar_.Initialize() && ok;
         ok = voltageSensor_.Initialize() && ok;
         ok = radio_.Initialize() && ok;
+        ok = rtc_.Initialize() && ok;
         // ok = audioBeacon_.Initialize() && ok;
         // ok = camera_.Initialize() && ok;
 

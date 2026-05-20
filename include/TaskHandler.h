@@ -33,7 +33,7 @@ namespace Tasks
     
     //Always running
     void MissionManagerTask(void* pvParameters);
-    void WatchdogTask(void* pvParameters);
+    void RTCTask(void* pvParameters);
     
     
 
@@ -49,7 +49,7 @@ namespace Tasks
     extern TaskHandle_t GuidanceTaskHandle;
 
     extern TaskHandle_t MissionManagerTaskHandle;
-    extern TaskHandle_t WatchdogTaskHandle;
+    extern TaskHandle_t RTCTaskHandle;
     
 
     

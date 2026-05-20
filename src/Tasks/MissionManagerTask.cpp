@@ -22,7 +22,6 @@ void Tasks::MissionManagerTask(void* pvParameters){
         
         
         while(xQueueReceive(SharedData::gCommandQueue, &MissionManager::Command, 0) == pdTRUE) {
-
             if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                 LocalStateVector = SharedData::gStateVector;
                 if(MissionManager::MaxAltitude < LocalStateVector.z) {
@@ -34,22 +33,39 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 LocalSensorSnapshot = SharedData::gSnapshot;
                 xSemaphoreGive(SharedData::gSnapshotMutex);
             }
-            if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'X' && MissionManager::Command[2] == '\0') {
-                if(!MissionManager::CXFlag) {
-                    xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to send CX packet immediately
-                    MissionManager::CXFlag = true;
-                }
-                else{
-                    xTaskNotifyGive(Tasks::WriteTelemetryTaskHandle); // notify telemetry to suspend until next CX command
-                }   
+            if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'X' && MissionManager::Command[2] == ',' && MissionManager::Command[3] == 'O' && MissionManager::Command[4] == 'N' && MissionManager::Command[5] == '\0')
+            {
+                if(!MissionManager::localCXFlag) {
+                // notify telemetry to send CX packet immediately
+                    if(xSemaphoreTake(SharedData::gCXFlagMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        SharedData::gCXFlag = true;
+                        xSemaphoreGive(SharedData::gCXFlagMutex);
+                    } 
+                    MissionManager::localCXFlag = true;
+                } 
             }
-            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T' && MissionManager::Command[2] == '\0') {
-                // Set time logic
+            if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'X' && MissionManager::Command[2] == ',' && MissionManager::Command[3] == 'O' && MissionManager::Command[4] == 'F' && MissionManager::Command[5] == 'F' && MissionManager::Command[6] == '\0')
+            {
+                if(MissionManager::localCXFlag) {
+                    if(xSemaphoreTake(SharedData::gCXFlagMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                        SharedData::gCXFlag = false;
+                        xSemaphoreGive(SharedData::gCXFlagMutex);
+                    } 
+                    MissionManager::localCXFlag = false;
+                } 
+            }
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T') 
+            {
+                // Take rest of the command after ST as a string then send it over a queue to RTC thread to set the RTC time. If the command has GPS then tell the RTC to set time from GPS
+
+
+                
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == '\0') {
 
                 if(!simEnabled){
                     simEnabled = true;
+                    
                     xTaskNotifyGive(Tasks::NavigationTaskHandle);
                     xTaskNotifyGive(Tasks::ControlTaskHandle);
                 }   
@@ -88,6 +104,10 @@ void Tasks::MissionManagerTask(void* pvParameters){
                     Hardware::audioBeacon_.BuzzerOff();
                     MissionManager::AUDFlag = false;
                 }
+            }
+            else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C'
+            && MissionManager::Command[3] == ',' && MissionManager::Command[4] == 'E' && MissionManager::Command[5] == 'K' && MissionManager::Command[6] == 'F'){
+
             }
         }
     

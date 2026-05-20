@@ -4,23 +4,19 @@
 #include "Common.h"
 #include "GNC/GNC.h"
 
+struct EnergyValues{
+    float DistReq{0.0f};
+    float DistStraight{0.0f};
+    float EnergySurplus{0.0f};
+    float EnergyAval{0.0f};
 
+    EnergyValues() = default;
+    EnergyValues(float req, float straight, float surplus):
+        DistReq(req), DistStraight(straight), EnergySurplus(surplus) {}
+};
 
 class PathPlanner{
     private:
-
-        
-
-        struct EnergyValues{
-            float DistReq{0.0f};
-            float DistStraight{0.0f};
-            float EnergySurplus{0.0f};
-            float EnergyAval{0.0f};
-
-            EnergyValues() = default;
-            EnergyValues(float req, float straight, float surplus):
-                DistReq(req), DistStraight(straight), EnergySurplus(surplus) {}
-        };        
 
         EnergyValues Energy;
         GNC::GliderPhase Phase;

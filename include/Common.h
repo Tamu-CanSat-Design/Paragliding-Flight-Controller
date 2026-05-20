@@ -47,6 +47,7 @@ namespace Common {
         }
         return "UNKNOWN";
     }
+
     enum CommandType {
         CX=0,
         ST=1,
@@ -110,6 +111,12 @@ namespace Common {
         float altitude;
     };
 
+    struct TimeData{
+        int year, month, day;
+        int hour, minute, second;
+        time_t unix;
+    };
+
     struct GPSData {
         float latitude;
         float longitude;
@@ -171,10 +178,11 @@ namespace Common {
         VoltageData voltageData;
         LidarData lidarData;
         MagData magData;
+        TimeData timeData;
     };
 
     struct telemetry {  // This struct needs to be reordered for memory optimization
-        float missionTime;
+        char missionTime[16];
         int packetCount;
         char Mode;
         FlightState state;

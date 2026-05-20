@@ -30,7 +30,7 @@ void Commlink::ReadGroundRadio(char* buffer, size_t length){
             buffer[index] = '\0';
             index = 0;
         } else {
-            if (index < length - 1) {
+            if ((size_t)index < length - 1) {
                 buffer[index++] = static_cast<char>(c);
             } else {
                 index = 0;

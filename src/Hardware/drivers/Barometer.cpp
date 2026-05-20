@@ -2,11 +2,8 @@
 
 
 
-// Arduino core for delay and wire setup.
 #include <Arduino.h>
-// I2C transport.
 #include <Wire.h>
-// Math helpers for scaling and altitude.
 #include <cmath>
 
 namespace {
