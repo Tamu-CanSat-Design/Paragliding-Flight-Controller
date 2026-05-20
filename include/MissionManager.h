@@ -26,6 +26,8 @@ namespace MissionManager {
 
 
   void CAL();
+  void SIM();
+  void SetBarometerMode(bool enabled);
   
 
 

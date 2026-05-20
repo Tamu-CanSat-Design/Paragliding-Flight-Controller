@@ -54,34 +54,21 @@ namespace MissionManager {
         static Common::Window<30> accelWindow;
         static Common::Window<30> gyroWindow;
 
+    void SIM() {
+        simEnabled = !simEnabled;
+        simArmed = simEnabled;
 
+        if (SharedData::gSimEnabledMutex != nullptr) {
+            if (xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                SharedData::gSimEnabled = simEnabled;
+                xSemaphoreGive(SharedData::gSimEnabledMutex);
+            }
+        }
+    }
 
-    // void SIM() {
-    //     const char* token = std::strchr(Command, ',');
-    //     if (token == nullptr) {
-    //         simEnabled = !simEnabled;
-    //         simArmed = simEnabled;
-    //         SetSharedSimEnabled(simEnabled);
-    //         return;
-    //     }
-
-    //     ++token;
-    //     if (std::strcmp(token, "ENABLE") == 0) {
-    //         simArmed = true;
-    //         simEnabled = false;
-    //     } else if (std::strcmp(token, "ACTIVATE") == 0) {
-    //         if (simArmed) {
-    //             simEnabled = true;
-    //         }
-    //     } else if (std::strcmp(token, "DISABLE") == 0) {
-    //         simEnabled = false;
-    //         simArmed = false;
-    //     }
-
-    //     SetSharedSimEnabled(simEnabled);
-    // }
-
-
+    void SetBarometerMode(bool enabled) {
+        BarometerMode = enabled;
+    }
 
     void CAL() {
         float pressureHpa = 0.0f;
