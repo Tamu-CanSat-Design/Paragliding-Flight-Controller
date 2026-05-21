@@ -51,7 +51,7 @@ namespace SharedData {
 
     extern QueueHandle_t gSetTimeQueue;
 
-    // Depth-1 queue for barometer pressure calibration requests in hPa.
+    // 1 depth queue peak
     extern QueueHandle_t gBarometerCalibrationQueue;
 
     // Depth-1 queue for the latest roll angle setpoint from GuidanceTask.

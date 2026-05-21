@@ -102,6 +102,9 @@ void setup() {
     const bool gpsOk = gps.Initialize();
     Serial.print("GPS init: ");
     Serial.println(gpsOk ? "OK" : "FAIL");
+    const TeseoGPS::Diagnostics initDiagnostics = gps.GetDiagnostics();
+    PrintGpsDiagnostics(initDiagnostics);
+    Serial.println();
     //suspend if failed
     if (!gpsOk) {
         while (true) {
