@@ -105,6 +105,20 @@ bool BarometerOTS::Initialize() {
     }
     diagnostics_.foundAddress = static_cast<uint8_t>(handle_.iic_addr >> 1);
 
+    if ((err = bmp390_set_pressure(&handle_, BMP390_BOOL_TRUE)) != 0) {
+        Serial.printf("BarometerOTS: enable pressure failed (err=%u)\n", err);
+        diagnostics_.lastInitErrorCode = err;
+        ++diagnostics_.initFailureCount;
+        bmp390_deinit(&handle_);
+        return false;
+    }
+    if ((err = bmp390_set_temperature(&handle_, BMP390_BOOL_TRUE)) != 0) {
+        Serial.printf("BarometerOTS: enable temperature failed (err=%u)\n", err);
+        diagnostics_.lastInitErrorCode = err;
+        ++diagnostics_.initFailureCount;
+        bmp390_deinit(&handle_);
+        return false;
+    }
     if ((err = bmp390_set_pressure_oversampling(&handle_, BMP390_OVERSAMPLING_x8)) != 0) {
         Serial.printf("BarometerOTS: set pressure oversampling failed (err=%u)\n", err);
         diagnostics_.lastInitErrorCode = err;
