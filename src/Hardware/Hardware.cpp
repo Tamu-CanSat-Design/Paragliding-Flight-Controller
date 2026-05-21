@@ -36,12 +36,16 @@ namespace Hardware {
         ok = magnetometer_.Initialize() && ok;
         Serial.println("Magnetometer");
         Serial.println(ok ? "true" : "false");
+        ok = barometer_.Initialize() && ok;
+        Serial.println("Barometer");
+        Serial.println(ok ? "true" : "false");
+
         ok = gps_.Initialize() && ok;
         Serial.println("GPS");
         Serial.println(ok ? "true" : "false");
 #if CANSAT_ENABLE_LIDAR
         ok = lidar_.Initialize() && ok;
-        ok = barometer_.Initialize() && ok;
+        
 #else
         // LiDAR temporarily disabled until mechanical LiDAR leg is complete.
         Serial.println("Hardware: LiDAR disabled");

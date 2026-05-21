@@ -36,10 +36,8 @@ namespace {
 // process the samples sequentially without losing the original sensor cadence.
 constexpr TickType_t kBusTaskLoopPeriod = 1;
 constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(100);        // 10 Hz
-#if CANSAT_ENABLE_LIDAR
 constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
 constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(10);       // 100 Hz
-#endif
 constexpr TickType_t kMagPeriodTicks = pdMS_TO_TICKS(20);         // 50 Hz
 constexpr TickType_t kVoltagePeriodTicks = pdMS_TO_TICKS(143);    // nearest tick period to ~7 Hz
 constexpr TickType_t kImuPollPeriodTicks = pdMS_TO_TICKS(10);     // poll FIFO every 10 ms for 4-sample bursts
@@ -87,11 +85,12 @@ void PublishGps(const Common::GPSData& data) {
     UpdateSnapshot(&Common::SensorSnapshot::gpsData, data);
 }
 
-#if CANSAT_ENABLE_LIDAR
 void PublishBarometer(const Common::BarometerData& data) {
     PublishQueue(SharedData::gI2C1BarometerQueue, data);
     UpdateSnapshot(&Common::SensorSnapshot::barometerData, data);
 }
+#if CANSAT_ENABLE_LIDAR
+
 void PublishLidar(const Common::LidarData& data) {
     if (data.valid) {
         PublishQueue(SharedData::gI2C1LidarQueue, data);
@@ -144,8 +143,9 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     
     TickType_t nextGpsTick = lastWakeTime;
-#if CANSAT_ENABLE_LIDAR
     TickType_t nextBarometerTick = lastWakeTime;
+#if CANSAT_ENABLE_LIDAR
+    
     TickType_t nextLidarTick = lastWakeTime;
 #endif
     TickType_t nextVoltageTick = lastWakeTime;
@@ -156,13 +156,11 @@ void Tasks::I2C1BusTask(void* pvParameters) {
 
         // Barometer ownership lives here. The driver owns BMP390 compensation and
         // altitude calibration; the bus task only schedules and publishes samples.
-#if CANSAT_ENABLE_LIDAR
         if (IsTimeDue(now, nextBarometerTick)) {
             latestBaro = Hardware::barometer_.ReadData();
             PublishBarometer(latestBaro);
             AdvanceDeadline(&nextBarometerTick, kBarometerPeriodTicks, now);
         }
-#endif
         // GPS is intentionally slow compared to the rest of the bus. The queue
         // receives every internal sample; telemetry later decides what subset to
         // downlink at 1 Hz.

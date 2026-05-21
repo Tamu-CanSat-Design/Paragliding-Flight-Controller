@@ -7,7 +7,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
     Common::SensorSnapshot localSnapshot = {};
     Common::StateVector localStateVector = {};
     Common::FlightState localFlightState = Common::FlightState::STANDBY;
-    char localCommand[32] = {};
+    char localCommand[32] = {'\0'};
     
     Common::telemetry data;
     bool simEnabled = false;
@@ -36,6 +36,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             snprintf(localCommand, sizeof(localCommand), "%s", SharedData::gCommand); // Copy command under mutex
             xSemaphoreGive(SharedData::gCommandMutex);
         }
+       
         if(xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
             simEnabled = SharedData::gSimEnabled;
             xSemaphoreGive(SharedData::gSimEnabledMutex);
@@ -62,6 +63,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         snprintf(data.GPSTime, sizeof(data.GPSTime), "%s", localSnapshot.gpsData.time);
         data.GPSLoc = {localSnapshot.gpsData.latitude, localSnapshot.gpsData.longitude, localSnapshot.gpsData.altitude};
         data.GPSSats = localSnapshot.gpsData.satellites;
+        
         data.stateVector = localStateVector;
 
         Common::BuildPacket(data, telemetryBuf, sizeof(telemetryBuf));
