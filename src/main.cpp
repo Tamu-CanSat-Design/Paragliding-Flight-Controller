@@ -16,7 +16,7 @@ void setup() {
   Tasks::InitializeTasks();
   
 
-  
+  Serial.println("All tasks initialized. Starting scheduler...");
   // Start the scheduler if it is not already running.
   if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
     vTaskStartScheduler();
