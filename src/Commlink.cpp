@@ -27,6 +27,8 @@ void Commlink::ReadGroundRadio(char* buffer, size_t length){
 
     while (GetXbeeSerial().available() > 0) {
         int c = GetXbeeSerial().read();
+        // ignore CR characters (common on serial line endings \r\n)
+        if (c == '\r') continue;
         if (c == '\n') {
             buffer[index] = '\0';
             index = 0;
@@ -43,12 +45,14 @@ void Commlink::ReadGroundRadio(char* buffer, size_t length){
 
 // copy next field into dst
 static void copyField(const char*& s, char* dst, size_t dstSize) {
+    // skip leading whitespace and CR that may remain from serial input
+    while (*s == ' ' || *s == '\t' || *s == '\r') ++s;
     size_t i = 0;
     while (*s && *s != ',' && i + 1 < dstSize) {
         dst[i++] = *s++;
     }
     dst[i] = '\0';
-    if (*s == ',') ++s;
+    if (*s == ',' || *s == '\r') ++s;
 }
 
 bool Commlink::CheckCommand(const char* command){
