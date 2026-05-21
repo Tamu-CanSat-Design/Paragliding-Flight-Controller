@@ -5,7 +5,7 @@ namespace Hardware {
     // Global hardware manager instance. Tasks can access this to read sensors, send radio messages, etc.
     // This is defined here in the .cpp file to avoid circular dependencies with the header.
     
-    Barometer barometer_;
+    BarometerOTS barometer_;
     IMU imu_;
     MagnetometerOTS magnetometer_;
     TeseoGPS gps_;
