@@ -123,6 +123,7 @@ bool TeseoGPS::Initialize() {
         PrintInitDiagnostics("fail-zero-address", diagnostics_, bus_->address());
         return false;
     }
+    Serial.println("TeseoGPS: Starting GPS initialization sequence");
     delay(2000);
 
     uint8_t probe = kGpsIdleByte;
@@ -139,6 +140,7 @@ bool TeseoGPS::Initialize() {
     diagnostics_.lastI2cByte = probe;
     PrintInitDiagnostics("probe-read-ok", diagnostics_, bus_->address());
     delay(2000);
+    Serial.println("TeseoGPS: I2C probe read byte 0x" + String(probe, HEX));
     if (probe != kGpsIdleByte) {
         ++diagnostics_.nonIdleByteCount;
         diagnostics_.lastNonIdleByte = probe;
@@ -150,6 +152,7 @@ bool TeseoGPS::Initialize() {
         nmea_.clear();
         PrintInitDiagnostics("probe-idle-byte", diagnostics_, bus_->address());
     }
+    Serial.println("TeseoGPS: GPS initialization sequence complete");
     initialized_ = true;
     PrintInitDiagnostics("complete", diagnostics_, bus_->address());
     return true;

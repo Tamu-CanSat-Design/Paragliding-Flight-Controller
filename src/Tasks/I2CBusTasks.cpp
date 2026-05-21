@@ -35,9 +35,9 @@ namespace {
 // ordered IMU batch carrying reconstructed per-sample timestamps so the MEKF can
 // process the samples sequentially without losing the original sensor cadence.
 constexpr TickType_t kBusTaskLoopPeriod = 1;
-constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
 constexpr TickType_t kGpsPeriodTicks = pdMS_TO_TICKS(100);        // 10 Hz
 #if CANSAT_ENABLE_LIDAR
+constexpr TickType_t kBarometerPeriodTicks = pdMS_TO_TICKS(20);   // 50 Hz
 constexpr TickType_t kLidarPeriodTicks = pdMS_TO_TICKS(10);       // 100 Hz
 #endif
 constexpr TickType_t kMagPeriodTicks = pdMS_TO_TICKS(20);         // 50 Hz
@@ -80,10 +80,7 @@ bool PublishQueue(QueueHandle_t queue, const T& value) {
     return queue != nullptr && xQueueSend(queue, &value, 0) == pdTRUE;
 }
 
-void PublishBarometer(const Common::BarometerData& data) {
-    PublishQueue(SharedData::gI2C1BarometerQueue, data);
-    UpdateSnapshot(&Common::SensorSnapshot::barometerData, data);
-}
+
 
 void PublishGps(const Common::GPSData& data) {
     PublishQueue(SharedData::gI2C1GPSQueue, data);
@@ -91,6 +88,10 @@ void PublishGps(const Common::GPSData& data) {
 }
 
 #if CANSAT_ENABLE_LIDAR
+void PublishBarometer(const Common::BarometerData& data) {
+    PublishQueue(SharedData::gI2C1BarometerQueue, data);
+    UpdateSnapshot(&Common::SensorSnapshot::barometerData, data);
+}
 void PublishLidar(const Common::LidarData& data) {
     if (data.valid) {
         PublishQueue(SharedData::gI2C1LidarQueue, data);
@@ -141,9 +142,10 @@ void Tasks::I2C1BusTask(void* pvParameters) {
     // lastWakeTime drives vTaskDelayUntil so the task wakes on a stable RTOS
     // cadence instead of drifting over time.
     TickType_t lastWakeTime = xTaskGetTickCount();
-    TickType_t nextBarometerTick = lastWakeTime;
+    
     TickType_t nextGpsTick = lastWakeTime;
 #if CANSAT_ENABLE_LIDAR
+    TickType_t nextBarometerTick = lastWakeTime;
     TickType_t nextLidarTick = lastWakeTime;
 #endif
     TickType_t nextVoltageTick = lastWakeTime;
@@ -154,12 +156,13 @@ void Tasks::I2C1BusTask(void* pvParameters) {
 
         // Barometer ownership lives here. The driver owns BMP390 compensation and
         // altitude calibration; the bus task only schedules and publishes samples.
+#if CANSAT_ENABLE_LIDAR
         if (IsTimeDue(now, nextBarometerTick)) {
             latestBaro = Hardware::barometer_.ReadData();
             PublishBarometer(latestBaro);
             AdvanceDeadline(&nextBarometerTick, kBarometerPeriodTicks, now);
         }
-
+#endif
         // GPS is intentionally slow compared to the rest of the bus. The queue
         // receives every internal sample; telemetry later decides what subset to
         // downlink at 1 Hz.

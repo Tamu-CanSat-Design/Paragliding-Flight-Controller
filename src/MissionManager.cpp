@@ -41,6 +41,7 @@ namespace MissionManager {
     bool EGRELFlag = false;
     bool AUDFlag = false;
     bool localEKFFlag = false;
+    bool barometerMode = false;
 
     bool StandbyStartedFlag = false;
     bool AscentStartedFlag = false;
@@ -49,39 +50,31 @@ namespace MissionManager {
     bool RecoveryStartedFlag = false;
     float MaxAltitude = 0.0f;
 
-        static Common::Window<10> altWindow;
-        static Common::Window<10> vzWindow;
-        static Common::Window<30> accelWindow;
-        static Common::Window<30> gyroWindow;
+    Common::Window<10> altWindow;
+    Common::Window<10> vzWindow;
+    Common::Window<30> accelWindow;
+    Common::Window<30> gyroWindow;
+    
+    Common::Window<20> baroAltWindow;
+    Common::Window<2> simulationWindow;
+    
 
 
+    void SIM() {
+        simEnabled = !simEnabled;
+        simArmed = simEnabled;
 
-    // void SIM() {
-    //     const char* token = std::strchr(Command, ',');
-    //     if (token == nullptr) {
-    //         simEnabled = !simEnabled;
-    //         simArmed = simEnabled;
-    //         SetSharedSimEnabled(simEnabled);
-    //         return;
-    //     }
+        if (SharedData::gSimEnabledMutex != nullptr) {
+            if (xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+                SharedData::gSimEnabled = simEnabled;
+                xSemaphoreGive(SharedData::gSimEnabledMutex);
+            }
+        }
+    }
 
-    //     ++token;
-    //     if (std::strcmp(token, "ENABLE") == 0) {
-    //         simArmed = true;
-    //         simEnabled = false;
-    //     } else if (std::strcmp(token, "ACTIVATE") == 0) {
-    //         if (simArmed) {
-    //             simEnabled = true;
-    //         }
-    //     } else if (std::strcmp(token, "DISABLE") == 0) {
-    //         simEnabled = false;
-    //         simArmed = false;
-    //     }
-
-    //     SetSharedSimEnabled(simEnabled);
-    // }
-
-
+    void SetBarometerMode(bool enabled) {
+        BarometerMode = enabled;
+    }
 
     void CAL() {
         float pressureHpa = 0.0f;
@@ -107,8 +100,39 @@ namespace MissionManager {
         // if Inertial_Velocity > 1 m/s
 
 
+        if(simEnabled) 
+        {
+            switch(currentState){
+                case Common::FlightState::STANDBY:
+                    if(simulationWindow.size() > 1 && simulationWindow.isDescending()) {
+                        return Common::FlightState::ASCENT;
+                    }
+                    break;
+                case Common::FlightState::ASCENT:
+                    if(simulationWindow.isAscending()) {
+                        return Common::FlightState::DESCENT;
+                    }
+                    if (simulationWindow.getLatest()> MaxAltitude) {
+                        MaxAltitude = simulationWindow.getLatest();
+                    }
+                    break;
+                case Common::FlightState::DESCENT:
+                    if(simulationWindow.getLatest() < (0.8f * MaxAltitude)){
+                        return Common::FlightState::PAYLOAD_RELEASE;
+                    }
+                    break;
+                case Common::FlightState::PAYLOAD_RELEASE:
+                    if(simulationWindow.isStatic()) {
+                        return Common::FlightState::RECOVERY;
+                    }
+            }
+        }
+        // else if(barometerMode)
+        // {
 
-        if(!simEnabled){
+        // }
+        else 
+        {
             // Logic for checking state changes
             altWindow.push(ekfState.z);
             vzWindow.push(ekfState.vz);
@@ -153,11 +177,6 @@ namespace MissionManager {
                     // Handle unexpected state
                     break;
             }
-        }
-        else{
-            //idk
-
-            return currentState;
         }
         return currentState;
     }  

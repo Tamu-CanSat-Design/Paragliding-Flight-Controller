@@ -8,7 +8,10 @@ class RTC : public IRTC {
 public:
     bool Initialize() override;
     bool SetTime(time_t unix) override;
-    Common::TimeData GetTime() override;
+    char* GetTime() override;
+
+private:
+    char timeStr[Common::TIME_STRING_LENGTH] = {};
 };
 
 

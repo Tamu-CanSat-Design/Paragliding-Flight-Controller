@@ -8,6 +8,7 @@ void setup() {
   // Initialize all sensors before proceeding.
   while(!(Hardware::InitializeAllSensors())){
     // Optionally add a delay or error handling here
+    
   }
 
   // Create tasks and initialize hardware before starting the scheduler.

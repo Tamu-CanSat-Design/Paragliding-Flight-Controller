@@ -58,7 +58,6 @@ namespace SharedData {
     // Write with xQueueOverwrite; read with xQueuePeek (non-blocking).
     extern QueueHandle_t gRollAngleQueue;
 
-    extern Commlink commlink;
 
     void InitializeThreadSafeData();
 }

@@ -9,8 +9,8 @@ namespace {
     constexpr UBaseType_t MAGQUEUEDEPTH = 30;
     constexpr UBaseType_t VOLTAGEQUEUEDEPTH = 10;
     constexpr UBaseType_t COMMANDQUEUEDEPTH = 8;
-    constexpr UBaseType_t SETTIMEQUEUEDEPTH = 5;
-    constexpr UBaseType_t BAROMETERCALIBRATIONQUEUEDEPTH = 1;
+    constexpr UBaseType_t SETTIMEQUEUEDEPTH = 3;
+    constexpr UBaseType_t BAROMETERCALIBRATIONQUEUEDEPTH = 3;
 
     uint8_t gI2C1BarometerQueueStorage[BAROMETERQUEUEDEPTH * sizeof(Common::BarometerData)];
     uint8_t gI2C1GPSQueueStorage[GPSQUEUEDEPTH * sizeof(Common::GPSData)];
@@ -19,7 +19,7 @@ namespace {
     uint8_t gI2C2MagQueueStorage[MAGQUEUEDEPTH * sizeof(Common::MagData)];
     uint8_t gI2C1VoltageQueueStorage[VOLTAGEQUEUEDEPTH * sizeof(Common::VoltageData)];
     uint8_t gCommandQueueStorage[COMMANDQUEUEDEPTH * Common::COMMAND_BUFFER_LENGTH];
-    uint8_t gSetTimeQueueStorage[SETTIMEQUEUEDEPTH * sizeof(Common::TimeData)];
+    uint8_t gSetTimeQueueStorage[SETTIMEQUEUEDEPTH * Common::TIME_STRING_LENGTH];
     uint8_t gBarometerCalibrationQueueStorage[BAROMETERCALIBRATIONQUEUEDEPTH * sizeof(float)];
 
     StaticSemaphore_t gSnapshotMutexBuffer;
@@ -45,7 +45,6 @@ namespace {
 
 namespace SharedData {
 
-    Commlink commlink;
     Common::SensorSnapshot gSnapshot;
     Common::FlightState gFlightState;
     bool gSimEnabled = false;
@@ -97,7 +96,7 @@ namespace {
         gI2C2MagQueue = xQueueCreateStatic(MAGQUEUEDEPTH, sizeof(Common::MagData), gI2C2MagQueueStorage, &gI2C2MagQueueBuffer);
         gI2C1VoltageQueue = xQueueCreateStatic(VOLTAGEQUEUEDEPTH, sizeof(Common::VoltageData), gI2C1VoltageQueueStorage, &gI2C1VoltageQueueBuffer);
         gCommandQueue = xQueueCreateStatic(COMMANDQUEUEDEPTH, Common::COMMAND_BUFFER_LENGTH, gCommandQueueStorage, &gCommandQueueBuffer);
-        gSetTimeQueue = xQueueCreateStatic(SETTIMEQUEUEDEPTH, sizeof(Common::TimeData), gSetTimeQueueStorage, &gSetTimeQueueBuffer);
+        gSetTimeQueue = xQueueCreateStatic(SETTIMEQUEUEDEPTH, Common::TIME_STRING_LENGTH, gSetTimeQueueStorage, &gSetTimeQueueBuffer);
         gBarometerCalibrationQueue = xQueueCreateStatic(BAROMETERCALIBRATIONQUEUEDEPTH, sizeof(float), gBarometerCalibrationQueueStorage, &gBarometerCalibrationQueueBuffer);
     }
 

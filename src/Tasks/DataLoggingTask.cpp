@@ -6,6 +6,9 @@ namespace{
             "Voltage,Current,GyroX,GyroY,GyroZ,AccX,AccY,AccZ,GPSTime,"
             "GPSLat,GPSLon,GPSAlt,GPSSats,CMDEcho,MagX,MagY,MagZ,PosX:"
             "PosY,PosZ,VelX,VelY,VelZ,QuatW,QuatX,QuatY,QuatZ,AccelBias,GyroBias,EKFStatus\n";
+
+
+    
 }
 
 
@@ -13,7 +16,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
     (void)pvParameters;
 
     // Initialize SD card (runs once)
-    if (!SD.begin(Common::SD_PIN)) {
+    if (!SD.begin(BUILTIN_SDCARD)) {
         Serial.println("[DataLog] SD init failed — task suspending");
         vTaskSuspend(nullptr);          // nothing we can do without the card
     }
@@ -62,9 +65,8 @@ void Tasks::DataLoggingTask(void* pvParameters) {
         // 4) Format the CSV line (no mutex held)
         Common::telemetry dataToLog = {};
 
-        char timeStr[16] = {0};
-        snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d", localSensorSnapshot.timeData.hour, localSensorSnapshot.timeData.minute, localSensorSnapshot.timeData.second);
-
+        char timeStr[16];
+        snprintf(timeStr, sizeof(timeStr), "%s", localSensorSnapshot.timeData);
 
         strncpy(dataToLog.missionTime, timeStr, sizeof(dataToLog.missionTime) - 1);
         dataToLog.missionTime[sizeof(dataToLog.missionTime) - 1] = '\0';

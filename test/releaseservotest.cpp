@@ -11,20 +11,9 @@ void setup() {
 }
 
 void loop() {
-  // Sweep 0 → 180
+  
   Serial.println("Moving to 0°");
-  myServo.write(0);
+  myServo.write(20);
   delay(1000);
 
-  Serial.println("Moving to 90°");
-  myServo.write(90);
-  delay(1000);
-
-  Serial.println("Moving to 180°");
-  myServo.write(180);
-  delay(1000);
-
-  Serial.println("Moving back to 90°");
-  myServo.write(90);
-  delay(1000);
 }

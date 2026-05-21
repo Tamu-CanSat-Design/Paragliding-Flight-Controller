@@ -7,13 +7,13 @@ void Tasks::ReadCommandTask(void* pvParameters) {
 
 
     while (true) {
-        SharedData::commlink.ReadGroundRadio(cmdBuf, sizeof(cmdBuf));
+        Hardware::commlink_.ReadGroundRadio(cmdBuf, sizeof(cmdBuf));
         if (cmdBuf[0] != '\0') { // Check if we received a command
-            if (SharedData::commlink.CheckCommand(cmdBuf)) {
+            if (Hardware::commlink_.CheckCommand(cmdBuf)) {
                 xQueueSend(SharedData::gCommandQueue, cmdBuf, 0); // Send command to MissionManager if queue has room.
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100)); // Adjust delay as needed
+        vTaskDelay(pdMS_TO_TICKS(500)); // Adjust delay as needed
     }
 }

@@ -19,8 +19,6 @@ void Tasks::MissionManagerTask(void* pvParameters){
     Common::SensorSnapshot LocalSensorSnapshot = {};
     
     while(true){
-        
-        
         while(xQueueReceive(SharedData::gCommandQueue, &MissionManager::Command, 0) == pdTRUE) {
             if(xSemaphoreTake(SharedData::gStateVectorMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                 LocalStateVector = SharedData::gStateVector;
@@ -54,12 +52,19 @@ void Tasks::MissionManagerTask(void* pvParameters){
                     MissionManager::localCXFlag = false;
                 } 
             }
-            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T') 
+            else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'T' && MissionManager::Command[2] == ',') 
             {
                 // Take rest of the command after ST as a string then send it over a queue to RTC thread to set the RTC time. If the command has GPS then tell the RTC to set time from GPS
+               
+                char timeArg[Common::TIME_STRING_LENGTH] = {0};
+                //get rid of the "ST," part of the command
+                memcpy(timeArg, MissionManager::Command + 3, sizeof(timeArg) - 1);
+                timeArg[sizeof(timeArg) - 1] = '\0';
 
 
-                
+
+
+                xQueueSend(SharedData::gSetTimeQueue, &timeArg, 0);
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == '\0') {
 
@@ -77,6 +82,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
             }
             else if(MissionManager::Command[0] == 'S' && MissionManager::Command[1] == 'I' && MissionManager::Command[2] == 'M' && MissionManager::Command[3] == 'P' && MissionManager::Command[4] == '\0') {
                 //Altitude calculated from pressure
+                
             }
             else if(MissionManager::Command[0] == 'C' && MissionManager::Command[1] == 'A' && MissionManager::Command[2] == 'L' && MissionManager::Command[3] == '\0') {
                 MissionManager::CAL();
@@ -149,6 +155,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 break;
             case Common::FlightState::RECOVERY:
                 if (!MissionManager::RecoveryStartedFlag) {
+                    Hardware::audioBeacon_.BuzzerOn();
                     MissionManager::RecoveryStartedFlag = true;
                 }
                 break;

@@ -6,14 +6,13 @@
 #include "Hardware/drivers/TeseoGPS.h"
 #include "Hardware/drivers/Lidar.h"
 #include "Hardware/drivers/VoltageSensor.h"
-#include "Hardware/drivers/Radio.h" //
 #include "Hardware/drivers/AudioBeacon.h"
 #include "Hardware/drivers/Camera.h"
 #include "Hardware/drivers/ReleaseServo.h"
 #include "Hardware/drivers/SteeringServo.h"
 #include "Hardware/drivers/RTC.h"
+#include "Commlink.h"
 #include "bus/I2CDevice.h"
-#include <array>
 
 namespace Hardware {
 
@@ -34,8 +33,11 @@ namespace Hardware {
     extern VoltageSensor voltageSensor_;
     extern RTC rtc_;
 
+    //Radio
+    extern Commlink commlink_;
+
     //Actuators
-    extern Radio radio_;
+    // extern Radio radio_;
     extern AudioBeacon audioBeacon_;
     extern Camera camera_;
     extern ReleaseServo ContainerPayloadServo_;
