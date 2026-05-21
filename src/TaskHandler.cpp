@@ -16,16 +16,16 @@ namespace {
 
 
 
-    constexpr UBaseType_t kI2C1BusTaskPriority = 1;
-    constexpr UBaseType_t kI2C2BusTaskPriority = 2;
-    constexpr UBaseType_t kWriteTelemetryTaskPriority = 3;
-    constexpr UBaseType_t kDataLoggingTaskPriority = 4;
-    constexpr UBaseType_t kReadCommandTaskPriority = 5;
-    constexpr UBaseType_t kControlTaskPriority = 6;
-    constexpr UBaseType_t kNavigationTaskPriority = 7;
-    constexpr UBaseType_t kMissionManagerTaskPriority = 8;
-    constexpr UBaseType_t kGuidanceTaskPriority = 9;
-    constexpr UBaseType_t kRTCTaskPriority = 10;
+    constexpr UBaseType_t kI2C1BusTaskPriority = 0;
+    constexpr UBaseType_t kI2C2BusTaskPriority = 1;
+    constexpr UBaseType_t kWriteTelemetryTaskPriority = 2;
+    constexpr UBaseType_t kDataLoggingTaskPriority = 3;
+    constexpr UBaseType_t kReadCommandTaskPriority = 4;
+    constexpr UBaseType_t kControlTaskPriority = 5;
+    constexpr UBaseType_t kNavigationTaskPriority = 6;
+    constexpr UBaseType_t kMissionManagerTaskPriority = 7;
+    constexpr UBaseType_t kGuidanceTaskPriority = 8;
+    constexpr UBaseType_t kRTCTaskPriority = 9;
 
 
 
