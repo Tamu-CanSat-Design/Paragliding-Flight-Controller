@@ -48,8 +48,11 @@ namespace Common {
 
     
     inline const char* GetFlightStateName(FlightState state) {
-        if (state >= FlightState::STANDBY && state <= FlightState::RECOVERY) {
-            return FlightStateNames[static_cast<int>(state)];
+        const int base = static_cast<int>(FlightState::STANDBY);
+        int idx = static_cast<int>(state) - base;
+        const int namesCount = static_cast<int>(sizeof(FlightStateNames) / sizeof(FlightStateNames[0]));
+        if (idx >= 0 && idx < namesCount) {
+            return FlightStateNames[idx];
         }
         return "UNKNOWN";
     }
