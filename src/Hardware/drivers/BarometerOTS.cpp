@@ -60,11 +60,20 @@ void debug_print(const char* const fmt, ...) {
     Serial.print(buf);
 }
 
+uint8_t spi_init(void)                                              { return 0; }
+uint8_t spi_deinit(void)                                            { return 0; }
+uint8_t spi_read(uint8_t reg, uint8_t* buf, uint16_t len)           { (void)reg; (void)buf; (void)len; return 1; }
+uint8_t spi_write(uint8_t reg, uint8_t* buf, uint16_t len)          { (void)reg; (void)buf; (void)len; return 1; }
+
 void SetHandleCallbacks(bmp390_handle_t* h) {
     h->iic_init    = iic_init;
     h->iic_deinit  = iic_deinit;
     h->iic_read    = iic_read;
     h->iic_write   = iic_write;
+    h->spi_init    = spi_init;
+    h->spi_deinit  = spi_deinit;
+    h->spi_read    = spi_read;
+    h->spi_write   = spi_write;
     h->delay_ms    = delay_ms;
     h->debug_print = debug_print;
 }
