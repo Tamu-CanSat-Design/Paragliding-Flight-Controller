@@ -9,7 +9,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
     Common::FlightState localFlightState = Common::FlightState::STANDBY;
     char localCommand[32] = {'\0'};
     
-    Common::telemetry data;
+    Common::telemetry data = {};
     bool simEnabled = false;
     bool localCXFlag = false;
     while (true) {
@@ -61,6 +61,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         data.imuData = localSnapshot.imuData;
         data.magnetometer = localSnapshot.magData;
         snprintf(data.GPSTime, sizeof(data.GPSTime), "%s", localSnapshot.gpsData.time);
+        snprintf(data.CMDEcho, sizeof(data.CMDEcho), "%s", localCommand); // Copy command to telemetry struct
         data.GPSLoc = {localSnapshot.gpsData.latitude, localSnapshot.gpsData.longitude, localSnapshot.gpsData.altitude};
         data.GPSSats = localSnapshot.gpsData.satellites;
         
