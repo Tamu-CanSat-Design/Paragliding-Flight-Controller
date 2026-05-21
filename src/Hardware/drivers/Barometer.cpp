@@ -183,7 +183,7 @@ bool Barometer::SoftReset() {
     }
 
     // Give the device time to reset before further access.
-    delay(10);
+    delay(30);
 
     // Check command-ready status if available to avoid racing configuration.
     uint8_t status = 0;
@@ -192,7 +192,7 @@ bool Barometer::SoftReset() {
     }
 
     // Fallback delay; device should be ready after reset even if STATUS isn't updated.
-    delay(10);
+    delay(30);
     return true;
 }
 

@@ -97,7 +97,7 @@ namespace Common {
         float z;
         float vx;
         float vy;
-        float vz;
+        float vz=0.0f;
         float q0;
         float q1;
         float q2;
