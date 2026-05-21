@@ -320,24 +320,24 @@ float Barometer::CompensateTemperature(uint32_t raw_temp) {
 float Barometer::CompensatePressure(uint32_t raw_press) {
     // Datasheet p56: "Pressure compensation".
     // First polynomial branch for temperature-dependent offset.
-    float partial_data1 = calib_.par_p6 * calib_.t_lin;
-    float partial_data2 = calib_.par_p7 * (calib_.t_lin * calib_.t_lin);
-    float partial_data3 = calib_.par_p8 * (calib_.t_lin * calib_.t_lin * calib_.t_lin);
-    float partial_out1 = calib_.par_p5 + partial_data1 + partial_data2 + partial_data3;
+    double partial_data1 = calib_.par_p6 * calib_.t_lin;
+    double partial_data2 = calib_.par_p7 * (calib_.t_lin * calib_.t_lin);
+    double partial_data3 = calib_.par_p8 * (calib_.t_lin * calib_.t_lin * calib_.t_lin);
+    double partial_out1 = calib_.par_p5 + partial_data1 + partial_data2 + partial_data3;
 
     // Second polynomial branch for temperature-scaled pressure.
     partial_data1 = calib_.par_p2 * calib_.t_lin;
     partial_data2 = calib_.par_p3 * (calib_.t_lin * calib_.t_lin);
     partial_data3 = calib_.par_p4 * (calib_.t_lin * calib_.t_lin * calib_.t_lin);
-    float partial_out2 = static_cast<float>(raw_press)
+    double partial_out2 = static_cast<double>(raw_press)
         * (calib_.par_p1 + partial_data1 + partial_data2 + partial_data3);
 
     // Third polynomial branch for higher-order pressure corrections.
     partial_data1 = static_cast<float>(raw_press) * static_cast<float>(raw_press);
     partial_data2 = calib_.par_p9 + calib_.par_p10 * calib_.t_lin;
     partial_data3 = partial_data1 * partial_data2;
-    const float partial_data4 = partial_data3
-        + (static_cast<float>(raw_press) * static_cast<float>(raw_press) * static_cast<float>(raw_press))
+    const double partial_data4 = partial_data3
+        + (static_cast<double>(raw_press) * static_cast<double>(raw_press) * static_cast<double>(raw_press))
         * calib_.par_p11;
 
     // Sum all branches to get compensated pressure in Pa.
@@ -349,7 +349,7 @@ float Barometer::PressureToRelativeAltitude(float pressureHpa) const {
         return 0.0f;
     }
 
-    const float ratio = pressureHpa / referencePressureHpa_;
+    const double ratio = pressureHpa / referencePressureHpa_;
     return 44330.0f * (1.0f - std::pow(ratio, 0.190294957f));
 }
 

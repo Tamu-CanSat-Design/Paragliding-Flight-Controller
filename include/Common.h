@@ -283,9 +283,9 @@ namespace Common {
         return std::snprintf(
             buffer,
             bufferSize,
-            "ID:%d,Time:%s,PacketCount:%d,Mode:%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
-            "Voltage:%f,Current:%f,GyroX:%f,GyroY:%f,GyroZ:%f,AccX:%f,AccY:%f,AccZ:%f,GPSTime:%s,"
-            "GPSLat:%f,GPSLon:%f,GPSAlt:%f,GPSSats:%d,CMDEcho:%s,MagX:%f,MagY:%f,MagZ:%f,PosX:%f,"
+            "%d,%s,PacketCount:%d,%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
+            "%f,%f,%f,%f,%f,%f,%f,%f,%s,"
+            "%f,%f,%f,%d,%s,%f,%f,%f,PosX:%f,"
             "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f",
             TEAM_ID,
             data.missionTime,

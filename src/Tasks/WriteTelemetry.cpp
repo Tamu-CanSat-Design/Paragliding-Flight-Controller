@@ -1,5 +1,9 @@
 #include "TaskHandler.h"
 
+namespace{
+    int packetCount = 0;
+}
+
 void Tasks::WriteTelemetryTask(void* pvParameters) {
     (void)pvParameters;
     char telemetryBuf[1024]; // Buffer for telemetry data
@@ -51,6 +55,8 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
 
         strncpy(data.missionTime, timeStr, sizeof(data.missionTime) - 1);
         data.missionTime[sizeof(data.missionTime) - 1] = '\0';
+        packetCount++;
+        data.packetCount = packetCount;
         data.Mode = simEnabled ? 'S' : 'F'; // 'S' for simulation mode, 'F' for flight mode
         data.state = localFlightState;
         data.baroAltitude = localSnapshot.barometerData.altitude;
