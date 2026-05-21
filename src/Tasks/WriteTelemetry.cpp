@@ -65,7 +65,7 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
         data.stateVector = localStateVector;
 
         Common::BuildPacket(data, telemetryBuf, sizeof(telemetryBuf));
-        
+        Serial.println(telemetryBuf); // For debugging, can be removed in final version
         
         if(localCXFlag) {
             Hardware::commlink_.WriteGroundRadio(telemetryBuf);
