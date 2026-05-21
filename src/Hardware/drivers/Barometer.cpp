@@ -100,6 +100,7 @@ bool Barometer::Initialize() {
     if (!device_.ReadRegister(kRegChipId, &chip_id) || chip_id != kChipId) {
         device_.setAddress(kI2cAddressHigh);
         if (!device_.ReadRegister(kRegChipId, &chip_id) || chip_id != kChipId) {
+            Serial.printf("Barometer probe failed: no response or unexpected chip ID 0x%02X\n", chip_id);
             ++diagnostics_.initFailureCount;
             return false;
         }
@@ -107,18 +108,21 @@ bool Barometer::Initialize() {
 
     // Soft reset to known default state so configuration writes behave predictably.
     if (!SoftReset()) {
+        Serial.println("Barometer: soft reset failed");
         ++diagnostics_.initFailureCount;
         return false;
     }
 
     // Read calibration coefficients from NVM because compensation depends on them.
     if (!ReadCalibration()) {
+        Serial.println("Barometer: calibration read failed");
         ++diagnostics_.initFailureCount;
         return false;
     }
 
     // Configure oversampling, ODR, filter, and mode to balance noise and latency.
     if (!Configure()) {
+        Serial.println("Barometer: configure failed");
         ++diagnostics_.initFailureCount;
         return false;
     }
