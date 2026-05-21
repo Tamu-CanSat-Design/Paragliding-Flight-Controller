@@ -105,6 +105,8 @@ bool Barometer::Initialize() {
             return false;
         }
     }
+    diagnostics_.foundAddress = device_.address();
+    diagnostics_.chipId = chip_id;
 
     // Soft reset to known default state so configuration writes behave predictably.
     if (!SoftReset()) {
