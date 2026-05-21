@@ -1,8 +1,7 @@
 #include <Arduino.h>
-#include <Hardware/drivers/Barometer.h>
+#include <Hardware/drivers/BarometerOTS.h>
 
-
-Barometer baro;
+BarometerOTS baro;
 
 namespace {
 
@@ -16,17 +15,27 @@ void PrintBaroSample(const Common::BarometerData& sample) {
     Serial.println(" m");
 }
 
-void PrintBaroDiagnostics(const Barometer::Diagnostics& diag) {
-    Serial.print("Baro diag: initFail=");
+void PrintBaroDiagnostics(const BarometerOTS::Diagnostics& diag) {
+    Serial.print("Baro diag init: failures=");
     Serial.print(diag.initFailureCount);
-    Serial.print(" readFail=");
+    Serial.print(" lastErrCode=");
+    Serial.print(diag.lastInitErrorCode);
+    Serial.print(" addr=0x");
+    Serial.print(diag.foundAddress, HEX);
+    Serial.println();
+
+    Serial.print("Baro diag read: total=");
+    Serial.print(diag.totalReadCount);
+    Serial.print(" fail=");
     Serial.print(diag.readFailureCount);
     Serial.print(" stale=");
     Serial.print(diag.staleReturnCount);
-    Serial.print(" addr=0x");
-    Serial.print(diag.foundAddress, HEX);
-    Serial.print(" chipId=0x");
-    Serial.print(diag.chipId, HEX);
+    Serial.print(" consecutive=");
+    Serial.print(diag.consecutiveReadFailures);
+    Serial.print(" maxConsecutive=");
+    Serial.print(diag.maxConsecutiveReadFailures);
+    Serial.print(" lastErrCode=");
+    Serial.print(diag.lastReadErrorCode);
     Serial.println();
 }
 
@@ -53,7 +62,7 @@ void setup() {
 
 void loop() {
     const Common::BarometerData sample = baro.ReadData();
-    const Barometer::Diagnostics diag = baro.GetDiagnostics();
+    const BarometerOTS::Diagnostics diag = baro.GetDiagnostics();
 
     PrintBaroSample(sample);
     PrintBaroDiagnostics(diag);

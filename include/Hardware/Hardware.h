@@ -1,6 +1,6 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
-#include "Hardware/drivers/Barometer.h"
+#include "Hardware/drivers/BarometerOTS.h"
 #include "Hardware/drivers/Imu.h"
 #include "Hardware/drivers/MagnetometerOTS.h"
 #include "Hardware/drivers/TeseoGPS.h"
@@ -25,7 +25,7 @@ namespace Hardware {
     extern I2CDevice i2c2_; // default address, can be changed by drivers
 
     //Sensors:
-    extern Barometer barometer_;
+    extern BarometerOTS barometer_;
     extern IMU imu_;
     extern MagnetometerOTS magnetometer_;
     extern TeseoGPS gps_;
