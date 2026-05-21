@@ -25,6 +25,7 @@ namespace {
     constexpr UBaseType_t kNavigationTaskPriority = 7;
     constexpr UBaseType_t kMissionManagerTaskPriority = 8;
     constexpr UBaseType_t kGuidanceTaskPriority = 9;
+    constexpr UBaseType_t kRTCTaskPriority = 10;
 
 
 
@@ -73,6 +74,7 @@ namespace Tasks
 
     TaskHandle_t RTCTaskHandle = nullptr;
     StaticTask_t RTCTaskBuffer;
+    StackType_t RTCTaskStack[kRTCTaskStackDepth];
 
 
 
@@ -107,6 +109,15 @@ namespace Tasks
             nullptr, 
             kWriteTelemetryTaskPriority, 
             WriteTelemetryTaskStack, &WriteTelemetryTaskBuffer);
+
+        RTCTaskHandle = xTaskCreateStatic(
+            RTCTask,
+            "RTC Task",
+            kRTCTaskStackDepth,
+            nullptr,
+            kRTCTaskPriority,
+            RTCTaskStack, &RTCTaskBuffer);
+            
         
         DataLoggingTaskHandle = xTaskCreateStatic(
             DataLoggingTask,

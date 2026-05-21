@@ -23,7 +23,6 @@ namespace Common {
     inline constexpr uint8_t BUZZER_PIN = 20;
     inline constexpr uint8_t CAMERA_TRIGGER_PIN = 41;
     inline constexpr unsigned long CAMERA_TRIGGER_PULSE_MS = 600;
-    inline constexpr uint8_t SD_PIN = 46;
 
     
 
@@ -266,6 +265,11 @@ namespace Common {
             idx = 0;
             count = 0;
             std::fill(std::begin(_buffer), std::end(_buffer), float{});
+        }
+
+        float getLatest() const {
+            if(count == 0) return 0.0f;
+            return _buffer[(idx - 1) % N];
         }
 
     private:

@@ -2,10 +2,11 @@
 
 int Commlink::index = 0;
 
-void Commlink::Initialize(){
+bool Commlink::Initialize(){
 /* Initialize Ground Link */
 
     GetXbeeSerial().begin(Common::XBEE_BAUDRATE);
+    return true;
 }
 
 

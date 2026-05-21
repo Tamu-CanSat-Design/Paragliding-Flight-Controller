@@ -6,6 +6,9 @@ namespace{
             "Voltage,Current,GyroX,GyroY,GyroZ,AccX,AccY,AccZ,GPSTime,"
             "GPSLat,GPSLon,GPSAlt,GPSSats,CMDEcho,MagX,MagY,MagZ,PosX:"
             "PosY,PosZ,VelX,VelY,VelZ,QuatW,QuatX,QuatY,QuatZ,AccelBias,GyroBias,EKFStatus\n";
+
+
+    
 }
 
 
@@ -13,7 +16,7 @@ void Tasks::DataLoggingTask(void* pvParameters) {
     (void)pvParameters;
 
     // Initialize SD card (runs once)
-    if (!SD.begin(Common::SD_PIN)) {
+    if (!SD.begin(BUILTIN_SDCARD)) {
         Serial.println("[DataLog] SD init failed — task suspending");
         vTaskSuspend(nullptr);          // nothing we can do without the card
     }

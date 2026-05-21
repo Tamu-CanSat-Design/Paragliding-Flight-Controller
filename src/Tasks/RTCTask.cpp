@@ -8,7 +8,7 @@ namespace{
 }
 
 void Tasks::RTCTask(void *pvParameters) {
-
+    (void)pvParameters; // Avoid unused parameter warning
 
     while(true) {
 
