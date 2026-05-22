@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <Hardware/drivers/BarometerOTS.h>
+#include <Hardware/drivers/BarometerBMP3.h>
 
-BarometerOTS baro;
+BarometerBMP3 baro;
 
 namespace {
 
@@ -15,13 +15,37 @@ void PrintBaroSample(const Common::BarometerData& sample) {
     Serial.println(" m");
 }
 
-void PrintBaroDiagnostics(const BarometerOTS::Diagnostics& diag) {
+void PrintBaroDiagnostics(const BarometerBMP3::Diagnostics& diag) {
     Serial.print("Baro diag init: failures=");
     Serial.print(diag.initFailureCount);
-    Serial.print(" lastErrCode=");
-    Serial.print(diag.lastInitErrorCode);
+    Serial.print(" lastApi=");
+    Serial.print(diag.lastInitApiResult);
+    Serial.print(" lastIntf=");
+    Serial.print(diag.lastInitInterfaceResult);
+    Serial.print(" lastChip=0x");
+    Serial.print(diag.lastInitChipId, HEX);
+    Serial.print(" configApi=");
+    Serial.print(diag.lastConfigApiResult);
+    Serial.print(" configIntf=");
+    Serial.print(diag.lastConfigInterfaceResult);
     Serial.print(" addr=0x");
     Serial.print(diag.foundAddress, HEX);
+    Serial.print(" chip=0x");
+    Serial.print(diag.chipId, HEX);
+    Serial.println();
+
+    Serial.print("Baro diag probes: primaryApi=");
+    Serial.print(diag.primaryInitApiResult);
+    Serial.print(" primaryIntf=");
+    Serial.print(diag.primaryInitInterfaceResult);
+    Serial.print(" primaryChip=0x");
+    Serial.print(diag.primaryInitChipId, HEX);
+    Serial.print(" secondaryApi=");
+    Serial.print(diag.secondaryInitApiResult);
+    Serial.print(" secondaryIntf=");
+    Serial.print(diag.secondaryInitInterfaceResult);
+    Serial.print(" secondaryChip=0x");
+    Serial.print(diag.secondaryInitChipId, HEX);
     Serial.println();
 
     Serial.print("Baro diag read: total=");
@@ -34,8 +58,12 @@ void PrintBaroDiagnostics(const BarometerOTS::Diagnostics& diag) {
     Serial.print(diag.consecutiveReadFailures);
     Serial.print(" maxConsecutive=");
     Serial.print(diag.maxConsecutiveReadFailures);
-    Serial.print(" lastErrCode=");
-    Serial.print(diag.lastReadErrorCode);
+    Serial.print(" notReady=");
+    Serial.print(diag.notReadyCount);
+    Serial.print(" lastApi=");
+    Serial.print(diag.lastReadApiResult);
+    Serial.print(" lastIntf=");
+    Serial.print(diag.lastReadInterfaceResult);
     Serial.println();
 }
 
@@ -45,7 +73,8 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
-    Serial.println("Barometer test starting");
+    Serial.print("Barometer test starting: ");
+    Serial.println(baro.SensorName());
 
     const bool ok = baro.Initialize();
     Serial.print("Baro init: ");
@@ -62,7 +91,7 @@ void setup() {
 
 void loop() {
     const Common::BarometerData sample = baro.ReadData();
-    const BarometerOTS::Diagnostics diag = baro.GetDiagnostics();
+    const BarometerBMP3::Diagnostics diag = baro.GetDiagnostics();
 
     PrintBaroSample(sample);
     PrintBaroDiagnostics(diag);

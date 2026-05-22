@@ -1,0 +1,9 @@
+{
+  "name": "BMP3_SensorAPI",
+  "version": "2.0.6",
+  "description": "Vendored Bosch Sensortec BMP3 sensor API files used by BarometerBMP3.",
+  "keywords": ["bosch", "bmp390", "bmp3", "barometer"],
+  "license": "BSD-3-Clause",
+  "frameworks": "*",
+  "platforms": "*"
+}
