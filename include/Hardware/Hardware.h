@@ -8,8 +8,8 @@
 #include "Hardware/drivers/VoltageSensor.h"
 #include "Hardware/drivers/AudioBeacon.h"
 #include "Hardware/drivers/Camera.h"
-#include "Hardware/drivers/ReleaseServo.h"
-#include "Hardware/drivers/SteeringServo.h"
+#include "Hardware/drivers/Mg90sServo.h"
+#include "Hardware/drivers/Sg90Servo.h"
 #include "Hardware/drivers/RTC.h"
 #include "Commlink.h"
 #include "bus/I2CDevice.h"
@@ -40,11 +40,11 @@ namespace Hardware {
     // extern Radio radio_;
     extern AudioBeacon audioBeacon_;
     extern Camera camera_;
-    extern ReleaseServo ContainerPayloadServo_;
-    extern ReleaseServo EggInstrumentServo_;
-    extern ReleaseServo LidarCameraServo_;
-    extern SteeringServo LeftServo_;
-    extern SteeringServo RightServo_;
+    extern Mg90sServo ContainerPayloadServo_;
+    extern Mg90sServo EggInstrumentServo_;
+    extern Mg90sServo LidarCameraServo_;
+    extern Sg90Servo LeftServo_;
+    extern Sg90Servo RightServo_;
     
 
     bool InitializeAllSensors();

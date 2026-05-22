@@ -1,19 +1,63 @@
-#include <Servo.h>
 #include <Arduino.h>
-Servo myServo;
 
-const int SERVO_PIN = 15;
+#include "Hardware/drivers/Mg90sServo.h"
+
+// MG90S angle-only hardware bench test.
+//
+// Safety before powering:
+// - Use an external servo supply, not the Teensy 5 V pin.
+// - Tie servo supply ground to Teensy ground.
+// - Start with linkage disconnected or mechanically unloaded.
+// - Verify each endpoint before installing the servo into the mechanism.
+
+static constexpr uint8_t kServoPin = 15;
+static constexpr unsigned long kSettleMs = 800;
+
+namespace {
+
+Mg90sServo gServo{kServoPin};
+
+void CommandAngle(float degrees) {
+    Serial.print(F("Command MG90S angle "));
+    Serial.print(degrees, 1);
+    Serial.println(F(" deg; attached Servo backend should hold this angle"));
+
+    gServo.SetAngle(degrees);
+    delay(kSettleMs);
+}
+
+}  // namespace
 
 void setup() {
-  Serial.begin(115200);
-  myServo.attach(SERVO_PIN);
-  Serial.println("Servo test starting...");
+    Serial.begin(115200);
+    delay(1000);
+
+    Serial.println(F("\n========================================"));
+    Serial.println(F("  MG90S Servo Angle Bench Test"));
+    Serial.println(F("========================================"));
+    Serial.print(F("Signal pin: "));
+    Serial.println(kServoPin);
+    Serial.println(F("Pulse basis: local MG90S datasheet, 1000/1500/2000 us"));
+
+    const bool ok = gServo.Initialize();
+    Serial.print(F("Servo init: "));
+    Serial.println(ok ? F("OK") : F("FAIL"));
+
+    if (!ok) {
+        while (true) {
+            delay(1000);
+        }
+    }
+
+    const float angles[] = {0.0f, 45.0f, 90.0f, 135.0f, 180.0f, -30.0f, 210.0f, 90.0f};
+    const int count = static_cast<int>(sizeof(angles) / sizeof(angles[0]));
+    for (int i = 0; i < count; ++i) {
+        CommandAngle(angles[i]);
+    }
+
+    Serial.println(F("MG90S bench sequence complete."));
 }
 
 void loop() {
-  
-  Serial.println("Moving to 0°");
-  myServo.write(20);
-  delay(1000);
-
+    delay(1000);
 }

@@ -16,11 +16,11 @@ namespace Hardware {
     AudioBeacon audioBeacon_;
     RTC rtc_;
     Camera camera_;
-    ReleaseServo ContainerPayloadServo_{15};
-    ReleaseServo EggInstrumentServo_{14};
-    ReleaseServo LidarCameraServo_{13};
-    SteeringServo LeftServo_{[]{ SteeringServo::Config c; c.pin = 23; return c; }()};
-    SteeringServo RightServo_{[]{ SteeringServo::Config c; c.pin = 22; return c; }()};
+    Mg90sServo ContainerPayloadServo_{15};
+    Mg90sServo EggInstrumentServo_{14};
+    Mg90sServo LidarCameraServo_{13};
+    Sg90Servo LeftServo_{23};
+    Sg90Servo RightServo_{22};
     I2CDevice i2c1_{};
     I2CDevice i2c2_{};
     
