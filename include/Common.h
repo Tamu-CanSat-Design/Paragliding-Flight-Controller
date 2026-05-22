@@ -286,10 +286,10 @@ namespace Common {
         return std::snprintf(
             buffer,
             bufferSize,
-            "%d,%s,PacketCount:%d,%c,State:%s,BaroAlt:%f,Temp:%f,Pressure:%f,"
+            "%d,%s,%d,%c,%s,%f,%f,%f,"
             "%f,%f,%f,%f,%f,%f,%f,%f,%s,"
-            "%f,%f,%f,%d,%s,%f,%f,%f,PosX:%f,"
-            "PosY:%f,PosZ:%f,VelX:%f,VelY:%f,VelZ:%f,QuatW:%f,QuatX:%f,QuatY:%f,QuatZ:%f",
+            "%f,%f,%f,%d,%s,%f,%f,%f,%f,"
+            "%f,%f,%f,%f,%f,%f,%f,%f,%f",
             TEAM_ID,
             data.missionTime,
             data.packetCount,
