@@ -9,6 +9,8 @@ void Tasks::ReadCommandTask(void* pvParameters) {
     while (true) {
         Hardware::commlink_.ReadGroundRadio(cmdBuf, sizeof(cmdBuf));
         if (cmdBuf[0] != '\0') { // Check if we received a command
+            // Serial.print("[ReadCommandTask] Received: ");
+            // Serial.println(cmdBuf);
             if (Hardware::commlink_.CheckCommand(cmdBuf)) {
                 xQueueSend(SharedData::gCommandQueue, cmdBuf, 0); // Send command to MissionManager if queue has room.
             }
