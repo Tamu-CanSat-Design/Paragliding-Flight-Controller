@@ -67,11 +67,11 @@ namespace Hardware {
         }
                 ok = camera_.Initialize() && ok;
 
-        // ok = EggInstrumentServo_.Initialize() && ok;
-        // ok = LidarCameraServo_.Initialize() && ok;
-        // ok = ContainerPayloadServo_.Initialize() && ok;
-        // ok = LeftServo_.Initialize() && ok;
-        // ok = RightServo_.Initialize() && ok;
+        ok = EggInstrumentServo_.Initialize() && ok;
+        ok = LidarCameraServo_.Initialize() && ok;
+        ok = ContainerPayloadServo_.Initialize() && ok;
+        ok = LeftServo_.Initialize() && ok;
+        ok = RightServo_.Initialize() && ok;
         return ok;
     }
 }
