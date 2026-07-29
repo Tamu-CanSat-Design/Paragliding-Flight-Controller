@@ -42,7 +42,7 @@ namespace Hardware {
     extern Camera camera_;
     extern Mg90sServo ContainerPayloadServo_;
     extern Mg90sServo EggInstrumentServo_;
-    extern Mg90sServo LidarCameraServo_;
+    extern Sg90Servo LidarCameraServo_;
     extern Sg90Servo LeftServo_;
     extern Sg90Servo RightServo_;
     

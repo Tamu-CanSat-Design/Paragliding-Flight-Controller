@@ -6,20 +6,20 @@ namespace {
 
 constexpr int kMinPulseUs = 1000;
 constexpr int kMaxPulseUs = 2000;
-constexpr float kMinAngleDeg = 0.0f;
-constexpr float kMaxAngleDeg = 180.0f;
-constexpr float kStartupAngleDeg = 90.0f;
+constexpr int kStopPulseUs = 1500;
+constexpr float kMinCommandDeg = -90.0f;
+constexpr float kMaxCommandDeg = 90.0f;
 
 bool IsFinite(float value) {
     return isfinite(value);
 }
 
-float ClampAngle(float degrees) {
-    if (degrees < kMinAngleDeg) {
-        return kMinAngleDeg;
+float ClampCommand(float degrees) {
+    if (degrees < kMinCommandDeg) {
+        return kMinCommandDeg;
     }
-    if (degrees > kMaxAngleDeg) {
-        return kMaxAngleDeg;
+    if (degrees > kMaxCommandDeg) {
+        return kMaxCommandDeg;
     }
     return degrees;
 }
@@ -37,7 +37,7 @@ bool Mg90sServo::Initialize() {
     }
 
     initialized_ = true;
-    SetAngle(kStartupAngleDeg);
+    servo_.writeMicroseconds(kStopPulseUs);
     return true;
 }
 
@@ -51,6 +51,8 @@ void Mg90sServo::SetAngle(float degrees) {
         return;
     }
 
-    const float commandedDegrees = ClampAngle(degrees);
-    servo_.write(static_cast<int>(commandedDegrees + 0.5f));
+    const float commandedDegrees = ClampCommand(degrees);
+    const int pulseWidth = static_cast<int>(
+        kStopPulseUs + (commandedDegrees / kMaxCommandDeg) * 500.0f);
+    servo_.writeMicroseconds(pulseWidth);
 }

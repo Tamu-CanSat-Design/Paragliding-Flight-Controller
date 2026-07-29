@@ -18,7 +18,7 @@ namespace Hardware {
     Camera camera_;
     Mg90sServo ContainerPayloadServo_{15};
     Mg90sServo EggInstrumentServo_{14};
-    Mg90sServo LidarCameraServo_{13};
+    Sg90Servo LidarCameraServo_{13};
     Sg90Servo LeftServo_{23};
     Sg90Servo RightServo_{22};
     I2CDevice i2c1_{};
@@ -67,11 +67,11 @@ namespace Hardware {
         }
                 ok = camera_.Initialize() && ok;
 
-        // ok = EggInstrumentServo_.Initialize() && ok;
-        // ok = LidarCameraServo_.Initialize() && ok;
-        // ok = ContainerPayloadServo_.Initialize() && ok;
-        // ok = LeftServo_.Initialize() && ok;
-        // ok = RightServo_.Initialize() && ok;
+        ok = EggInstrumentServo_.Initialize() && ok;
+        ok = LidarCameraServo_.Initialize() && ok;
+        ok = ContainerPayloadServo_.Initialize() && ok;
+        ok = LeftServo_.Initialize() && ok;
+        ok = RightServo_.Initialize() && ok;
         return ok;
     }
 }
