@@ -102,7 +102,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 && MissionManager::Command[9] == ',' && MissionManager::Command[10] == 'O' && MissionManager::Command[11] == 'N' 
                 && MissionManager::Command[12] == '\0') {
                 //Trigger servo for egg release mechanism
-                Hardware::EggInstrumentServo_.SetAngle(15);
+                Hardware::EggInstrumentServo_.SetAngle(-90);
             }
             /*Egg Release Off*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C'
@@ -112,7 +112,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                  && MissionManager::Command[12] == 'F' && MissionManager::Command[13] == '\0') 
             {
                 //Trigger servo for egg release mechanism
-                Hardware::EggInstrumentServo_.SetAngle(15);
+                Hardware::EggInstrumentServo_.SetAngle(90);
             }
             /*LiDAR/Camera Release On*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' 
@@ -121,7 +121,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 && MissionManager::Command[9] == 'O' && MissionManager::Command[10] == 'N' && MissionManager::Command[11] == '\0') 
             {
                 //Trigger servo for lidar/camera release mechanism
-                Hardware::EggInstrumentServo_.SetAngle(20);
+                Hardware::LidarCameraServo_.SetAngle(-15);
             }
             /*LiDAR/Camera Release Off*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' 
@@ -131,7 +131,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                 && MissionManager::Command[12] == '\0') 
             {
                 //Trigger servo for lidar/camera release mechanism
-                Hardware::EggInstrumentServo_.SetAngle(20);
+                Hardware::LidarCameraServo_.SetAngle(15);
             }
             /*Container/Payload Release On*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C'
@@ -140,7 +140,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                  && MissionManager::Command[9] == ',' && MissionManager::Command[10] == 'O' && MissionManager::Command[11] == 'N' 
                  && MissionManager::Command[12] == '\0') 
             {
-                Hardware::ContainerPayloadServo_.SetAngle(75);
+                Hardware::ContainerPayloadServo_.SetAngle(-55);
             }
             /*Container/Payload Release Off*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C'
@@ -149,7 +149,7 @@ void Tasks::MissionManagerTask(void* pvParameters){
                  && MissionManager::Command[9] == ',' && MissionManager::Command[10] == 'O' && MissionManager::Command[11] == 'F' 
                  && MissionManager::Command[12] == 'F' && MissionManager::Command[13] == '\0') 
             {
-                Hardware::ContainerPayloadServo_.SetAngle(75);
+                Hardware::ContainerPayloadServo_.SetAngle(15);
             }
             /*Audio Beacon On*/
             else if(MissionManager::Command[0] == 'M' && MissionManager::Command[1] == 'E' && MissionManager::Command[2] == 'C' 
