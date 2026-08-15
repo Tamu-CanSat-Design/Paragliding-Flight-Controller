@@ -21,8 +21,6 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             localCXFlag = SharedData::gCXFlag;
             xSemaphoreGive(SharedData::gCXFlagMutex);
         }
-        
-
         //Mutexes to safely read shared data
         if(xSemaphoreTake(SharedData::gSnapshotMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
             localSnapshot = SharedData::gSnapshot;
@@ -40,7 +38,6 @@ void Tasks::WriteTelemetryTask(void* pvParameters) {
             snprintf(localCommand, sizeof(localCommand), "%s", SharedData::gCommand); // Copy command under mutex
             xSemaphoreGive(SharedData::gCommandMutex);
         }
-       
         if(xSemaphoreTake(SharedData::gSimEnabledMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
             simEnabled = SharedData::gSimEnabled;
             xSemaphoreGive(SharedData::gSimEnabledMutex);
