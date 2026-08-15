@@ -55,7 +55,7 @@ static void copyField(const char*& s, char* dst, size_t dstSize) {
     if (*s == ',' || *s == '\r') ++s;
 }
 
-bool Commlink::CheckCommand(const char* command){
+bool Commlink::CheckCommand(char* command){
     if (!command || !*command) return false;
 
     const char* p = command;
@@ -74,6 +74,13 @@ bool Commlink::CheckCommand(const char* command){
     if (atoi(teamId) != Common::TEAM_ID) {
         Serial.println("Invalid TEAM_ID");
         return false;
+    }
+
+    // 3) Updates command by removing the CMD,1030 before sending it to the mission manager
+    if (*p != '\0') {
+        memmove(command, p, strlen(p) + 1);
+    } else {
+        command[0] = '\0';
     }
     return true;
 }
